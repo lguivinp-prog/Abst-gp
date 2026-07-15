@@ -1,0 +1,29 @@
+FROM python:3.11-slim
+
+# Instalar dependencias del sistema requeridas para OCRmyPDF, Tesseract, PaddleOCR y OpenCV
+RUN apt-get update && apt-get install -y \
+    tesseract-ocr \
+    tesseract-ocr-spa \
+    ghostscript \
+    poppler-utils \
+    libgl1 \
+    libglib2.0-0 \
+    libsm6 \
+    libxext6 \
+    libxrender-dev \
+    gcc \
+    g++ \
+    && rm -rf /var/lib/apt/lists/*
+
+WORKDIR /app
+
+COPY requirements-ocr.txt .
+RUN pip install --no-cache-dir -r requirements-ocr.txt
+
+COPY . .
+
+# Variables de entorno
+ENV PYTHONPATH=/app
+ENV PYTHONUNBUFFERED=1
+
+CMD ["rq", "worker", "ocr_tasks", "--url", "redis://redis:6379/0"]

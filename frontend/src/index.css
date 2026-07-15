@@ -1,0 +1,15 @@
+@import './styles/variables.css';
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+  .doc-paragraph {
+    text-align: justify;
+    text-justify: inter-word;
+    line-height: 1.6;
+    margin-bottom: 1rem;
+    font-size: 1.125rem; /* 18px */
+    color: #1a202c; /* text-gray-900 */
+  }
+
+/* Any global utilities can go here, but variables.css handles the reset and theme */

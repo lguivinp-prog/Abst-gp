@@ -1,0 +1,262 @@
+from sqlalchemy import Column, Integer, String, Boolean, DateTime, ForeignKey, Text, Float, JSON, CheckConstraint, Index, UniqueConstraint, PrimaryKeyConstraint, text
+from sqlalchemy.dialects.postgresql import JSONB, UUID
+from sqlalchemy.orm import relationship
+from sqlalchemy.sql import func
+import uuid
+from app.models.base import Base
+
+from sqlalchemy import event
+from sqlalchemy.orm import Session
+
+class ValidationDocumentCase(Base):
+    __tablename__ = "validation_document_cases"
+    
+    case_id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    validation_run_id = Column(UUID(as_uuid=True), nullable=False)
+    uploaded_document_id = Column(Integer, ForeignKey("uploaded_documents.id", ondelete="RESTRICT", name="fk_validation_case_uploaded_document"), nullable=False)
+    
+    # Checksum of the PDF content. Same length as SHA-256 hex string.
+    pdf_sha256 = Column(String(64), nullable=False)
+    
+    # Request idempotency derived from SHA256(validation_run_id + ":" + pdf_sha256)
+    request_idempotency_key = Column(String(64), unique=True, nullable=False)
+    
+    created_at = Column(DateTime(timezone=True), server_default=func.now(), nullable=False)
+
+    __table_args__ = (
+        UniqueConstraint('validation_run_id', 'pdf_sha256', name='uq_validation_case_run_sha'),
+        UniqueConstraint('request_idempotency_key', name='uq_validation_case_request_idempotency_key'),
+        CheckConstraint("pdf_sha256 ~ '^[0-9a-f]{64}$'", name="check_pdf_sha256_format"),
+        CheckConstraint("request_idempotency_key ~ '^[0-9a-f]{64}$'", name="check_request_idempotency_key_format"),
+        PrimaryKeyConstraint('case_id', name='pk_validation_document_cases')
+    )
+
+class OCRProcessingRun(Base):
+    __tablename__ = "ocr_processing_runs"
+    
+    run_id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    uploaded_document_id = Column(Integer, ForeignKey("uploaded_documents.id", ondelete="RESTRICT", name="fk_ocr_run_uploaded_document"), nullable=False)
+    validation_case_id = Column(UUID(as_uuid=True), ForeignKey("validation_document_cases.case_id", ondelete="RESTRICT", name="fk_ocr_run_validation_case"), nullable=True, index=True)
+    processing_job_id = Column(Integer, ForeignKey("processing_jobs.id", ondelete="RESTRICT", name="fk_ocr_run_processing_job"), nullable=True, index=True)
+    execution_role = Column(String, nullable=False)
+    engine = Column(String, nullable=False)
+    status = Column(String, index=True, nullable=False)
+    quality_status = Column(String, nullable=True)
+    attempt_number = Column(Integer, nullable=False, default=1)
+    dispatch_attempt_count = Column(Integer, nullable=False, default=0)
+    worker_attempt_count = Column(Integer, nullable=False, default=0)
+    dispatch_owner = Column(String, nullable=True)
+    dispatch_token = Column(UUID(as_uuid=True), nullable=True)
+    dispatch_claimed_at = Column(DateTime(timezone=True), nullable=True)
+    dispatch_lease_expires_at = Column(DateTime(timezone=True), nullable=True)
+    run_dedup_key = Column(String(64), nullable=False)
+    source_run_id = Column(UUID(as_uuid=True), ForeignKey("ocr_processing_runs.run_id", ondelete="RESTRICT", name="fk_ocr_run_source"), nullable=True, index=True)
+    rq_job_id = Column(String, nullable=True)
+    score = Column(Float, nullable=True)
+    review_threshold = Column(Float, nullable=True)
+    started_at = Column(DateTime(timezone=True), nullable=True)
+    finished_at = Column(DateTime(timezone=True), nullable=True)
+    heartbeat_at = Column(DateTime(timezone=True), nullable=True)
+    last_dispatch_attempt_at = Column(DateTime(timezone=True), nullable=True)
+    failure_code = Column(String, nullable=True)
+    failure_detail = Column(Text, nullable=True)
+    last_dispatch_error = Column(Text, nullable=True)
+    structured_document_path = Column(String, nullable=True)
+    structured_document_checksum = Column(String(64), nullable=True)
+    metadata_ = Column("metadata", JSONB, nullable=True)
+    created_at = Column(DateTime(timezone=True), server_default=func.now(), nullable=False)
+
+    __table_args__ = (
+        PrimaryKeyConstraint('run_id', name='pk_ocr_processing_runs'),
+        UniqueConstraint('run_dedup_key', name='uq_ocr_run_dedup_key'),
+        Index("ix_ocr_run_rq_job_id", "rq_job_id", unique=True, postgresql_where=text("rq_job_id IS NOT NULL")),
+        Index("ix_ocr_run_source_fallback", "source_run_id", unique=True, postgresql_where=text("execution_role = 'FALLBACK'")),
+        Index("ix_ocr_run_doc_role_created", "uploaded_document_id", "execution_role", "created_at"),
+        Index("ix_ocr_run_pending_dispatch", "status", "created_at", postgresql_where=text("status IN ('PENDING_DISPATCH', 'DISPATCHING')")),
+        
+        CheckConstraint("engine IN ('v1', 'v2')", name="check_engine"),
+        CheckConstraint("execution_role IN ('PRIMARY', 'SHADOW', 'FALLBACK')", name="check_execution_role"),
+        CheckConstraint("status IN ('PENDING_DISPATCH', 'DISPATCHING', 'QUEUED', 'RUNNING', 'COMPLETED', 'FAILED')", name="check_status"),
+        CheckConstraint("quality_status IN ('APPROVED', 'REVIEW_REQUIRED')", name="check_quality_status_values"),
+        CheckConstraint(
+            "(status IN ('PENDING_DISPATCH', 'DISPATCHING', 'QUEUED', 'RUNNING', 'FAILED') AND quality_status IS NULL) OR "
+            "(status = 'COMPLETED' AND quality_status IS NOT NULL AND quality_status IN ('APPROVED', 'REVIEW_REQUIRED'))",
+            name="check_status_quality_relation"
+        ),
+        CheckConstraint("attempt_number >= 1", name="check_attempt_number"),
+        CheckConstraint("dispatch_attempt_count >= 0", name="check_dispatch_attempt_count"),
+        CheckConstraint("worker_attempt_count >= 0", name="check_worker_attempt_count"),
+        CheckConstraint("score IS NULL OR (score >= 0.0 AND score <= 1.0)", name="check_score_range"),
+        CheckConstraint("review_threshold IS NULL OR (review_threshold >= 0.0 AND review_threshold <= 1.0)", name="check_review_threshold_range"),
+        CheckConstraint("run_dedup_key ~ '^[0-9a-f]{64}$'", name="check_run_dedup_key_format"),
+        CheckConstraint("structured_document_checksum IS NULL OR structured_document_checksum ~ '^[0-9a-f]{64}$'", name="check_structured_document_checksum_format"),
+        CheckConstraint("finished_at IS NULL OR started_at IS NULL OR finished_at >= started_at", name="check_time_order"),
+        CheckConstraint(
+            "(status IN ('PENDING_DISPATCH', 'DISPATCHING') AND started_at IS NULL AND finished_at IS NULL) OR "
+            "(status = 'QUEUED' AND started_at IS NULL AND finished_at IS NULL) OR "
+            "(status = 'RUNNING' AND started_at IS NOT NULL AND finished_at IS NULL) OR "
+            "(status = 'COMPLETED' AND started_at IS NOT NULL AND finished_at IS NOT NULL AND failure_code IS NULL) OR "
+            "(status = 'FAILED' AND finished_at IS NOT NULL AND failure_code IS NOT NULL)",
+            name="check_status_lifecycle"
+        ),
+        CheckConstraint(
+            "(execution_role = 'PRIMARY' AND source_run_id IS NULL) OR "
+            "(execution_role = 'SHADOW' AND source_run_id IS NOT NULL AND engine = 'v2') OR "
+            "(execution_role = 'FALLBACK' AND source_run_id IS NOT NULL AND engine = 'v1')",
+            name="check_role_engine_source"
+        ),
+        CheckConstraint(
+            "(validation_case_id IS NOT NULL AND processing_job_id IS NULL) OR "
+            "(validation_case_id IS NULL AND processing_job_id IS NOT NULL)",
+            name="check_exclusive_scope"
+        ),
+        CheckConstraint(
+            "source_run_id IS NULL OR source_run_id <> run_id",
+            name="check_no_immediate_circular_reference"
+        )
+    )
+
+
+class User(Base):
+    __tablename__ = "users"
+    id = Column(Integer, primary_key=True, index=True)
+    username = Column(String, unique=True, index=True, nullable=False)
+    password_hash = Column(String, nullable=False)
+    role = Column(String, nullable=False, default="readonly") # admin, operator, readonly
+    is_active = Column(Boolean, default=True)
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+
+class SystemSettings(Base):
+    __tablename__ = "system_settings"
+    id = Column(Integer, primary_key=True, index=True)
+    institution_name = Column(String, nullable=True)
+    logo_path = Column(String, nullable=True)
+    storage_path = Column(String, nullable=True)
+    max_file_size = Column(Integer, default=10485760) # 10MB
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+    updated_at = Column(DateTime(timezone=True), onupdate=func.now())
+
+class CaseFile(Base):
+    __tablename__ = "case_files"
+    id = Column(Integer, primary_key=True, index=True)
+    title = Column(String, nullable=False)
+    contract_type = Column(String, nullable=False)
+    siga_number = Column(String, nullable=True)
+    office_unit = Column(String, nullable=True)
+    status = Column(String(50), default="CREATED", nullable=False)
+    created_by = Column(Integer, ForeignKey("users.id"))
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+    updated_at = Column(DateTime(timezone=True), onupdate=func.now())
+    documents = relationship("UploadedDocument", back_populates="case")
+
+class UploadedDocument(Base):
+    __tablename__ = "uploaded_documents"
+    id = Column(Integer, primary_key=True, index=True)
+    case_id = Column(Integer, ForeignKey("case_files.id"))
+    document_type = Column(String, nullable=False) # requirement / quotation / logo
+    original_filename = Column(String, nullable=False)
+    stored_path = Column(String, nullable=False)
+    mime_type = Column(String, nullable=False)
+    text_extracted = Column(Text, nullable=True)
+    ocr_used = Column(Boolean, default=False)
+    ocr_metadata = Column(JSON, nullable=True)
+    # Nuevos campos OCR V2
+    ocr_engine_used = Column(String(50), nullable=True)
+    ocr_score = Column(Float, nullable=True)
+    ocr_status = Column(String(50), nullable=True) # PROCESSING, APPROVED, REVIEW_REQUIRED, FAILED
+    ocr_processed_at = Column(DateTime(timezone=True), nullable=True)
+    structured_document_path = Column(String, nullable=True)
+    
+    processing_job_id = Column(String(100), nullable=True)
+    processing_status = Column(String(50), default="pending", nullable=False)
+    processing_error = Column(Text, nullable=True)
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+    case = relationship("CaseFile", back_populates="documents")
+
+class ParsedSection(Base):
+    __tablename__ = "parsed_sections"
+    id = Column(Integer, primary_key=True, index=True)
+    case_id = Column(Integer, ForeignKey("case_files.id"))
+    original_roman = Column(String(20), nullable=True)
+    original_order = Column(Integer, nullable=True)
+    title = Column(String(255), nullable=True)
+    original_text = Column(Text, nullable=True)
+    current_text = Column(Text, nullable=True)
+    cleaned_text = Column(Text, nullable=True)
+    normalized_text = Column(Text, nullable=True)
+    structure_json = Column(JSONB, nullable=True)
+    corrections_json = Column(JSONB, nullable=True)
+    warnings_json = Column(JSONB, nullable=True)
+    extraction_metadata = Column(JSONB, nullable=True)
+    is_selected = Column(Boolean, default=False)
+    confidence_score = Column(Float, nullable=True)
+    warnings = Column(String, nullable=True) # Retained for backwards compatibility if needed, or we can drop it. The prompt says "Si alguna columna ya existe...". I'll keep warnings and add warnings_json.
+    review_status = Column(String, default="pending_review") # pending_review, validated, rejected
+
+class QuotationExtraction(Base):
+    __tablename__ = "quotation_extractions"
+    id = Column(Integer, primary_key=True, index=True)
+    case_id = Column(Integer, ForeignKey("case_files.id"))
+    supplier_ruc = Column(String, nullable=True)
+    supplier_business_name = Column(String, nullable=True)
+    supplier_address = Column(String, nullable=True)
+    supplier_phone = Column(String, nullable=True)
+    supplier_email = Column(String, nullable=True)
+    contact_name = Column(String, nullable=True)
+    description = Column(Text, nullable=True)
+    brand = Column(String, nullable=True)
+    model = Column(String, nullable=True)
+    quantity = Column(Integer, nullable=True)
+    unit_price = Column(Float, nullable=True)
+    total_price = Column(Float, nullable=True)
+    currency = Column(String, nullable=True)
+    payment_condition = Column(String, nullable=True)
+    delivery_term = Column(String, nullable=True)
+    execution_term = Column(String, nullable=True)
+    warranty_term = Column(String, nullable=True)
+    warranty_conditions = Column(Text, nullable=True)
+    quote_validity = Column(String, nullable=True)
+    confidence = Column(Float, nullable=True)
+    raw_json = Column(JSON, nullable=True)
+    review_status = Column(String, default="pending_review") # pending_review, validated, rejected
+
+class FinalConditionComparison(Base):
+    __tablename__ = "final_condition_comparisons"
+    id = Column(Integer, primary_key=True, index=True)
+    case_id = Column(Integer, ForeignKey("case_files.id"))
+    field_name = Column(String, nullable=False)
+    requirement_value = Column(String, nullable=True)
+    quotation_value = Column(String, nullable=True)
+    final_value = Column(String, nullable=True)
+    status = Column(String, nullable=False) # Coincide, Reemplazado, Revisión Manual
+
+class GeneratedOutput(Base):
+    __tablename__ = "generated_outputs"
+    id = Column(Integer, primary_key=True, index=True)
+    case_id = Column(Integer, ForeignKey("case_files.id"))
+    version_number = Column(Integer, nullable=False, default=1)
+    html_output = Column(Text, nullable=True)
+    plain_text_output = Column(Text, nullable=True)
+    created_by = Column(Integer, ForeignKey("users.id"))
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+
+class AuditLog(Base):
+    __tablename__ = "audit_logs"
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, ForeignKey("users.id"))
+    action = Column(String, nullable=False)
+    entity_type = Column(String, nullable=False)
+    entity_id = Column(Integer, nullable=False)
+    details = Column(String, nullable=True)
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+
+class ProcessingJob(Base):
+    __tablename__ = "processing_jobs"
+    id = Column(Integer, primary_key=True, index=True)
+    document_id = Column(Integer, ForeignKey("uploaded_documents.id"))
+    worker_type = Column(String(50), nullable=False)
+    status = Column(String(50), default="pending", nullable=False) # pending, processing, completed, failed
+    error_message = Column(Text, nullable=True)
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+    started_at = Column(DateTime(timezone=True), nullable=True)
+    finished_at = Column(DateTime(timezone=True), nullable=True)

@@ -1,0 +1,53 @@
+# Environment variables
+.env
+.env.*
+!.env.example
+!.env.test.example
+
+# Local data and uploads
+data/
+uploads/
+generated/
+output/
+pgdata/
+redisdata/
+
+# Dependencies and build artifacts
+node_modules/
+dist/
+build/
+
+.venv/
+venv/
+
+__pycache__/
+.pytest_cache/
+.mypy_cache/
+.coverage
+
+*.db
+*.sqlite
+*.dump
+
+*.pem
+*.key
+*.pfx
+*.p12
+
+*.onnx
+*.pth
+*.pt
+*.bin
+
+logs/
+
+# Root models directory
+/models/*
+!/models/.gitkeep
+!/models/README.md
+
+# PDFs
+*.pdf
+!backend/tests/mock_data/cotizacion_digital.pdf
+!backend/tests/mock_data/req_bienes_digital.pdf
+!backend/tests/mock_data/req_bienes_scanned.pdf

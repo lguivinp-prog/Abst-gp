@@ -1,0 +1,96 @@
+version: '3.8'
+
+services:
+  db:
+    image: postgres:15-alpine
+    container_name: abst_db
+    restart: always
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-abst_user}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-abst_password}
+      POSTGRES_DB: ${POSTGRES_DB:-abst_gp}
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    ports:
+      - "5433:5432"
+
+  redis:
+    image: redis:7-alpine
+    container_name: abst_redis
+    restart: always
+    volumes:
+      - redisdata:/data
+    ports:
+      - "6380:6379"
+
+  api:
+    build: 
+      context: ./backend
+    container_name: abst_api
+    restart: always
+    environment:
+      - DATABASE_URL=postgresql://${POSTGRES_USER:-abst_user}:${POSTGRES_PASSWORD:-abst_password}@db:5432/${POSTGRES_DB:-abst_gp}
+      - REDIS_URL=redis://redis:6379/0
+      - SECRET_KEY=${SECRET_KEY:-supersecretkey_change_in_production}
+      - UPLOADS_DIR=/data/uploads
+    volumes:
+      - ./backend:/app
+      - uploads:/data/uploads
+    ports:
+      - "8000:8000"
+    depends_on:
+      - db
+      - redis
+
+  worker:
+    build:
+      context: ./backend
+    container_name: abst_worker
+    restart: always
+    command: ["rq", "worker", "-u", "redis://redis:6379/0", "default"]
+    environment:
+      - DATABASE_URL=postgresql://${POSTGRES_USER:-abst_user}:${POSTGRES_PASSWORD:-abst_password}@db:5432/${POSTGRES_DB:-abst_gp}
+      - REDIS_URL=redis://redis:6379/0
+      - SECRET_KEY=${SECRET_KEY:-supersecretkey_change_in_production}
+      - UPLOADS_DIR=/data/uploads
+    volumes:
+      - ./backend:/app
+      - uploads:/data/uploads
+    depends_on:
+      - db
+      - redis
+
+  worker-ocr:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile.ocr
+    container_name: abst_worker_ocr
+    restart: always
+    command: ["rq", "worker", "-u", "redis://redis:6379/0", "ocr_tasks"]
+    environment:
+      - DATABASE_URL=postgresql://${POSTGRES_USER:-abst_user}:${POSTGRES_PASSWORD:-abst_password}@db:5432/${POSTGRES_DB:-abst_gp}
+      - REDIS_URL=redis://redis:6379/0
+      - SECRET_KEY=${SECRET_KEY:-supersecretkey_change_in_production}
+      - UPLOADS_DIR=/data/uploads
+    volumes:
+      - ./backend:/app
+      - uploads:/data/uploads
+      - ./models:/models
+    depends_on:
+      - db
+      - redis
+
+  web:
+    build:
+      context: ./frontend
+    container_name: abst_web
+    restart: always
+    ports:
+      - "8080:80"
+    depends_on:
+      - api
+
+volumes:
+  pgdata:
+  redisdata:
+  uploads:

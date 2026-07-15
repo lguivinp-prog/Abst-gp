@@ -1,0 +1,17 @@
+{
+  "cotizacion_digital_1": {
+    "expected_supplier": {
+      "ruc": "20123456789",
+      "email": "ventas@tecnologia.com"
+    },
+    "expected_product": {
+      "total": 30000.00,
+      "currency": "PEN"
+    },
+    "expected_conditions": {
+      "payment_condition": "Contado a los 15 días",
+      "delivery_term": "7 días calendario",
+      "warranty_term": "24 meses"
+    }
+  }
+}
