@@ -1,0 +1,100 @@
+version: '3.8'
+
+services:
+  db:
+    container_name: abst_db_test
+    restart: "no"
+    ports: !reset []
+    environment:
+      POSTGRES_USER: test_user
+      POSTGRES_PASSWORD: test_password
+      POSTGRES_DB: test_db
+    volumes: !override
+      - test_pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U test_user -d test_db"]
+      interval: 3s
+      timeout: 3s
+      retries: 5
+
+  redis:
+    container_name: abst_redis_test
+    restart: "no"
+    ports: !reset []
+    volumes: !override
+      - test_redisdata:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 3s
+      timeout: 3s
+      retries: 5
+
+  api:
+    container_name: abst_api_test
+    restart: "no"
+    ports: !reset []
+    environment:
+      - DATABASE_URL=postgresql://test_user:test_password@db:5432/test_db
+      - REDIS_URL=redis://redis:6379/0
+      - SECRET_KEY=test_secret_key
+      - UPLOADS_DIR=/data/uploads
+      - PYTHONDONTWRITEBYTECODE=1
+    volumes: !override
+      - ./backend:/app:ro
+      - test_uploads:/data/uploads
+    depends_on: !override
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+
+  worker:
+    container_name: abst_worker_test
+    restart: "no"
+    environment:
+      - DATABASE_URL=postgresql://test_user:test_password@db:5432/test_db
+      - REDIS_URL=redis://redis:6379/0
+      - SECRET_KEY=test_secret_key
+      - UPLOADS_DIR=/data/uploads
+      - PYTHONDONTWRITEBYTECODE=1
+    volumes: !override
+      - ./backend:/app:ro
+      - test_uploads:/data/uploads
+    depends_on: !override
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+
+  worker-ocr:
+    container_name: abst_worker_ocr_test
+    restart: "no"
+    environment:
+      - DATABASE_URL=postgresql://test_user:test_password@db:5432/test_db
+      - REDIS_URL=redis://redis:6379/0
+      - SECRET_KEY=test_secret_key
+      - UPLOADS_DIR=/data/uploads
+      - PYTHONDONTWRITEBYTECODE=1
+    volumes: !override
+      - ./backend:/app:ro
+      - test_uploads:/data/uploads
+      - test_models:/models
+    depends_on: !override
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+
+  web:
+    container_name: abst_web_test
+    restart: "no"
+    ports: !reset []
+    depends_on: !override
+      api:
+        condition: service_started
+
+volumes:
+  test_pgdata:
+  test_redisdata:
+  test_uploads:
+  test_models:
