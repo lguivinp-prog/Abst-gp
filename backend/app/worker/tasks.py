@@ -112,7 +112,9 @@ def process_run_v1(run_id: str):
                     source_run_id=run.run_id,
                     run_dedup_key=shadow_dedup
                 )
-                db.add(shadow_run)
+                from app.services.ocr.run_repository import OCRRunRepository
+                repo = OCRRunRepository(db)
+                repo.create_run(shadow_run)
                 db.commit()
             except Exception as snap_e:
                 logger.error(f"Failed to create baseline snapshot for run {run_id}: {str(snap_e)}")
