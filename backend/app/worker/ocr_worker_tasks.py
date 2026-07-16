@@ -152,6 +152,10 @@ def process_run_v2(run_id: str):
                 
                 # Parse Sections
                 parsed_sections = StructuredDocumentAdapter.to_parsed_sections(case_id, structured_doc)
+                if not parsed_sections:
+                    from app.services.extraction.exceptions import NoSectionsExtractedError
+                    raise NoSectionsExtractedError("No se detectaron secciones estructurales válidas en el documento (V2).")
+
                 for sec in parsed_sections:
                     db.add(sec)
                     
@@ -176,8 +180,19 @@ def process_run_v2(run_id: str):
             run.failure_code = 'TASK_EXCEPTION'
             run.failure_detail = error_msg
             run.finished_at = datetime.utcnow()
+            run.quality_status = None
             
             if run.execution_role == 'PRIMARY':
+                doc = db.query(UploadedDocument).filter(UploadedDocument.id == run.uploaded_document_id).first()
+                if doc:
+                    doc.processing_status = "failed"
+                    doc.processing_error = error_msg
+                    doc.ocr_status = "FAILED"
+                    
+                    db_case = db.query(CaseFile).filter(CaseFile.id == doc.case_id).first()
+                    if db_case:
+                        db_case.status = "ERROR"
+
                 # Attempt to create FALLBACK immediately on clean exception
                 # If we die (SIGKILL), Monitor handles it.
                 from app.services.ocr.run_repository import OCRRunRepository
@@ -199,6 +214,6 @@ def process_run_v2(run_id: str):
                     logger.error(f"Failed to create fallback: {str(fallback_e)}")
             
             db.commit()
-        raise e
+        raise
     finally:
         db.close()

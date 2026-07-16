@@ -112,7 +112,9 @@ def process_run_v1(run_id: str):
                     source_run_id=run.run_id,
                     run_dedup_key=shadow_dedup
                 )
-                db.add(shadow_run)
+                from app.services.ocr.run_repository import OCRRunRepository
+                repo = OCRRunRepository(db)
+                repo.create_run(shadow_run)
                 db.commit()
             except Exception as snap_e:
                 logger.error(f"Failed to create baseline snapshot for run {run_id}: {str(snap_e)}")
@@ -175,11 +177,14 @@ def execute_v1_pipeline(case_id: int, file_path: str, job_id: str, fallback_used
 
         # 3. Clean OCR text and Extract Sections via DocumentExtractionAgent
         from app.services.extraction.document_extraction_agent import DocumentExtractionAgent
+        from app.services.extraction.exceptions import NoSectionsExtractedError
         
         agent = DocumentExtractionAgent()
         db_case = db.query(CaseFile).filter(CaseFile.id == case_id).first()
         
         extracted_sections = agent.process(ocr_result.pages_text, db_case.contract_type)
+        if not extracted_sections:
+            raise NoSectionsExtractedError("No se detectaron secciones estructurales válidas en el documento (V1).")
         
         # 4. Save extracted data to document
         if doc:
@@ -233,7 +238,6 @@ def execute_v1_pipeline(case_id: int, file_path: str, job_id: str, fallback_used
     except Exception as e:
         db.rollback()
         error_msg = str(e)
-        error_trace = traceback.format_exc()
         
         doc = db.query(UploadedDocument).filter(UploadedDocument.processing_job_id == job_id).first()
         if not doc:
@@ -244,7 +248,7 @@ def execute_v1_pipeline(case_id: int, file_path: str, job_id: str, fallback_used
             
         if doc:
             doc.processing_status = "failed"
-            doc.processing_error = error_trace
+            doc.processing_error = error_msg
             doc.ocr_status = "FAILED"
             
         db_case = db.query(CaseFile).filter(CaseFile.id == case_id).first()
@@ -257,7 +261,7 @@ def execute_v1_pipeline(case_id: int, file_path: str, job_id: str, fallback_used
             job.save_meta()
             
         db.commit()
-        raise e
+        raise
         
     finally:
         db.close()

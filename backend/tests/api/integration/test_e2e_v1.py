@@ -27,7 +27,7 @@ def test_full_integration_flow():
     case_id = case["id"]
     
     # Rutas para PDFs (usando el mock_data que ya existe)
-    mock_dir = os.path.join(os.path.dirname(__file__), "..", "mock_data")
+    mock_dir = os.path.join(os.path.dirname(__file__), "..", "..", "mock_data")
     req_pdf_path = os.path.join(mock_dir, "req_bienes_digital.pdf")
     quot_pdf_path = os.path.join(mock_dir, "cotizacion_digital.pdf")
     
@@ -55,9 +55,9 @@ def test_full_integration_flow():
     sections = res.json()
     assert len(sections) > 0
     
-    # Seleccionar la primera sección (ej. Finalidad) y la de Forma de pago
+    # Seleccionar la primera sección (ej. Objetivo) y la de Forma de pago
     for sec in sections:
-        if "FINALIDAD" in sec["title"] or "FORMA DE PAGO" in sec["title"]:
+        if "OBJETIVO" in sec["title"] or "FORMA DE PAGO" in sec["title"]:
             res = client.put(f"/cases/sections/{sec['id']}", json={
                 "is_selected": True,
                 "review_status": "validated",
@@ -85,5 +85,5 @@ def test_full_integration_flow():
     output = res.json()
     assert "html" in output
     assert "plain_text" in output
-    assert "FINALIDAD PÚBLICA" in output["html"] # O la sección extraída
+    assert "FORMA DE PAGO" in output["html"] # O la sección extraída
     assert "Cuadro Comparativo" in output["html"]

@@ -5,21 +5,9 @@ from sqlalchemy.orm import sessionmaker, Session
 from app.models.domain import Base, UploadedDocument, ValidationDocumentCase, OCRProcessingRun
 from app.services.ocr.run_repository import OCRRunRepository
 
-# Connection for tests
-DATABASE_URL = os.environ.get("DATABASE_URL", "postgresql://abst_user:abst_password@db:5432/test_alembic_v2")
-
-engine = create_engine(DATABASE_URL)
-TestingSessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
-
-@pytest.fixture(scope="module")
-def setup_database():
-    Base.metadata.create_all(bind=engine)
-    yield
-    # We do not drop tables so we can debug, but each test uses a transaction
-
 @pytest.fixture
-def session(setup_database):
-    session = TestingSessionLocal()
+def session(db_session):
+    session = db_session
     # Create test data
     doc1 = UploadedDocument(original_filename="doc1.pdf", document_type="requirement", stored_path="/tmp/1.pdf", mime_type="application/pdf")
     doc2 = UploadedDocument(original_filename="doc2.pdf", document_type="requirement", stored_path="/tmp/2.pdf", mime_type="application/pdf")
@@ -42,16 +30,6 @@ def session(setup_database):
     session.commit()
     
     yield session, doc1, doc2, val_case, val_case_diff_doc
-    
-    session.rollback()
-    for run in session.query(OCRProcessingRun).all():
-        session.delete(run)
-    for vc in session.query(ValidationDocumentCase).all():
-        session.delete(vc)
-    for doc in session.query(UploadedDocument).all():
-        session.delete(doc)
-    session.commit()
-    session.close()
 
 def test_create_primary_success(session):
     sess, doc1, doc2, val_case, val_case_diff_doc = session

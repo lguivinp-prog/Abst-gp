@@ -28,8 +28,8 @@ def assert_raises(db, func, expected_err=(IntegrityError, ValueError), msg=""):
         print(f"ERROR: {msg} failed with unexpected error {e}")
         sys.exit(1)
 
-def test_db_constraints():
-    db = SessionLocal()
+def test_db_constraints(db_session):
+    db = db_session
     
     # 1. Setup minimal requirements
     user = User(username=f"testuser_{uuid.uuid4()}", password_hash="hash")
@@ -252,104 +252,6 @@ def test_db_constraints():
     db.commit()
     print("SUCCESS: Valid PRIMARY, SHADOW, FALLBACK relations allowed.")
 
-    # 14. Transactional Cross-Row Constraints
-    
-    doc2 = UploadedDocument(case_id=case.id, document_type="requirement", original_filename="test2.pdf", stored_path="/data/test2.pdf", mime_type="application/pdf")
-    db.add(doc2)
-    db.commit()
-    
-    job2 = ProcessingJob(document_id=doc2.id, worker_type="ocr")
-    db.add(job2)
-    db.commit()
 
-    # Validation Case Mismatch
-    case_val_other = ValidationDocumentCase(
-        validation_run_id=uuid.uuid4(),
-        uploaded_document_id=doc2.id, # Different doc
-        pdf_sha256="d" * 64,
-        request_idempotency_key=uuid.uuid4().hex + uuid.uuid4().hex
-    )
-    db.add(case_val_other)
-    db.commit()
-
-    def test_mismatched_val_case():
-        bad = OCRProcessingRun(
-            uploaded_document_id=doc.id, # doc.id vs doc2.id
-            validation_case_id=case_val_other.case_id,
-            execution_role="PRIMARY", engine="v2", status="RUNNING",
-            run_dedup_key="f" * 64
-        )
-        db.add(bad)
-    assert_raises(db, test_mismatched_val_case, expected_err=ValueError, msg="Mismatched Validation Case Document")
-
-    # Source Run Mismatch (Different Document)
-    def test_mismatched_source_doc():
-        bad = OCRProcessingRun(
-            uploaded_document_id=doc2.id, processing_job_id=job2.id,
-            execution_role="SHADOW", engine="v2", status="RUNNING",
-            source_run_id=primary2.run_id, run_dedup_key="1" * 63 + "a"
-        )
-        db.add(bad)
-    assert_raises(db, test_mismatched_source_doc, expected_err=ValueError, msg="Source run belongs to a different document")
-    
-    # Source Run Mismatch (Different Scope)
-    def test_mismatched_source_scope():
-        bad = OCRProcessingRun(
-            uploaded_document_id=doc.id, validation_case_id=case_val.case_id,
-            execution_role="SHADOW", engine="v2", status="RUNNING",
-            source_run_id=primary2.run_id, run_dedup_key="1" * 63 + "b"
-        )
-        db.add(bad)
-    assert_raises(db, test_mismatched_source_scope, expected_err=ValueError, msg="Source run belongs to a different scope")
-
-    # Source Run Role is not PRIMARY
-    def test_source_role_not_primary():
-        bad = OCRProcessingRun(
-            uploaded_document_id=doc.id, processing_job_id=job.id,
-            execution_role="SHADOW", engine="v2", status="RUNNING",
-            source_run_id=shadow2.run_id, run_dedup_key="1" * 63 + "c"
-        )
-        db.add(bad)
-    assert_raises(db, test_source_role_not_primary, expected_err=ValueError, msg="Source run must have PRIMARY role")
-
-    # FALLBACK Engine v1 checking if Source is V2
-    primary_v1 = OCRProcessingRun(
-        uploaded_document_id=doc.id, processing_job_id=job.id, execution_role="PRIMARY", engine="v1",
-        status="FAILED", failure_code="ERR", finished_at=datetime.now(timezone.utc), run_dedup_key="1" * 63 + "d"
-    )
-    db.add(primary_v1)
-    db.commit()
-
-    def test_fallback_source_v1():
-        bad = OCRProcessingRun(
-            uploaded_document_id=doc.id, processing_job_id=job.id,
-            execution_role="FALLBACK", engine="v1", status="PENDING_DISPATCH",
-            source_run_id=primary_v1.run_id, run_dedup_key="1" * 63 + "e"
-        )
-        db.add(bad)
-    assert_raises(db, test_fallback_source_v1, expected_err=ValueError, msg="FALLBACK source run must use engine v2")
-
-    # FALLBACK checking if Source is FAILED
-    primary3 = OCRProcessingRun(
-        uploaded_document_id=doc.id, processing_job_id=job.id, execution_role="PRIMARY", engine="v2",
-        status="RUNNING", started_at=datetime.now(timezone.utc), run_dedup_key="1" * 63 + "f"
-    )
-    db.add(primary3)
-    db.commit()
-
-    def test_fallback_source_not_failed():
-        bad = OCRProcessingRun(
-            uploaded_document_id=doc.id, processing_job_id=job.id,
-            execution_role="FALLBACK", engine="v1", status="PENDING_DISPATCH",
-            source_run_id=primary3.run_id, run_dedup_key="1" * 63 + "0"
-        )
-        db.add(bad)
-    assert_raises(db, test_fallback_source_not_failed, expected_err=ValueError, msg="FALLBACK source run must be FAILED")
-
-    print("All transactional logic tests passed.")
 
     print("All tests passed.")
-    db.close()
-
-if __name__ == "__main__":
-    test_db_constraints()

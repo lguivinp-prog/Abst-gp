@@ -105,3 +105,51 @@ def test_build_structure_blocks_mandatory_test_case():
     
     assert blocks[7]["type"] == "paragraph"
     assert "El traslado de los bienes" in blocks[7]["text"]
+
+def test_build_structure_blocks_narrative_vs_kv():
+    from app.services.extraction.section_detector import build_structure_blocks
+    
+    # 1. Narrativas (deben ser párrafos)
+    text_narrative_1 = "Los bienes solicitados son los siguientes: Mandilón descartable 200 Unidad"
+    blocks = build_structure_blocks(text_narrative_1)
+    assert len(blocks) == 1
+    assert blocks[0]["type"] == "paragraph"
+    assert "Mandilón descartable" in blocks[0]["text"]
+    
+    text_narrative_2 = "Las características son las siguientes: Material resistente al agua"
+    blocks = build_structure_blocks(text_narrative_2)
+    assert len(blocks) == 1
+    assert blocks[0]["type"] == "paragraph"
+    assert "Material resistente" in blocks[0]["text"]
+
+    text_narrative_3 = "El proveedor deberá cumplir con lo que se detalla a continuación: Entrega documentada"
+    blocks = build_structure_blocks(text_narrative_3)
+    assert len(blocks) == 1
+    assert blocks[0]["type"] == "paragraph"
+    assert "Entrega documentada" in blocks[0]["text"]
+
+    # 2. Key-Value reales (deben ser table_vertical)
+    text_kv_1 = "Plazo de entrega: 10 días"
+    blocks = build_structure_blocks(text_kv_1)
+    assert len(blocks) == 1
+    assert blocks[0]["type"] == "table_vertical"
+    assert "Plazo de entrega" in blocks[0]["rows"][0]
+    assert blocks[0]["rows"][0]["Plazo de entrega"] == "10 días"
+    
+    text_kv_2 = "Lugar de prestación: Almacén central"
+    blocks = build_structure_blocks(text_kv_2)
+    assert len(blocks) == 1
+    assert blocks[0]["type"] == "table_vertical"
+    assert blocks[0]["rows"][0]["Lugar de prestación"] == "Almacén central"
+    
+    text_kv_3 = "Consideraciones: No aplica"
+    blocks = build_structure_blocks(text_kv_3)
+    assert len(blocks) == 1
+    assert blocks[0]["type"] == "table_vertical"
+    assert blocks[0]["rows"][0]["Consideraciones"] == "No aplica"
+    
+    text_kv_4 = "Plazo máximo para la entrega de los bienes: 10 días"
+    blocks = build_structure_blocks(text_kv_4)
+    assert len(blocks) == 1
+    assert blocks[0]["type"] == "table_vertical"
+    assert blocks[0]["rows"][0]["Plazo máximo para la entrega de los bienes"] == "10 días"

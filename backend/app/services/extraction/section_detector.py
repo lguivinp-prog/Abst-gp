@@ -4,6 +4,17 @@ from typing import List, Dict, Any
 from pydantic import BaseModel
 from app.services.ocr.cleaner import normalize_structural_breaks
 
+_NARRATIVE_INTRO_ENDINGS = (
+    "los siguientes",
+    "las siguientes",
+    "lo siguiente",
+    "a continuación",
+)
+
+def _is_narrative_intro(key: str) -> bool:
+    normalized = " ".join(key.casefold().split())
+    return normalized.endswith(_NARRATIVE_INTRO_ENDINGS)
+
 class DetectedSection(BaseModel):
     original_roman: str
     original_order: int
@@ -157,6 +168,10 @@ def build_structure_blocks(text: str) -> List[Dict[str, Any]]:
         kv_match = re.match(r'^([A-Z][a-záéíóúñA-ZÁÉÍÓÚÑ\s/]+):\s*(.*)$', line_s)
         if kv_match:
             key, val = kv_match.group(1).strip(), kv_match.group(2).strip()
+            if _is_narrative_intro(key):
+                current_paragraph.append(line_s)
+                continue
+
             if not in_table or (in_table and current_table_rows and "Item" in current_table_rows[-1]):
                 flush_paragraph() # flush anything else
                 in_table = True
