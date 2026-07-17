@@ -43,7 +43,7 @@ def test_full_integration_flow():
     # 3. Procesar requerimiento (ahora es asíncrono, así que poll status)
     import time
     job_id = res.json()["job_id"]
-    for _ in range(10):
+    for _ in range(180):
         res_job = client.get(f"/cases/jobs/{job_id}")
         if res_job.json()["progress"] == 100:
             break

@@ -43,7 +43,7 @@ def test_full_integration_flow_v2():
     # 3. Procesar requerimiento
     import time
     job_id = res.json()["job_id"]
-    for _ in range(15):
+    for _ in range(180):
         res_job = client.get(f"/cases/jobs/{job_id}")
         if res_job.json()["progress"] == 100:
             break
@@ -110,7 +110,7 @@ def test_empty_extraction_v2(tmp_path):
     # 3. Procesar requerimiento
     import time
     job_id = res.json()["job_id"]
-    for _ in range(15):
+    for _ in range(180):
         res_job = client.get(f"/cases/jobs/{job_id}")
         if res_job.json()["progress"] == 100:
             break

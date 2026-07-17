@@ -51,9 +51,9 @@ class StructuredDocumentAdapter:
                     cleaned_text=content_text,
                     normalized_text=title,
                     current_text=content_text,
-                    structure_json={},
-                    corrections_json={},
-                    warnings_json={},
+                    structure_json=[],
+                    corrections_json=[],
+                    warnings_json=[],
                     extraction_metadata=metadata,
                     confidence_score=block.confidence,
                     review_status="pending_review"
