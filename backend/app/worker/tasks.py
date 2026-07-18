@@ -203,10 +203,10 @@ def execute_v1_pipeline(case_id: int, file_path: str, job_id: str, fallback_used
             job.meta['status_message'] = "Detectando y limpiando secciones..."
             job.save_meta()
 
-        # 6. Save Sections
         for sec_data in extracted_sections:
             sec = ParsedSection(
                 case_id=case_id,
+                document_id=doc.id,
                 original_roman=sec_data.metadata.get("original_roman"),
                 original_order=sec_data.metadata.get("original_order"),
                 title=sec_data.metadata.get("title"),
@@ -278,3 +278,9 @@ def process_requirement_task(case_id: int, file_path: str):
     job_id = job.id if job else "unknown"
     
     ExtractionOrchestrator.coordinate_extraction(case_id, file_path, job_id)
+
+def ocr_shadow_task(case_id: int, file_path: str):
+    """
+    Dummy shadow task for V1 to prevent ImportError in ExtractionOrchestrator.
+    """
+    pass

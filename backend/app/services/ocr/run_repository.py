@@ -65,6 +65,12 @@ class OCRRunRepository:
             if source_run.execution_role == 'SHADOW':
                  raise ValueError("Shadow mode can never create a FALLBACK or any other child run.")
 
-        self.session.add(run)
-        self.session.flush()
-        return run
+        try:
+            with self.session.begin_nested():
+                self.session.add(run)
+                self.session.flush()
+            return run
+        except IntegrityError:
+            # We don't need to manually rollback, begin_nested() handles it!
+            # The outer transaction is still valid.
+            raise

@@ -7,7 +7,7 @@ def db_session():
     # Should be replaced with actual test database session.
     raise NotImplementedError("Test database fixture not implemented yet")
 
-@pytest.mark.xfail(reason="Authz schema migration not implemented yet")
+@pytest.mark.xfail(reason="Phase 5 not started", strict=True)
 def test_alembic_migration_adds_user_fields(db_session):
     """
     TDD Contract: The database schema must contain the new User fields after migration.
@@ -24,6 +24,7 @@ def test_alembic_migration_adds_user_fields(db_session):
     for field in expected_fields:
         assert field in columns, f"Missing {field} in 'users' table"
 
+@pytest.mark.xfail(reason="Phase 5 not started", strict=True)
 def test_alembic_migration_adds_case_file_assignment(db_session):
     """
     TDD Contract: The database schema must contain CaseFile assignment fields.
@@ -37,6 +38,7 @@ def test_alembic_migration_adds_case_file_assignment(db_session):
     for field in expected_fields:
         assert field in columns, f"Missing {field} in 'case_files' table"
 
+@pytest.mark.xfail(reason="Phase 5 not started", strict=True)
 def test_alembic_migration_audit_log_expanded(db_session):
     """
     TDD Contract: The AuditLog table must be expanded with 'status' and String entity_id.
@@ -49,6 +51,7 @@ def test_alembic_migration_audit_log_expanded(db_session):
     assert "status" in columns, "Missing 'status' in 'audit_logs' table"
     assert columns.get("entity_id") in ("character varying", "text"), "entity_id must be migrated to String type"
 
+@pytest.mark.xfail(reason="Phase 5 not started", strict=True)
 def test_alembic_admin_unique_constraint(db_session):
     """
     TDD Contract: There should be a partial unique index ensuring only one ADMIN exists.

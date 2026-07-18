@@ -2,6 +2,7 @@ import pytest
 from sqlalchemy import inspect
 from app.models.domain import User, CaseFile, AuditLog
 
+@pytest.mark.xfail(reason="Phase 5 not started", strict=True)
 def test_user_model_has_required_fields():
     """
     TDD Contract: The User model must include new authz fields.
@@ -26,6 +27,7 @@ def test_user_model_has_required_fields():
     for field in expected_fields:
         assert field in columns, f"User model is missing expected field: {field}"
 
+@pytest.mark.xfail(reason="Phase 5 not started", strict=True)
 def test_case_file_model_has_assignment_fields():
     """
     TDD Contract: The CaseFile model must support assignment to operators.
@@ -42,6 +44,7 @@ def test_case_file_model_has_assignment_fields():
     for field in expected_fields:
         assert field in columns, f"CaseFile model is missing assignment field: {field}"
 
+@pytest.mark.xfail(reason="Phase 5 not started", strict=True)
 def test_audit_log_model_contract():
     """
     TDD Contract: The AuditLog model must support robust auditing.

@@ -1,8 +1,9 @@
-from sqlalchemy import Column, Integer, String, Boolean, DateTime, ForeignKey, Text, Float, JSON, CheckConstraint, Index, UniqueConstraint, PrimaryKeyConstraint, text
+from sqlalchemy import Column, Integer, String, Boolean, DateTime, ForeignKey, Text, Float, JSON, CheckConstraint, Index, UniqueConstraint, PrimaryKeyConstraint, text, Enum as SAEnum
 from sqlalchemy.dialects.postgresql import JSONB, UUID
 from sqlalchemy.orm import relationship
 from sqlalchemy.sql import func
 import uuid
+import enum
 from app.models.base import Base
 
 from sqlalchemy import event
@@ -177,6 +178,7 @@ class ParsedSection(Base):
     __tablename__ = "parsed_sections"
     id = Column(Integer, primary_key=True, index=True)
     case_id = Column(Integer, ForeignKey("case_files.id"))
+    document_id = Column(Integer, ForeignKey("uploaded_documents.id", ondelete="CASCADE"), nullable=False, index=True)
     original_roman = Column(String(20), nullable=True)
     original_order = Column(Integer, nullable=True)
     title = Column(String(255), nullable=True)
@@ -260,3 +262,82 @@ class ProcessingJob(Base):
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     started_at = Column(DateTime(timezone=True), nullable=True)
     finished_at = Column(DateTime(timezone=True), nullable=True)
+
+class ComparisonRunStatus(str, enum.Enum):
+    CREATED = "CREATED"
+    PROCESSING = "PROCESSING"
+    COMPLETED = "COMPLETED"
+    FAILED = "FAILED"
+
+class RequirementItemType(str, enum.Enum):
+    TECHNICAL = "TECHNICAL"
+    COMMERCIAL = "COMMERCIAL"
+    LEGAL = "LEGAL"
+    DELIVERY = "DELIVERY"
+    WARRANTY = "WARRANTY"
+
+class ComparisonResultStatus(str, enum.Enum):
+    PASS = "PASS"
+    FAIL = "FAIL"
+    MANUAL_REVIEW = "MANUAL_REVIEW"
+
+class EvaluationMethod(str, enum.Enum):
+    EXACT_MATCH = "EXACT_MATCH"
+    NUMERIC_MATCH = "NUMERIC_MATCH"
+    FUZZY_MATCH = "FUZZY_MATCH"
+    MANUAL_REVIEW = "MANUAL_REVIEW"
+    NO_MATCH = "NO_MATCH"
+
+class ComparisonRun(Base):
+    __tablename__ = "comparison_runs"
+    
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    case_id = Column(Integer, ForeignKey("case_files.id", ondelete="RESTRICT"), nullable=False, index=True)
+    requirement_doc_id = Column(Integer, ForeignKey("uploaded_documents.id", ondelete="RESTRICT"), nullable=False)
+    quotation_doc_id = Column(Integer, ForeignKey("uploaded_documents.id", ondelete="RESTRICT"), nullable=False)
+    status = Column(SAEnum(ComparisonRunStatus, name="comparison_run_status_enum", create_type=False), nullable=False)
+    created_at = Column(DateTime(timezone=True), server_default=func.now(), nullable=False)
+    updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now(), nullable=False)
+
+    # Relaciones
+    case = relationship("CaseFile", foreign_keys=[case_id])
+    requirement_doc = relationship("UploadedDocument", foreign_keys=[requirement_doc_id])
+    quotation_doc = relationship("UploadedDocument", foreign_keys=[quotation_doc_id])
+    results = relationship("ComparisonResult", back_populates="run", cascade="all, delete-orphan")
+
+class RequirementItem(Base):
+    __tablename__ = "requirement_items"
+    
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    parsed_section_id = Column(Integer, ForeignKey("parsed_sections.id", ondelete="CASCADE"), nullable=False)
+    item_type = Column(SAEnum(RequirementItemType, name="requirement_item_type_enum", create_type=False), nullable=False)
+    content_text = Column(String, nullable=False)
+    is_approved = Column(Boolean, default=False, nullable=False)
+
+    # Relaciones
+    parsed_section = relationship("ParsedSection")
+
+class ComparisonResult(Base):
+    __tablename__ = "comparison_results"
+    
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    run_id = Column(UUID(as_uuid=True), ForeignKey("comparison_runs.id", ondelete="CASCADE"), nullable=False, index=True)
+    requirement_item_id = Column(UUID(as_uuid=True), ForeignKey("requirement_items.id", ondelete="CASCADE"), nullable=False, index=True)
+    quotation_section_id = Column(Integer, ForeignKey("parsed_sections.id", ondelete="SET NULL"), nullable=True)
+    status = Column(SAEnum(ComparisonResultStatus, name="comparison_result_status_enum", create_type=False), nullable=False, index=True)
+    evaluation_method = Column(SAEnum(EvaluationMethod, name="comparison_evaluation_method_enum", create_type=False), nullable=False)
+    confidence_score = Column(Float, nullable=False)
+    reasoning = Column(String, nullable=True)
+    evidence_text = Column(String, nullable=True)
+    requirement_page = Column(Integer, nullable=True)
+    quotation_page = Column(Integer, nullable=True)
+
+    # Relaciones
+    run = relationship("ComparisonRun", back_populates="results")
+    requirement_item = relationship("RequirementItem")
+    quotation_section = relationship("ParsedSection")
+
+    __table_args__ = (
+        UniqueConstraint('run_id', 'requirement_item_id', name='uq_comparison_run_requirement'),
+    )
+

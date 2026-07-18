@@ -163,12 +163,7 @@ def upload_requirement(
         )
 
 
-    job = task_queue.enqueue(
-        "app.worker.tasks.process_requirement_task",
-        case_id,
-        file_path
-    )
-
+    job_id = str(uuid.uuid4())
 
     document = UploadedDocument(
         case_id=case_id,
@@ -176,16 +171,20 @@ def upload_requirement(
         original_filename=file.filename,
         stored_path=file_path,
         mime_type="application/pdf",
-        processing_job_id=job.id,
+        processing_job_id=job_id,
         processing_status="queued"
     )
 
-
     db.add(document)
-
     db_case.status = "PROCESSING_REQUIREMENT"
-
     db.commit()
+
+    job = task_queue.enqueue(
+        "app.worker.tasks.process_requirement_task",
+        case_id,
+        file_path,
+        job_id=job_id
+    )
 
 
     return {

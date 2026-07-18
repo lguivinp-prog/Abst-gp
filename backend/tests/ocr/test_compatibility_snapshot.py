@@ -21,7 +21,7 @@ def test_v2_to_parsed_sections_contract():
     doc.metadata = {"evaluation": {"score": 0.95}}
     
     case_id = 999
-    sections = StructuredDocumentAdapter.to_parsed_sections(case_id, doc)
+    sections = StructuredDocumentAdapter.to_parsed_sections(case_id, doc, 999)
     
     assert len(sections) == 1
     sec = sections[0]
@@ -55,7 +55,7 @@ def test_snapshot_adapter_with_tables():
     doc.tables.append(tb)
     
     case_id = 1000
-    sections = StructuredDocumentAdapter.to_parsed_sections(case_id, doc)
+    sections = StructuredDocumentAdapter.to_parsed_sections(case_id, doc, 999)
     
     assert len(sections) == 1
     sec = sections[0]

@@ -1,0 +1,659 @@
+from fastapi import APIRouter, Depends, HTTPException, UploadFile, File
+from sqlalchemy.orm import Session
+from typing import List
+import os
+import tempfile
+import uuid
+
+import rq
+
+from app.core.database import get_db
+from app.core.redis import task_queue
+
+from app.models.domain import (
+    CaseFile,
+    UploadedDocument,
+    ParsedSection,
+    QuotationExtraction,
+    FinalConditionComparison,
+    GeneratedOutput
+)
+
+from app.schemas.cases import (
+    CaseCreate,
+    CaseResponse,
+    SectionUpdate,
+    SectionResponse
+)
+
+from app.services.extraction.quotation_parser import parse_quotation_pdf
+from app.services.extraction.requirement_condition_extractor import extract_requirement_conditions
+from app.services.comparison.comparison_engine import run_comparison
+from app.services.generation.html_generator import generate_html
+from app.services.generation.plain_text_generator import generate_plain_text
+
+
+router = APIRouter()
+
+
+# =========================================================
+# CASOS
+# =========================================================
+
+@router.post("/", response_model=CaseResponse)
+def create_case(
+    case: CaseCreate,
+    db: Session = Depends(get_db)
+):
+
+    db_case = CaseFile(
+        title=case.title,
+        contract_type=case.contract_type,
+        status="CREATED"
+    )
+
+    db.add(db_case)
+    db.commit()
+    db.refresh(db_case)
+
+    return db_case
+
+
+@router.get("/", response_model=List[CaseResponse])
+def get_cases(
+    db: Session = Depends(get_db)
+):
+
+    cases = db.query(CaseFile).all()
+    for c in cases:
+        if c.status == "ERROR":
+            doc = db.query(UploadedDocument).filter(
+                UploadedDocument.case_id == c.id,
+                UploadedDocument.document_type == "requirement"
+            ).order_by(UploadedDocument.id.desc()).first()
+            if doc and doc.processing_error:
+                setattr(c, "last_processing_error", doc.processing_error)
+    return cases
+
+
+
+@router.get("/{case_id}", response_model=CaseResponse)
+def get_case(
+    case_id: int,
+    db: Session = Depends(get_db)
+):
+
+    db_case = (
+        db.query(CaseFile)
+        .filter(CaseFile.id == case_id)
+        .first()
+    )
+
+    if not db_case:
+        raise HTTPException(
+            status_code=404,
+            detail="Case not found"
+        )
+
+    if db_case.status == "ERROR":
+        doc = db.query(UploadedDocument).filter(
+            UploadedDocument.case_id == case_id,
+            UploadedDocument.document_type == "requirement"
+        ).order_by(UploadedDocument.id.desc()).first()
+        if doc and doc.processing_error:
+            setattr(db_case, "last_processing_error", doc.processing_error)
+
+    return db_case
+
+
+
+# =========================================================
+# REQUERIMIENTO PDF + RQ
+# =========================================================
+
+@router.post("/{case_id}/requirement/upload")
+def upload_requirement(
+    case_id: int,
+    file: UploadFile = File(...),
+    db: Session = Depends(get_db)
+):
+
+    db_case = (
+        db.query(CaseFile)
+        .filter(CaseFile.id == case_id)
+        .first()
+    )
+
+    if not db_case:
+        raise HTTPException(
+            status_code=404,
+            detail="Case not found"
+        )
+
+
+    if not file.filename.lower().endswith(".pdf"):
+        raise HTTPException(
+            status_code=400,
+            detail="Only PDF files are allowed"
+        )
+
+
+    uploads_dir = os.environ.get(
+        "UPLOADS_DIR",
+        "/data/uploads"
+    )
+
+    os.makedirs(
+        uploads_dir,
+        exist_ok=True
+    )
+
+
+    file_id = str(uuid.uuid4())
+
+    file_path = os.path.join(
+        uploads_dir,
+        f"{file_id}.pdf"
+    )
+
+
+    with open(file_path, "wb") as buffer:
+        buffer.write(
+            file.file.read()
+        )
+
+
+    job = task_queue.enqueue(
+        "app.worker.tasks.process_requirement_task",
+        case_id,
+        file_path
+    )
+
+
+    document = UploadedDocument(
+        case_id=case_id,
+        document_type="requirement",
+        original_filename=file.filename,
+        stored_path=file_path,
+        mime_type="application/pdf",
+        processing_job_id=job.id,
+        processing_status="queued"
+    )
+
+
+    db.add(document)
+
+    db_case.status = "PROCESSING_REQUIREMENT"
+
+    db.commit()
+
+
+    return {
+        "message": "Requirement queued",
+        "job_id": job.id
+    }
+
+
+
+# =========================================================
+# ESTADO DEL JOB OCR
+# =========================================================
+
+@router.get("/jobs/{job_id}")
+def get_job_status(
+    job_id: str,
+    db: Session = Depends(get_db)
+):
+
+    try:
+
+        job = rq.job.Job.fetch(
+            job_id,
+            connection=task_queue.connection
+        )
+
+
+        document = (
+            db.query(UploadedDocument)
+            .filter(
+                UploadedDocument.processing_job_id == job_id
+            )
+            .first()
+        )
+
+
+        case_status = None
+
+
+        if document:
+
+            case = (
+                db.query(CaseFile)
+                .filter(
+                    CaseFile.id == document.case_id
+                )
+                .first()
+            )
+
+            if case:
+                case_status = case.status
+
+
+
+        return {
+
+            "job_id": job.id,
+
+            "status": job.get_status(),
+
+            "progress": job.meta.get(
+                "progress",
+                0
+            ),
+
+            "message": job.meta.get(
+                "status_message",
+                "En cola"
+            ),
+
+            "case_status": case_status
+        }
+
+
+    except rq.exceptions.NoSuchJobError:
+
+        raise HTTPException(
+            status_code=404,
+            detail="Job not found"
+        )
+
+
+
+# =========================================================
+# SECCIONES OCR
+# =========================================================
+
+@router.get(
+    "/{case_id}/sections",
+    response_model=List[SectionResponse]
+)
+def get_sections(
+    case_id: int,
+    db: Session = Depends(get_db)
+):
+
+    return (
+        db.query(ParsedSection)
+        .filter(
+            ParsedSection.case_id == case_id
+        )
+        .order_by(
+            ParsedSection.original_order
+        )
+        .all()
+    )
+
+
+
+@router.put(
+    "/sections/{section_id}",
+    response_model=SectionResponse
+)
+def update_section(
+    section_id: int,
+    section_in: SectionUpdate,
+    db: Session = Depends(get_db)
+):
+
+    section = (
+        db.query(ParsedSection)
+        .filter(
+            ParsedSection.id == section_id
+        )
+        .first()
+    )
+
+
+    if not section:
+        raise HTTPException(
+            status_code=404,
+            detail="Section not found"
+        )
+
+
+    section.is_selected = section_in.is_selected
+    section.review_status = section_in.review_status
+    section.current_text = section_in.current_text
+
+
+    db.commit()
+    db.refresh(section)
+
+
+    return section
+
+@router.post(
+    "/{case_id}/sections/confirm",
+    response_model=CaseResponse
+)
+def confirm_sections(
+    case_id: int,
+    db: Session = Depends(get_db)
+):
+    case = db.query(CaseFile).filter(CaseFile.id == case_id).first()
+    if not case:
+        raise HTTPException(status_code=404, detail="Case not found")
+
+    if case.status != "REVIEW_SECTIONS":
+        raise HTTPException(status_code=400, detail="El expediente no está en revisión de secciones")
+
+    sections = db.query(ParsedSection).filter(ParsedSection.case_id == case_id).all()
+    if not sections:
+        raise HTTPException(status_code=400, detail="No hay secciones para confirmar")
+
+    case.status = "WAITING_QUOTATION"
+    db.commit()
+    db.refresh(case)
+    return case
+
+
+
+# =========================================================
+# COTIZACION
+# =========================================================
+
+@router.post("/{case_id}/quotation/upload")
+def upload_quotation(
+    case_id: int,
+    file: UploadFile = File(...),
+    db: Session = Depends(get_db)
+):
+
+    case = (
+        db.query(CaseFile)
+        .filter(
+            CaseFile.id == case_id
+        )
+        .first()
+    )
+
+
+    if not case:
+        raise HTTPException(
+            status_code=404,
+            detail="Case not found"
+        )
+
+
+    with tempfile.NamedTemporaryFile(
+        delete=False,
+        suffix=".pdf"
+    ) as temp:
+
+        temp.write(
+            file.file.read()
+        )
+
+        temp_path = temp.name
+
+
+
+    try:
+
+        quotation_data = parse_quotation_pdf(
+            temp_path
+        )
+
+
+        quotation = QuotationExtraction(
+            case_id=case_id,
+            raw_json=quotation_data,
+            review_status=(
+                "validated"
+                if quotation_data.get(
+                    "global_confidence",
+                    0
+                ) > 0.8
+                else "pending_review"
+            )
+        )
+
+
+        db.add(quotation)
+
+        case.status = "COMPARING"
+
+        db.commit()
+
+
+    finally:
+
+        if os.path.exists(temp_path):
+            os.remove(temp_path)
+
+
+
+    return {
+        "message": "Quotation processed"
+    }
+
+
+
+# =========================================================
+# COMPARACION
+# =========================================================
+
+@router.post("/{case_id}/comparison/run")
+def run_comparison_endpoint(
+    case_id: int,
+    db: Session = Depends(get_db)
+):
+
+    case = (
+        db.query(CaseFile)
+        .filter(
+            CaseFile.id == case_id
+        )
+        .first()
+    )
+
+
+    if not case:
+        raise HTTPException(
+            status_code=404
+        )
+
+
+    quotation = (
+        db.query(QuotationExtraction)
+        .filter(
+            QuotationExtraction.case_id == case_id
+        )
+        .first()
+    )
+
+
+    if not quotation:
+        raise HTTPException(
+            status_code=400,
+            detail="Quotation missing"
+        )
+
+
+    sections = (
+        db.query(ParsedSection)
+        .filter(
+            ParsedSection.case_id == case_id,
+            ParsedSection.is_selected == True
+        )
+        .all()
+    )
+
+    requirement_data = extract_requirement_conditions(sections)
+
+    quotation_data = quotation.raw_json or {}
+
+
+    results = run_comparison(
+        requirement_data,
+        quotation_data
+    )
+
+
+    for result in results:
+
+        db.add(
+            FinalConditionComparison(
+                case_id=case_id,
+                **result
+            )
+        )
+
+
+    case.status = "READY_GENERATE"
+
+    db.commit()
+
+
+    return {
+        "message": "Comparison completed"
+    }
+
+@router.get("/{case_id}/comparison")
+def get_comparison(
+    case_id: int,
+    db: Session = Depends(get_db)
+):
+    comparisons = (
+        db.query(FinalConditionComparison)
+        .filter(FinalConditionComparison.case_id == case_id)
+        .all()
+    )
+    return comparisons
+
+# =========================================================
+# GENERACION
+# =========================================================
+
+@router.post("/{case_id}/generate/html")
+def generate_html_endpoint(
+    case_id: int,
+    db: Session = Depends(get_db)
+):
+
+    sections = (
+        db.query(ParsedSection)
+        .filter(
+            ParsedSection.case_id == case_id,
+            ParsedSection.is_selected == True
+        )
+        .all()
+    )
+
+
+    comparisons = (
+        db.query(FinalConditionComparison)
+        .filter(
+            FinalConditionComparison.case_id == case_id
+        )
+        .all()
+    )
+
+
+    section_data = [
+
+        {
+            "title": s.title,
+            "text": s.current_text,
+            "roman": s.original_roman,
+            "structure_json": s.structure_json
+        }
+
+        for s in sections
+    ]
+
+
+
+    comparison_data = [
+
+        {
+            "field_name": c.field_name,
+            "requirement_value": c.requirement_value,
+            "quotation_value": c.quotation_value,
+            "final_value": c.final_value,
+            "status": c.status
+        }
+
+        for c in comparisons
+    ]
+
+
+
+    html = generate_html(
+        section_data,
+        comparison_data
+    )
+
+
+    plain = generate_plain_text(
+        section_data,
+        comparison_data
+    )
+
+
+
+    last = (
+        db.query(GeneratedOutput)
+        .filter(
+            GeneratedOutput.case_id == case_id
+        )
+        .order_by(
+            GeneratedOutput.version_number.desc()
+        )
+        .first()
+    )
+
+
+    version = (
+        last.version_number + 1
+        if last else 1
+    )
+
+
+    output = GeneratedOutput(
+        case_id=case_id,
+        html_output=html,
+        plain_text_output=plain,
+        version_number=version
+    )
+
+
+    db.add(output)
+
+    db.commit()
+
+
+    return {
+        "message": "Generated",
+        "version": version
+    }
+
+@router.get("/{case_id}/output")
+def get_output(
+    case_id: int,
+    db: Session = Depends(get_db)
+):
+    last_output = (
+        db.query(GeneratedOutput)
+        .filter(GeneratedOutput.case_id == case_id)
+        .order_by(GeneratedOutput.version_number.desc())
+        .first()
+    )
+    if not last_output:
+        raise HTTPException(status_code=404, detail="Output not found")
+        
+    return {
+        "html": last_output.html_output,
+        "plain_text": last_output.plain_text_output,
+        "version": last_output.version_number
+    }

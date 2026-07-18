@@ -3,7 +3,7 @@ import pytest
 # Since endpoints and security guards are not implemented yet, 
 # these tests serve as TDD contracts. We mark them as expected failures.
 
-@pytest.mark.xfail(reason="Authz security guards not implemented yet")
+@pytest.mark.xfail(reason="Authz security guards not implemented yet", strict=True)
 def test_operator_cannot_administer_users(client):
     """
     TDD Contract: A user with role OPERATOR must receive 403 Forbidden 
@@ -13,7 +13,7 @@ def test_operator_cannot_administer_users(client):
     response = client.post("/admin/users", json={"username": "new_op"})
     assert response.status_code == 403
 
-@pytest.mark.xfail(reason="CaseFile assignment guards not implemented yet")
+@pytest.mark.xfail(reason="CaseFile assignment guards not implemented yet", strict=True)
 def test_operator_cannot_access_unassigned_case(client):
     """
     TDD Contract: A user with role OPERATOR must receive 404 Not Found
@@ -23,7 +23,7 @@ def test_operator_cannot_access_unassigned_case(client):
     response = client.get("/cases/123")
     assert response.status_code == 404
 
-@pytest.mark.xfail(reason="Admin global access not fully enforced yet")
+@pytest.mark.xfail(reason="Admin global access not fully enforced yet", strict=True)
 def test_admin_can_see_all_cases(admin_client):
     """
     TDD Contract: A user with role ADMIN can access any case, assigned or not.
@@ -32,7 +32,7 @@ def test_admin_can_see_all_cases(admin_client):
     response = admin_client.get("/cases/123")
     assert response.status_code == 200
 
-@pytest.mark.xfail(reason="Unassigned case rules not implemented yet")
+@pytest.mark.xfail(reason="Unassigned case rules not implemented yet", strict=True)
 def test_unassigned_case_exclusive_to_admin(client, admin_client):
     """
     TDD Contract: A case without an assigned operator can only be accessed by ADMIN.

@@ -9,7 +9,7 @@ class StructuredDocumentAdapter:
     """
     
     @staticmethod
-    def to_parsed_sections(case_id: int, structured_doc: StructuredDocument) -> List[ParsedSection]:
+    def to_parsed_sections(case_id: int, structured_doc: StructuredDocument, document_id: int) -> List[ParsedSection]:
         parsed_sections = []
         
         # 1. Map Semantic Blocks to ParsedSections
@@ -44,6 +44,7 @@ class StructuredDocumentAdapter:
                 
                 sec = ParsedSection(
                     case_id=case_id,
+                    document_id=document_id,
                     original_roman=roman if roman else None,
                     original_order=order,
                     title=title,
@@ -61,6 +62,37 @@ class StructuredDocumentAdapter:
                 parsed_sections.append(sec)
                 order += 1
                 
+        if not parsed_sections and structured_doc.blocks:
+            # Fallback if no structural sections were detected but there is content
+            content_text = []
+            for block in structured_doc.blocks:
+                if not block.style.get("remove_from_content"):
+                    if isinstance(block.content, list):
+                        content_text.append("\n".join([str(c) for c in block.content]))
+                    else:
+                        content_text.append(str(block.content))
+            
+            if content_text:
+                full_content = "\n\n".join(content_text)
+                sec = ParsedSection(
+                    case_id=case_id,
+                    document_id=document_id,
+                    original_roman=None,
+                    original_order=1,
+                    title="CONTENIDO GENERAL",
+                    original_text=full_content,
+                    cleaned_text=full_content,
+                    normalized_text="CONTENIDO GENERAL",
+                    current_text=full_content,
+                    structure_json=[],
+                    corrections_json=[],
+                    warnings_json=[],
+                    extraction_metadata={"source": "ocr_v2", "fallback": True},
+                    confidence_score=0.5,
+                    review_status="pending_review"
+                )
+                parsed_sections.append(sec)
+
         # Attach tables and entities to the first section's metadata
         if parsed_sections:
             if structured_doc.tables:
