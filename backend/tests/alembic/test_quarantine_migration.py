@@ -40,11 +40,11 @@ def test_quarantine_ambiguous_legacy_data(alembic_config, monkeypatch):
     db = SessionLocal()
     
     try:
-        db.execute(text("DROP TABLE IF EXISTS quarantine_backup_comparison_results CASCADE"))
-        db.execute(text("DROP TABLE IF EXISTS quarantine_backup_comparison_runs CASCADE"))
-        db.execute(text("DROP TABLE IF EXISTS quarantine_backup_requirement_items CASCADE"))
-        db.execute(text("DROP TABLE IF EXISTS quarantine_backup_parsed_sections CASCADE"))
-        db.execute(text("DROP TABLE IF EXISTS quarantine_manifest CASCADE"))
+        db.execute(text("DROP TABLE IF EXISTS quarantine_backup_comparison_results"))
+        db.execute(text("DROP TABLE IF EXISTS quarantine_backup_comparison_runs"))
+        db.execute(text("DROP TABLE IF EXISTS quarantine_backup_requirement_items"))
+        db.execute(text("DROP TABLE IF EXISTS quarantine_backup_parsed_sections"))
+        db.execute(text("DROP TABLE IF EXISTS quarantine_manifest"))
         db.commit()
     except Exception:
         db.rollback()
@@ -136,6 +136,20 @@ def test_quarantine_ambiguous_legacy_data(alembic_config, monkeypatch):
     assert manifest[1] == 'OCR_COMPLETED'
     assert manifest[2] == 2
     assert manifest[3] == 1
+
+    # Verify no default sequences on backup tables
+    for table in [
+        'quarantine_backup_parsed_sections', 
+        'quarantine_backup_requirement_items', 
+        'quarantine_backup_comparison_runs', 
+        'quarantine_backup_comparison_results'
+    ]:
+        has_default = db.execute(text(f"""
+            SELECT column_default 
+            FROM information_schema.columns 
+            WHERE table_name = '{table}' AND column_name = 'id'
+        """)).scalar()
+        assert has_default is None, f"{table} should not have a default ID sequence"
 
     # Cleanup
     try:

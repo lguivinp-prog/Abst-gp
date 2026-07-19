@@ -42,10 +42,10 @@ def upgrade() -> None:
 
     # 2. Backup affected records before deletion.
     op.execute("""
-        CREATE TABLE IF NOT EXISTS quarantine_backup_comparison_runs (LIKE comparison_runs INCLUDING ALL);
-        CREATE TABLE IF NOT EXISTS quarantine_backup_comparison_results (LIKE comparison_results INCLUDING ALL);
-        CREATE TABLE IF NOT EXISTS quarantine_backup_requirement_items (LIKE requirement_items INCLUDING ALL);
-        CREATE TABLE IF NOT EXISTS quarantine_backup_parsed_sections (LIKE parsed_sections INCLUDING ALL);
+        CREATE TABLE IF NOT EXISTS quarantine_backup_comparison_runs (LIKE comparison_runs);
+        CREATE TABLE IF NOT EXISTS quarantine_backup_comparison_results (LIKE comparison_results);
+        CREATE TABLE IF NOT EXISTS quarantine_backup_requirement_items (LIKE requirement_items);
+        CREATE TABLE IF NOT EXISTS quarantine_backup_parsed_sections (LIKE parsed_sections);
         CREATE TABLE IF NOT EXISTS quarantine_manifest (
             case_id INTEGER PRIMARY KEY,
             original_status VARCHAR,
