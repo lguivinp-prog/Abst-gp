@@ -1,8 +1,8 @@
-"""quarantine_ambiguous_legacy_data
+"""quarantine_mixed_v1_v2
 
-Revision ID: 9bec824404a5
+Revision ID: 476e2601363c
 Revises: 12fd022d7f66
-Create Date: 2026-07-18 12:57:40.839542
+Create Date: 2026-07-18 23:32:38.000000
 
 """
 from typing import Sequence, Union
@@ -12,19 +12,20 @@ import sqlalchemy as sa
 
 
 # revision identifiers, used by Alembic.
-revision: str = '9bec824404a5'
+revision: str = '476e2601363c'
 down_revision: Union[str, Sequence[str], None] = '12fd022d7f66'
 branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None
 
 
 def upgrade() -> None:
-    # 1. Identify ambiguous legacy cases using the corrected CTE.
-    # A case is ambiguous if it has multiple documents AND at least one was processed by legacy V1.
+    # 1. Identify ambiguous legacy cases using COUNT(*) and BOOL_OR.
     op.execute("""
         CREATE TEMP TABLE ambiguous_cases_temp AS
         WITH ambiguous_cases AS (
-            SELECT ud.case_id
+            SELECT ud.case_id,
+                   COUNT(ud.id) as doc_count,
+                   COUNT(ud.id) FILTER (WHERE ud.ocr_engine_used IS NULL OR ud.ocr_engine_used = 'v1') as legacy_doc_count
             FROM uploaded_documents ud
             WHERE ud.case_id IS NOT NULL
             GROUP BY ud.case_id
@@ -34,7 +35,9 @@ def upgrade() -> None:
                    OR ud.ocr_engine_used = 'v1'
                )
         )
-        SELECT case_id FROM ambiguous_cases
+        SELECT ac.case_id, ac.doc_count, ac.legacy_doc_count, cf.status as original_status
+        FROM ambiguous_cases ac
+        JOIN case_files cf ON ac.case_id = cf.id
     """)
 
     # 2. Backup affected records before deletion.
@@ -43,6 +46,19 @@ def upgrade() -> None:
         CREATE TABLE IF NOT EXISTS quarantine_backup_comparison_results (LIKE comparison_results INCLUDING ALL);
         CREATE TABLE IF NOT EXISTS quarantine_backup_requirement_items (LIKE requirement_items INCLUDING ALL);
         CREATE TABLE IF NOT EXISTS quarantine_backup_parsed_sections (LIKE parsed_sections INCLUDING ALL);
+        CREATE TABLE IF NOT EXISTS quarantine_manifest (
+            case_id INTEGER PRIMARY KEY,
+            original_status VARCHAR,
+            doc_count INTEGER,
+            legacy_doc_count INTEGER,
+            quarantined_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        );
+    """)
+
+    op.execute("""
+        INSERT INTO quarantine_manifest (case_id, original_status, doc_count, legacy_doc_count)
+        SELECT case_id, original_status, doc_count, legacy_doc_count FROM ambiguous_cases_temp
+        ON CONFLICT DO NOTHING
     """)
 
     op.execute("""
@@ -80,7 +96,7 @@ def upgrade() -> None:
     """)
     op.execute("""
         UPDATE comparison_runs 
-        SET status = 'FAILED', failure_detail = 'Quarantined due to ambiguous legacy OCR'
+        SET status = 'FAILED'
         WHERE case_id IN (SELECT case_id FROM ambiguous_cases_temp)
     """)
     op.execute("""
@@ -95,6 +111,7 @@ def upgrade() -> None:
     op.execute("DROP TABLE ambiguous_cases_temp")
 
 def downgrade() -> None:
-    # Downgrade reverts status and drops backup tables if needed, 
-    # but we cannot automatically restore the deleted data without complex logic.
-    pass
+    raise RuntimeError(
+        "Migration 476e2601363c is irreversible; "
+        "restore the pre-migration database snapshot."
+    )
