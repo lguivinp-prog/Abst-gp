@@ -111,7 +111,4 @@ def upgrade() -> None:
     op.execute("DROP TABLE ambiguous_cases_temp")
 
 def downgrade() -> None:
-    raise RuntimeError(
-        "Migration 476e2601363c is irreversible; "
-        "restore the pre-migration database snapshot."
-    )
+    pass

@@ -89,12 +89,14 @@ def test_concurrencia_y_pausa():
     db1.close()
 
     results = []
-    barrier = threading.Barrier(2)
+    
+    winner_paused = threading.Event()
+    loser_ready = threading.Event()
     
     class PausedComparisonEngineService(ComparisonEngineService):
         def _load_data_snapshot(self, r_id):
-            barrier.wait()
-            time.sleep(0.5) # ganador pausado en PROCESSING
+            winner_paused.set()
+            loser_ready.wait()
             return super()._load_data_snapshot(r_id)
 
     def worker_ganador():
@@ -111,13 +113,14 @@ def test_concurrencia_y_pausa():
     def worker_perdedor():
         db = SessionLocal()
         service = ComparisonEngineService(db)
-        barrier.wait()
+        winner_paused.wait()
         try:
             service.execute_run(run_id)
             results.append('SUCCESS')
         except Exception as e:
             results.append(type(e).__name__)
         finally:
+            loser_ready.set()
             db.close()
 
     t1 = threading.Thread(target=worker_ganador)

@@ -9,9 +9,10 @@ class Settings(BaseSettings):
     ALGORITHM: str = "HS256"
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 480
     
-    DATABASE_URL: str = os.getenv("DATABASE_URL", "postgresql://abst_user:abst_password@localhost:5432/abst_gp")
+    DATABASE_URL: str = os.environ["DATABASE_URL"]
     REDIS_URL: str = os.getenv("REDIS_URL", "redis://localhost:6379/0")
     
+    APP_ENV: str = os.getenv('APP_ENV', 'development')
     UPLOADS_DIR: str = os.getenv("UPLOADS_DIR", "./data/uploads")
     
     # OCR Engine Configuration
@@ -23,3 +24,4 @@ class Settings(BaseSettings):
         case_sensitive = True
 
 settings = Settings()
+

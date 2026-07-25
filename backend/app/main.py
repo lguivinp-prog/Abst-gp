@@ -7,11 +7,15 @@ from app.core.config import settings
 from app.core.database import get_db
 from app.api.routers import cases, validation
 
+from app.api.exceptions import setup_exception_handlers
+
 app = FastAPI(
     title=settings.PROJECT_NAME,
     description="API para procesamiento de requerimientos de contratación",
     version="1.0.0"
 )
+
+setup_exception_handlers(app)
 
 # CORS config
 app.add_middleware(
@@ -24,6 +28,10 @@ app.add_middleware(
 
 app.include_router(cases.router, prefix="/cases", tags=["cases"])
 app.include_router(validation.router, prefix="/validation", tags=["validation"])
+
+from app.api.routers import auth_router, admin
+app.include_router(auth_router.router, prefix="/auth", tags=["auth"])
+app.include_router(admin.router, prefix="/admin", tags=["admin"])
 
 @app.get("/")
 def read_root():

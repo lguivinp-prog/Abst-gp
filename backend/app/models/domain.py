@@ -118,14 +118,48 @@ class OCRProcessingRun(Base):
     )
 
 
+class Tenant(Base):
+    __tablename__ = "tenants"
+    id = Column(String(50), primary_key=True)
+    name = Column(String(100), nullable=False)
+    created_at = Column(DateTime(timezone=True), server_default=func.now(), nullable=False)
+
 class User(Base):
     __tablename__ = "users"
     id = Column(Integer, primary_key=True, index=True)
+    tenant_id = Column(String(50), ForeignKey("tenants.id", onupdate="RESTRICT", ondelete="RESTRICT"), nullable=True)
+    tenant_resolution_status = Column(String(50), nullable=False, default="RESOLVED")
     username = Column(String, unique=True, index=True, nullable=False)
     password_hash = Column(String, nullable=False)
     role = Column(String, nullable=False, default="readonly") # admin, operator, readonly
-    is_active = Column(Boolean, default=True)
+    is_active = Column(Boolean, default=True, nullable=False)
+    must_change_password = Column(Boolean, default=False, nullable=False)
+    created_by_user_id = Column(Integer, ForeignKey("users.id"), nullable=True)
+    last_login_at = Column(DateTime(timezone=True), nullable=True)
+    failed_login_count = Column(Integer, default=0, nullable=False)
+    locked_until = Column(DateTime(timezone=True), nullable=True)
+    password_changed_at = Column(DateTime(timezone=True), nullable=True)
+    quarantined_at = Column(DateTime(timezone=True), nullable=True)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
+
+    __table_args__ = (
+        CheckConstraint(
+            "(role = 'ADMIN' AND tenant_id IS NULL AND tenant_resolution_status = 'RESOLVED') OR (role != 'ADMIN' AND tenant_id IS NOT NULL)",
+            name="chk_users_tenant_resolution"
+        ),
+    )
+
+class UserTenantQuarantine(Base):
+    __tablename__ = "user_tenant_quarantine"
+    user_id = Column(Integer, ForeignKey("users.id", onupdate="CASCADE", ondelete="CASCADE"), primary_key=True)
+    reason_code = Column(String, nullable=False)
+    evidence_reviewed = Column(JSONB, nullable=True)
+    status = Column(String, nullable=False, default="QUARANTINED")
+    proposed_tenant_id = Column(String(50), ForeignKey("tenants.id"), nullable=True)
+    quarantined_at = Column(DateTime(timezone=True), server_default=func.now())
+    resolved_at = Column(DateTime(timezone=True), nullable=True)
+    resolution_reference = Column(String, nullable=True)
+
 
 class SystemSettings(Base):
     __tablename__ = "system_settings"
@@ -136,19 +170,31 @@ class SystemSettings(Base):
     max_file_size = Column(Integer, default=10485760) # 10MB
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     updated_at = Column(DateTime(timezone=True), onupdate=func.now())
+    active_ring = Column(Integer, nullable=False, default=0)
+
+    __table_args__ = (
+        CheckConstraint("active_ring >= 0", name="check_active_ring_non_negative"),
+    )
 
 class CaseFile(Base):
     __tablename__ = "case_files"
     id = Column(Integer, primary_key=True, index=True)
+    tenant_id = Column(String(50), ForeignKey("tenants.id", onupdate="RESTRICT", ondelete="RESTRICT"), server_default="mega_tenant", nullable=True)
     title = Column(String, nullable=False)
     contract_type = Column(String, nullable=False)
     siga_number = Column(String, nullable=True)
     office_unit = Column(String, nullable=True)
     status = Column(String(50), default="CREATED", nullable=False)
     created_by = Column(Integer, ForeignKey("users.id"))
+    assigned_to_user_id = Column(Integer, ForeignKey("users.id"), nullable=True)
+    assigned_by_user_id = Column(Integer, ForeignKey("users.id"), nullable=True)
+    assigned_at = Column(DateTime(timezone=True), nullable=True)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     updated_at = Column(DateTime(timezone=True), onupdate=func.now())
     documents = relationship("UploadedDocument", back_populates="case")
+    
+    assigned_to = relationship("User", foreign_keys=[assigned_to_user_id])
+    assigned_by = relationship("User", foreign_keys=[assigned_by_user_id])
 
 class UploadedDocument(Base):
     __tablename__ = "uploaded_documents"
@@ -245,10 +291,12 @@ class GeneratedOutput(Base):
 class AuditLog(Base):
     __tablename__ = "audit_logs"
     id = Column(Integer, primary_key=True, index=True)
+    tenant_id = Column(String(50), ForeignKey("tenants.id", onupdate="RESTRICT", ondelete="RESTRICT"), server_default="mega_tenant", nullable=True)
     user_id = Column(Integer, ForeignKey("users.id"))
     action = Column(String, nullable=False)
     entity_type = Column(String, nullable=False)
-    entity_id = Column(Integer, nullable=False)
+    entity_id = Column(String, nullable=False)
+    status = Column(String, nullable=True)
     details = Column(String, nullable=True)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
 
@@ -341,3 +389,20 @@ class ComparisonResult(Base):
         UniqueConstraint('run_id', 'requirement_item_id', name='uq_comparison_run_requirement'),
     )
 
+
+class RolloutTenantAssignment(Base):
+    __tablename__ = "rollout_tenant_assignments"
+    
+    tenant_id = Column(String(50), ForeignKey("tenants.id", onupdate="RESTRICT", ondelete="RESTRICT"), primary_key=True)
+    assigned_ring = Column(Integer, nullable=True)
+    assignment_version = Column(String(20), nullable=False)
+    routing_mode = Column(String(50), nullable=False, default="AUTO")
+    override_until = Column(DateTime(timezone=True), nullable=True)
+    reason = Column(String(100), nullable=True)
+    assigned_at = Column(DateTime(timezone=True), server_default=func.now(), nullable=False)
+
+class BootstrapLedger(Base):
+    __tablename__ = "bootstrap_ledger"
+    operation_id = Column(String(100), primary_key=True)
+    payload_hash = Column(String(64), nullable=False)
+    executed_at = Column(DateTime(timezone=True), server_default=func.now())

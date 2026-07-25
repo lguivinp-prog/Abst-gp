@@ -2,14 +2,16 @@ version: '3.8'
 
 services:
   db:
-    container_name: !reset null
+    container_name: phase5_ring1_test_db
     restart: "no"
-    ports: !reset []
+    ports:
+      - "15432:5432"
     environment:
+      APP_ENV: test
       POSTGRES_USER: test_user
       POSTGRES_PASSWORD: test_password
       POSTGRES_DB: test_db
-    volumes: !override
+    volumes:
       - test_pgdata:/var/lib/postgresql/data
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U test_user -d test_db"]
@@ -18,10 +20,9 @@ services:
       retries: 5
 
   redis:
-    container_name: !reset null
+    container_name: phase5_ring1_test_redis
     restart: "no"
-    ports: !reset []
-    volumes: !override
+    volumes:
       - test_redisdata:/data
     healthcheck:
       test: ["CMD", "redis-cli", "ping"]
@@ -30,69 +31,70 @@ services:
       retries: 5
 
   api:
-    container_name: !reset null
+    container_name: phase5_ring1_test_api
     restart: "no"
-    ports: !reset []
     environment:
+      - APP_ENV=test
       - DATABASE_URL=postgresql://test_user:test_password@db:5432/test_db
       - REDIS_URL=redis://redis:6379/0
       - SECRET_KEY=test_secret_key
       - UPLOADS_DIR=/data/uploads
       - PYTHONDONTWRITEBYTECODE=1
       - OCR_ENGINE=v2
-    volumes: !override
+    volumes:
       - ./backend:/app:ro
       - test_uploads:/data/uploads
-    depends_on: !override
+    depends_on:
       db:
         condition: service_healthy
       redis:
         condition: service_healthy
 
   worker:
-    container_name: !reset null
+    container_name: phase5_ring1_test_worker
     restart: "no"
     environment:
+      - APP_ENV=test
       - DATABASE_URL=postgresql://test_user:test_password@db:5432/test_db
       - REDIS_URL=redis://redis:6379/0
       - SECRET_KEY=test_secret_key
       - UPLOADS_DIR=/data/uploads
       - PYTHONDONTWRITEBYTECODE=1
       - OCR_ENGINE=v2
-    volumes: !override
+    volumes:
       - ./backend:/app:ro
       - test_uploads:/data/uploads
-    depends_on: !override
+    depends_on:
       db:
         condition: service_healthy
       redis:
         condition: service_healthy
 
   worker-ocr:
-    container_name: !reset null
+    container_name: phase5_ring1_test_worker_ocr
     restart: "no"
     environment:
+      - APP_ENV=test
       - DATABASE_URL=postgresql://test_user:test_password@db:5432/test_db
       - REDIS_URL=redis://redis:6379/0
       - SECRET_KEY=test_secret_key
       - UPLOADS_DIR=/data/uploads
       - PYTHONDONTWRITEBYTECODE=1
       - OCR_ENGINE=v2
-    volumes: !override
+    volumes:
       - ./backend:/app:ro
       - test_uploads:/data/uploads
       - test_models:/models
-    depends_on: !override
+    depends_on:
       db:
         condition: service_healthy
       redis:
         condition: service_healthy
 
   web:
-    container_name: !reset null
+    container_name: phase5_ring1_test_web
     restart: "no"
-    ports: !reset []
-    depends_on: !override
+    depends_on:
       api:
         condition: service_started
 
@@ -101,3 +103,5 @@ volumes:
   test_redisdata:
   test_uploads:
   test_models:
+
+

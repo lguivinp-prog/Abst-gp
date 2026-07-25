@@ -19,6 +19,12 @@ from app.models.domain import (
     GeneratedOutput
 )
 
+from app.models.domain import User, AuditLog
+from app.api.auth import get_current_user, get_current_active_user, verify_case_access, require_role
+from app.api.exceptions import NotFoundException, ConflictException
+from pydantic import BaseModel
+from datetime import datetime, timezone
+
 from app.schemas.cases import (
     CaseCreate,
     CaseResponse,
@@ -43,13 +49,15 @@ router = APIRouter()
 @router.post("/", response_model=CaseResponse)
 def create_case(
     case: CaseCreate,
+    current_user: User = Depends(get_current_active_user),
     db: Session = Depends(get_db)
 ):
 
     db_case = CaseFile(
         title=case.title,
         contract_type=case.contract_type,
-        status="CREATED"
+        status="CREATED",
+        created_by=current_user.id
     )
 
     db.add(db_case)
@@ -61,10 +69,13 @@ def create_case(
 
 @router.get("/", response_model=List[CaseResponse])
 def get_cases(
+    current_user: User = Depends(get_current_active_user),
     db: Session = Depends(get_db)
 ):
-
-    cases = db.query(CaseFile).all()
+    query = db.query(CaseFile)
+    if current_user.role != "ADMIN":
+        query = query.filter(CaseFile.assigned_to_user_id == current_user.id)
+    cases = query.all()
     for c in cases:
         if c.status == "ERROR":
             doc = db.query(UploadedDocument).filter(
@@ -77,23 +88,56 @@ def get_cases(
 
 
 
+class CaseAssign(BaseModel):
+    assigned_to_user_id: int
+
+@router.post("/{case_id}/assign", response_model=CaseResponse)
+def assign_case(
+    case_id: int,
+    assign_req: CaseAssign,
+    db_case: CaseFile = Depends(verify_case_access),
+    current_user: User = Depends(require_role(["ADMIN"])),
+    db: Session = Depends(get_db)
+):
+    target_user = db.query(User).filter(
+        User.id == assign_req.assigned_to_user_id,
+        User.tenant_id == current_user.tenant_id
+    ).first()
+    if not target_user:
+        raise NotFoundException("Target user not found")
+        
+    db_case.assigned_to_user_id = assign_req.assigned_to_user_id
+    db_case.assigned_by_user_id = current_user.id
+    db_case.assigned_at = datetime.now(timezone.utc)
+    
+    audit = AuditLog(
+        user_id=current_user.id,
+        tenant_id=current_user.tenant_id,
+        action="ASSIGN_CASE",
+        entity_type="CaseFile",
+        entity_id=str(case_id),
+        details=f"Assigned to {target_user.username}",
+        status="SUCCESS"
+    )
+    db.add(audit)
+    
+    try:
+        import sqlalchemy.exc
+        db.flush()
+        db.commit()
+    except sqlalchemy.exc.SQLAlchemyError as e:
+        db.rollback()
+        raise HTTPException(status_code=500, detail="Transaction failed")
+        
+    db.refresh(db_case)
+    return db_case
+
 @router.get("/{case_id}", response_model=CaseResponse)
 def get_case(
     case_id: int,
+    db_case: CaseFile = Depends(verify_case_access),
     db: Session = Depends(get_db)
 ):
-
-    db_case = (
-        db.query(CaseFile)
-        .filter(CaseFile.id == case_id)
-        .first()
-    )
-
-    if not db_case:
-        raise HTTPException(
-            status_code=404,
-            detail="Case not found"
-        )
 
     if db_case.status == "ERROR":
         doc = db.query(UploadedDocument).filter(
@@ -115,20 +159,9 @@ def get_case(
 def upload_requirement(
     case_id: int,
     file: UploadFile = File(...),
+    db_case: CaseFile = Depends(verify_case_access),
     db: Session = Depends(get_db)
 ):
-
-    db_case = (
-        db.query(CaseFile)
-        .filter(CaseFile.id == case_id)
-        .first()
-    )
-
-    if not db_case:
-        raise HTTPException(
-            status_code=404,
-            detail="Case not found"
-        )
 
 
     if not file.filename.lower().endswith(".pdf"):
@@ -278,6 +311,7 @@ def get_job_status(
 )
 def get_sections(
     case_id: int,
+    db_case: CaseFile = Depends(verify_case_access),
     db: Session = Depends(get_db)
 ):
 
@@ -301,6 +335,7 @@ def get_sections(
 def update_section(
     section_id: int,
     section_in: SectionUpdate,
+    current_user: User = Depends(get_current_active_user),
     db: Session = Depends(get_db)
 ):
 
@@ -318,6 +353,11 @@ def update_section(
             status_code=404,
             detail="Section not found"
         )
+    
+    if current_user.role != "ADMIN":
+        case = db.query(CaseFile).filter(CaseFile.id == section.case_id).first()
+        if not case or case.assigned_to_user_id != current_user.id:
+            raise NotFoundException("Section not found")
 
 
     section.is_selected = section_in.is_selected
@@ -337,11 +377,9 @@ def update_section(
 )
 def confirm_sections(
     case_id: int,
+    case: CaseFile = Depends(verify_case_access),
     db: Session = Depends(get_db)
 ):
-    case = db.query(CaseFile).filter(CaseFile.id == case_id).first()
-    if not case:
-        raise HTTPException(status_code=404, detail="Case not found")
 
     if case.status != "REVIEW_SECTIONS":
         raise HTTPException(status_code=400, detail="El expediente no está en revisión de secciones")
@@ -365,23 +403,9 @@ def confirm_sections(
 def upload_quotation(
     case_id: int,
     file: UploadFile = File(...),
+    case: CaseFile = Depends(verify_case_access),
     db: Session = Depends(get_db)
 ):
-
-    case = (
-        db.query(CaseFile)
-        .filter(
-            CaseFile.id == case_id
-        )
-        .first()
-    )
-
-
-    if not case:
-        raise HTTPException(
-            status_code=404,
-            detail="Case not found"
-        )
 
 
     with tempfile.NamedTemporaryFile(
@@ -445,22 +469,9 @@ def upload_quotation(
 @router.post("/{case_id}/comparison/run")
 def run_comparison_endpoint(
     case_id: int,
+    case: CaseFile = Depends(verify_case_access),
     db: Session = Depends(get_db)
 ):
-
-    case = (
-        db.query(CaseFile)
-        .filter(
-            CaseFile.id == case_id
-        )
-        .first()
-    )
-
-
-    if not case:
-        raise HTTPException(
-            status_code=404
-        )
 
 
     quotation = (
@@ -493,6 +504,17 @@ def run_comparison_endpoint(
     quotation_data = quotation.raw_json or {}
 
 
+    from app.api.routing import TenantRouter
+    
+    route_info = TenantRouter.get_tenant_routing(case.tenant_id, db)
+    
+    if route_info["engine"] == "v2":
+        # Note: V2 Engine logic would be invoked here.
+        # For Ring 1 phase, we fallback to V1 or run V2 if available.
+        # Here we just pass a flag or call a different function if V2 exists.
+        # We will use V1 for now as per "FORCE_LEGACY" fallback.
+        pass
+    
     results = run_comparison(
         requirement_data,
         quotation_data
@@ -521,6 +543,7 @@ def run_comparison_endpoint(
 @router.get("/{case_id}/comparison")
 def get_comparison(
     case_id: int,
+    case: CaseFile = Depends(verify_case_access),
     db: Session = Depends(get_db)
 ):
     comparisons = (
@@ -537,6 +560,7 @@ def get_comparison(
 @router.post("/{case_id}/generate/html")
 def generate_html_endpoint(
     case_id: int,
+    case: CaseFile = Depends(verify_case_access),
     db: Session = Depends(get_db)
 ):
 
@@ -640,6 +664,7 @@ def generate_html_endpoint(
 @router.get("/{case_id}/output")
 def get_output(
     case_id: int,
+    case: CaseFile = Depends(verify_case_access),
     db: Session = Depends(get_db)
 ):
     last_output = (

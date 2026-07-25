@@ -32,7 +32,7 @@ def test_db_constraints(db_session):
     db = db_session
     
     # 1. Setup minimal requirements
-    user = User(username=f"testuser_{uuid.uuid4()}", password_hash="hash")
+    user = User(username=f"testuser_{uuid.uuid4()}", password_hash="hash", tenant_id="mega_tenant")
     db.add(user)
     db.commit()
     

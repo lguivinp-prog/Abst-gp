@@ -153,7 +153,7 @@ def process_run_v2(run_id: str):
                 run.quality_status = ocr_status
                 
                 # Parse Sections
-                parsed_sections = StructuredDocumentAdapter.to_parsed_sections(case_id, structured_doc, run.document_id)
+                parsed_sections = StructuredDocumentAdapter.to_parsed_sections(case_id, structured_doc, run.uploaded_document_id)
                 if not parsed_sections:
                     from app.services.extraction.exceptions import NoSectionsExtractedError
                     raise NoSectionsExtractedError("No se detectaron secciones estructurales válidas en el documento (V2).")

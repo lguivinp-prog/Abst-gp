@@ -57,15 +57,26 @@ def run_migrations_offline() -> None:
 
 
 def run_migrations_online() -> None:
-    """Run migrations in 'online' mode.
-
-    In this scenario we need to create an Engine
-    and associate a connection with the context.
-
-    """
     from app.core.config import settings
+    import sys
     configuration = config.get_section(config.config_ini_section, {})
-    configuration["sqlalchemy.url"] = settings.DATABASE_URL
+    
+    url = config.get_main_option("sqlalchemy.url")
+    if not url:
+        url = settings.DATABASE_URL
+        
+    if not url or url.startswith("driver://"):
+        print(f"FATAL: Invalid or missing database URL for Alembic: {url}")
+        sys.exit(1)
+    app_env = os.environ.get("APP_ENV", "local")
+    try:
+        from app.core.env_guard import validate_migration_environment
+        validate_migration_environment(app_env, url, dict(os.environ))
+    except Exception as e:
+        print(f"FATAL: Migration guard rejected execution: {e}")
+        sys.exit(1)
+        
+    configuration["sqlalchemy.url"] = url
     
     connectable = engine_from_config(
         configuration,
@@ -86,3 +97,4 @@ if context.is_offline_mode():
     run_migrations_offline()
 else:
     run_migrations_online()
+
