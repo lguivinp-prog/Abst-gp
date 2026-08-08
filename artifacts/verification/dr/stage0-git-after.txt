@@ -1,0 +1,95 @@
+## feature/phase5-ring1...origin/feature/phase5-ring1 [ahead 1]
+ M backend/alembic/versions/8527a001a1bc_add_bootstrap_ledger.py
+ M backend/app/api/routers/admin.py
+ M backend/app/api/routers/cases.py
+ M backend/app/cli/admin_bootstrap.py
+ M backend/app/core/config.py
+ M backend/app/core/database.py
+ M backend/app/main.py
+ M backend/app/models/__init__.py
+ M backend/app/models/domain.py
+ M backend/app/services/extraction_engine/utils/persistence.py
+ M backend/app/worker/ocr_worker_tasks.py
+ D backend/scripts/bootstrap_tenant.py
+ D backend/scripts/insert_users.py
+ M backend/tests/conftest.py
+ M frontend/package.json
+ M frontend/src/App.tsx
+ M frontend/src/api/client.ts
+ M frontend/src/components/Layout/Layout.tsx
+ M frontend/src/features/cases/CaseDetail.tsx
+ M frontend/src/features/cases/CasesList.tsx
+ M frontend/src/features/cases/components/ComparisonTable.tsx
+ M frontend/src/features/cases/components/OutputGenerator.tsx
+ M frontend/src/features/cases/components/ProcessingStatus.tsx
+ M frontend/src/features/cases/components/QuotationUpload.tsx
+ M frontend/src/features/cases/components/RequirementUpload.tsx
+ M frontend/src/types/index.ts
+ M frontend/tsconfig.app.json
+ M frontend/vite.config.ts
+?? .github/
+?? Dockerfile.backend.test
+?? Dockerfile.frontend.test
+?? artifacts/
+?? backend/alembic/versions/b2c3d4e5f6a7_v5_4_observability_and_heartbeat.py
+?? backend/alembic/versions/c4d5e6f7a8b9_phase_7_3_performance_and_governance_indices.py
+?? backend/alembic/versions/f1a2b3c4d5e6_expand_processing_jobs_v53.py
+?? backend/app/api/admin/
+?? backend/app/core/telemetry.py
+?? backend/app/repositories/
+?? backend/app/schemas/alerts.py
+?? backend/app/schemas/monitoring.py
+?? backend/app/services/alert_engine.py
+?? backend/app/services/capacity_governor.py
+?? backend/app/services/job_recovery_engine.py
+?? backend/app/services/job_repository.py
+?? backend/app/services/monitoring_service.py
+?? backend/app/worker/comparison_tasks.py
+?? backend/app/worker/quotation_tasks.py
+?? backend/downgrade_fail.log
+?? backend/requirements.validation.lock
+?? backend/scripts/test_downgrade_remediation.py
+?? backend/tests/api/integration/test_async_api_v53.py
+?? backend/tests/api/integration/test_comparison_concurrency.py
+?? backend/tests/api/integration/test_comparison_rollback.py
+?? backend/tests/api/integration/test_monitoring_api.py
+?? backend/tests/api/test_comparison_integrity.py
+?? backend/tests/api/test_document_retrieval.py
+?? backend/tests/dr/
+?? backend/tests/e2e/
+?? backend/tests/performance/
+?? backend/tests/unit/test_comparison_tasks.py
+?? backend/tests/unit/test_job_repository.py
+?? backend/tests/unit/test_monitoring_service.py
+?? backend/tests/unit/test_quotation_tasks.py
+?? backend/tests/unit/test_v54_job_recovery_engine.py
+?? backend/tests/unit/test_v54_migration_rollback.py
+?? backend/tests/unit/test_v54_observability_persistence.py
+?? backend/tests/unit/test_v54_worker_instrumentation.py
+?? backend/tests/unit/test_v55_alert_engine.py
+?? backend/tests/unit/test_v55_telemetry.py
+?? backend/upgrade_idempotent.log
+?? docs/
+?? frontend/.npmrc
+?? frontend/e2e/
+?? frontend/package-lock.json
+?? frontend/src/__tests__/
+?? frontend/src/api/apiError.ts
+?? frontend/src/api/cases.service.ts
+?? frontend/src/api/monitoringApi.ts
+?? frontend/src/components/Auth/
+?? frontend/src/components/Layout/ProtectedRoute.tsx
+?? frontend/src/config/
+?? frontend/src/features/auth/
+?? frontend/src/features/cases/adapters/
+?? frontend/src/features/cases/components/CreateCaseModal.tsx
+?? frontend/src/features/cases/components/DoublePaneReview.tsx
+?? frontend/src/features/cases/domain/
+?? frontend/src/features/cases/hooks/
+?? frontend/src/features/monitoring/
+?? frontend/src/hooks/
+?? frontend/src/types/jobs.ts
+?? frontend/src/types/monitoring.ts
+?? test_results.log
+?? verification/
+?? verification_output.log

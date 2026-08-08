@@ -1,0 +1,15 @@
+CONTAINER INSPECTION AT DIAGNOSTIC TIME:
+NAMES                                      IMAGE                                STATUS
+verification-backend-dr-run-99eb15dd0f2d   verification-backend-dr              Up 21 minutes
+verification-backend-dr-run-bd42c6791841   verification-backend-dr              Up 4 hours
+verification-db-dr-1                       postgres:16-alpine                   Up 6 hours (healthy)
+verification-redis-dr-1                    redis:7-alpine                       Up 6 hours (healthy)
+
+POSTGRESQL STAT ACTIVITY AT DIAGNOSTIC TIME:
+  pid  |        state        |          query_start          | wait_event_type | wait_event | query
+-------+---------------------+-------------------------------+-----------------+------------+-------------------------------------------------------------------------
+ 19647 | idle                | 2026-08-06 23:07:54.01424+00  | Client          | ClientRead | COMMIT
+ 19684 | idle in transaction | 2026-08-06 23:08:09.474424+00 | Client          | ClientRead | SELECT case_files... WHERE case_files.id = 12 LIMIT 1
+ 19711 | active              | 2026-08-06 23:08:09.49951+00  | Lock            | relation   | ALTER TABLE IF EXISTS ONLY public.uploaded_documents DROP CONSTRAINT IF EXISTS uploaded_documents_case_id_fkey;
+ 48801 | idle                | 2026-08-07 02:30:22.350389+00 | Client          | ClientRead | COMMIT
+ 48803 | active              | 2026-08-07 02:30:22.464463+00 | Lock            | relation   | INSERT INTO case_files ...

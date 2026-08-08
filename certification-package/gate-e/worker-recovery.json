@@ -1,0 +1,29 @@
+{
+  "timestamp_utc": "2026-08-08T12:42:41.212569+00:00",
+  "status": "PASS",
+  "dead_workers_simulated": [
+    {
+      "worker_name": "worker_dead_crashed_node_99",
+      "crashed_at_utc": "2026-08-08T12:27:40.976942+00:00",
+      "abandoned_jobs": [
+        "ocr_processing_42_08a48181",
+        "ocr_processing_42_75ac852b"
+      ]
+    }
+  ],
+  "active_workers_verified": [
+    {
+      "worker_name": "worker_node_alive_1",
+      "status": "HEALTHY",
+      "active_job": "document_extraction_42_8e73e220",
+      "disrupted": false
+    }
+  ],
+  "recovery_engine_metrics": {
+    "scan_duration_seconds": 0.04103796799608972,
+    "total_scanned": 2,
+    "stale_processing_detected": 2,
+    "jobs_retried": 1,
+    "jobs_max_retries_failed": 1
+  }
+}

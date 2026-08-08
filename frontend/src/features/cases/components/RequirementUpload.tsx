@@ -1,7 +1,9 @@
 import React, { useState } from 'react';
 import { Upload } from 'lucide-react';
 import { Button } from '../../../components/ui/Button';
-import apiClient from '../../../api/client';
+import { casesService } from '../../../api/cases.service';
+import { AppError } from '../../../api/apiError';
+import { MAX_REQUIREMENT_SIZE_MB } from '../../../config/documentLimits';
 
 interface RequirementUploadProps {
   caseId: string;
@@ -15,43 +17,58 @@ export const RequirementUpload: React.FC<RequirementUploadProps> = ({ caseId, on
 
   const handleUpload = async () => {
     if (!file) return;
+
+    const fileSizeMB = file.size / (1024 * 1024);
+    if (fileSizeMB > MAX_REQUIREMENT_SIZE_MB) {
+      setErrorMsg(`El archivo excede el tamaño máximo permitido de ${MAX_REQUIREMENT_SIZE_MB}MB.`);
+      return;
+    }
+
     setLoading(true);
     setErrorMsg(null);
-    const formData = new FormData();
-    formData.append('file', file);
     try {
-      const res = await apiClient.postForm(`/cases/${caseId}/requirement/upload`, formData);
-      if (res.data && res.data.job_id) {
-        onUploadSuccess(res.data.job_id);
+      const res = await casesService.uploadRequirement(caseId, file);
+      if (res && res.job_id) {
+        onUploadSuccess(res.job_id);
       } else {
         throw new Error('Respuesta del servidor sin job_id');
       }
     } catch (error: any) {
-      console.error('Error uploading requirement:', error);
-      let errorText = 'Error al subir requerimiento';
-      if (error.response?.data?.detail) {
-        if (typeof error.response.data.detail === 'string') {
-          errorText = error.response.data.detail;
-        } else if (Array.isArray(error.response.data.detail)) {
-          errorText = error.response.data.detail.map((e: any) => e.msg).join(', ');
-        } else {
-          errorText = JSON.stringify(error.response.data.detail);
-        }
-      } else if (error.message) {
-        errorText = error.message;
+      if (error instanceof AppError) {
+        setErrorMsg(error.message);
+      } else {
+        setErrorMsg('Error al subir requerimiento');
       }
-      setErrorMsg(errorText);
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <div className="upload-container p-4 border rounded-md bg-white">
-      <h3 className="text-lg font-medium mb-2">1. Subir Requerimiento</h3>
+    <div className="upload-container p-4 border rounded-md bg-white shadow-sm">
+      <h3 className="text-lg font-medium mb-2 text-gray-800">1. Subir Requerimiento</h3>
       <p className="text-sm text-gray-600 mb-4">Seleccione el PDF con el requerimiento (TDR/EETT).</p>
-      {errorMsg && <div className="text-red-600 mb-4 text-sm bg-red-50 p-2 rounded">{errorMsg}</div>}
-      <input type="file" accept="application/pdf" onChange={(e) => setFile(e.target.files?.[0] || null)} className="mb-4 block" />
+      
+      {errorMsg && (
+        <div className="text-red-700 mb-4 text-sm bg-red-50 border border-red-100 p-3 rounded-md">
+          {errorMsg}
+        </div>
+      )}
+      
+      <input 
+        type="file" 
+        data-testid="upload-requirement"
+        accept="application/pdf" 
+        onChange={(e) => setFile(e.target.files?.[0] || null)} 
+        className="mb-4 block w-full text-sm text-gray-500
+          file:mr-4 file:py-2 file:px-4
+          file:rounded-md file:border-0
+          file:text-sm file:font-semibold
+          file:bg-blue-50 file:text-blue-700
+          hover:file:bg-blue-100"
+        disabled={loading}
+      />
+      
       <Button 
         leftIcon={<Upload size={18} />} 
         onClick={handleUpload} 

@@ -1,0 +1,9 @@
+{
+  "scan_window": "30m",
+  "log_scan_timestamp_utc": "2026-08-07T19:45:39Z",
+  "permission_denied_errors_found": 0,
+  "archive_command_failures_found": 0,
+  "last_log_entry": "LOG: checkpoint complete: wrote 38 buffers (0.2%); 0 WAL file(s) added, 55 removed, 9 recycled; write=3.722 s, sync=0.016 s, total=4.205 s",
+  "logs_clean": true,
+  "status": "PASS"
+}

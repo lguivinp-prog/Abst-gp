@@ -1,0 +1,6 @@
+LOGS SNAPSHOT FOR VERIFICATION COMPOSE AT HANG TIME:
+db-dr-1     | 2026-08-07T02:47:50.384 UTC [75] DETAIL: The failed archive command was: test ! -f /var/lib/postgresql/archive/000000010000000000000001 && cp pg_wal/000000010000000000000001 /var/lib/postgresql/archive/000000010000000000000001
+db-dr-1     | 2026-08-07T02:47:51.385746088Z cp: can't create '/var/lib/postgresql/archive/000000010000000000000001': Permission denied
+db-dr-1     | 2026-08-07T02:47:51.385812326Z 2026-08-07 02:47:51.385 UTC [75] LOG: archive command failed with exit code 1
+backend-dr  | tests/dr/test_disaster_recovery.py::test_scenario_a_full_postgresql_recovery PASSED [  6%]
+backend-dr  | tests/dr/test_disaster_recovery.py::test_scenario_b_logical_deletion_pitr (blocked on pg_restore relation lock)

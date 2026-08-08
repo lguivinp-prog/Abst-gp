@@ -1,0 +1,9 @@
+{
+  "wal_replay_status": "PASS",
+  "wal_archive_dir": "/var/lib/postgresql/archive",
+  "restored_cluster_port": 5433,
+  "start_lsn": "0/6D001230",
+  "end_lsn": "0/6D0013D0",
+  "replayed_target_time": "2026-08-07 23:34:21.173962+00",
+  "timestamp_utc": "2026-08-07T23:34:33Z"
+}

@@ -1,0 +1,188 @@
+ Image abst_gp_v52_validation-backend-test Building 
+ Image abst_gp_v52_validation-backend-app Building 
+ Image abst_gp_v52_validation-worker-test Building 
+ Image abst_gp_v52_validation-frontend-test Building 
+#1 [internal] load local bake definitions
+#1 reading from stdin 2.31kB 0.0s done
+#1 DONE 0.0s
+
+#2 [frontend-test internal] load build definition from Dockerfile.frontend.test
+#2 transferring dockerfile: 455B 0.0s done
+#2 DONE 0.0s
+
+#3 [worker-test internal] load build definition from Dockerfile.backend.test
+#3 transferring dockerfile: 792B 0.0s done
+#3 DONE 0.0s
+
+#4 [frontend-test internal] load metadata for docker.io/library/node:20.19.0-alpine@sha256:8bda036ddd59ea51a23bc1a1035d3b5c614e72c01366d989f4120e8adca196d4
+#4 DONE 0.1s
+
+#5 [backend-app internal] load metadata for docker.io/library/python:3.12.3-slim
+#5 DONE 0.1s
+
+#6 [backend-app internal] load .dockerignore
+#6 transferring context: 2B done
+#6 DONE 0.0s
+
+#7 [backend-app 1/9] FROM docker.io/library/python:3.12.3-slim@sha256:afc139a0a640942491ec481ad8dda10f2c5b753f5c969393b12480155fe15a63
+#7 resolve docker.io/library/python:3.12.3-slim@sha256:afc139a0a640942491ec481ad8dda10f2c5b753f5c969393b12480155fe15a63 0.0s done
+#7 DONE 0.0s
+
+#8 [backend-app internal] load build context
+#8 transferring context: 47.97kB 0.0s done
+#8 DONE 0.1s
+
+#9 [frontend-test 1/6] FROM docker.io/library/node:20.19.0-alpine@sha256:8bda036ddd59ea51a23bc1a1035d3b5c614e72c01366d989f4120e8adca196d4
+#9 resolve docker.io/library/node:20.19.0-alpine@sha256:8bda036ddd59ea51a23bc1a1035d3b5c614e72c01366d989f4120e8adca196d4 0.0s done
+#9 DONE 0.1s
+
+#10 [frontend-test internal] load build context
+#10 ...
+
+#11 [backend-test 6/9] RUN pip install --no-cache-dir -r requirements.txt
+#11 CACHED
+
+#12 [backend-test 7/9] RUN pip install --no-cache-dir -r requirements-test.txt
+#12 CACHED
+
+#13 [backend-test 8/9] RUN pip check
+#13 CACHED
+
+#14 [backend-test 2/9] RUN apt-get update && apt-get install -y     libpq-dev gcc     tesseract-ocr     ghostscript     && rm -rf /var/lib/apt/lists/*
+#14 CACHED
+
+#15 [backend-test 3/9] WORKDIR /app
+#15 CACHED
+
+#16 [backend-test 4/9] COPY backend/requirements.validation.lock ./requirements.txt
+#16 CACHED
+
+#17 [backend-test 5/9] COPY backend/requirements-test.txt ./requirements-test.txt
+#17 CACHED
+
+#18 [backend-test 9/9] COPY backend/ ./
+#18 CACHED
+
+#10 [frontend-test internal] load build context
+#10 ...
+
+#19 [worker-test] exporting to image
+#19 exporting layers 0.0s done
+#19 exporting manifest sha256:563f659ceca83e7b564a05f6fd863fd8365309730e664c51019d8f25fa8918cd done
+#19 exporting config sha256:808ec5313f449ecd59edb0ba7712246cdbe28a05157e20f06027a3cb81621a4d done
+#19 exporting attestation manifest sha256:0549b6f82afa9f67b23df6017da26490c3983a9424d38690d07bcf6667f40998 0.1s done
+#19 exporting manifest list sha256:7aef6833c1545624fb1ddf246ac7b8ec98d6c0ae5d87883ad0fe11ef478a813b 0.1s done
+#19 naming to docker.io/library/abst_gp_v52_validation-worker-test:latest 0.0s done
+#19 unpacking to docker.io/library/abst_gp_v52_validation-worker-test:latest 0.0s done
+#19 DONE 0.4s
+
+#20 [backend-app] exporting to image
+#20 exporting layers 0.0s done
+#20 exporting manifest sha256:86cc35bd1f69a4f2105301b38bd8d5320744f30b0290a37eafca79e26c768e88 done
+#20 exporting config sha256:9cb97e9b642157f26f636b5e5a4a0512baac34b13f041e10b9dd1723aadbafbf done
+#20 exporting attestation manifest sha256:4d72c432bbbf8fa3da9242f7c27df1a99ab281414d761b732d5f17c9cc3f4b31 0.1s done
+#20 exporting manifest list sha256:928ff85c41df15e29fb1be07d64f70aaa27675e8e88fbd6550d7fd61e7345177 0.1s done
+#20 naming to docker.io/library/abst_gp_v52_validation-backend-app:latest 0.0s done
+#20 unpacking to docker.io/library/abst_gp_v52_validation-backend-app:latest 0.0s done
+#20 DONE 0.4s
+
+#10 [frontend-test internal] load build context
+#10 ...
+
+#21 [backend-test] exporting to image
+#21 exporting layers 0.0s done
+#21 exporting manifest sha256:dd1188fa7e59f4e63ccc6201df7e310691f3927a7749754550affdcccf9d7e88 done
+#21 exporting config sha256:664166b755be72861f56bf2c2169b74ecb2928e03aa5b5492d7ddd40869aa621 0.0s done
+#21 exporting attestation manifest sha256:6ea16babb02e80ba663e37b8c5590a1a2735a821e10750298c57173f734314f0 0.1s done
+#21 exporting manifest list sha256:1889e24231743db18f91a02729239daab6332dbf90ef0a675143627cdc7cb70d 0.1s done
+#21 naming to docker.io/library/abst_gp_v52_validation-backend-test:latest done
+#21 unpacking to docker.io/library/abst_gp_v52_validation-backend-test:latest 0.0s done
+#21 DONE 0.4s
+
+#10 [frontend-test internal] load build context
+#10 ...
+
+#22 [worker-test] resolving provenance for metadata file
+#22 DONE 0.1s
+
+#23 [backend-app] resolving provenance for metadata file
+#23 DONE 0.1s
+
+#24 [backend-test] resolving provenance for metadata file
+#24 DONE 0.1s
+
+#10 [frontend-test internal] load build context
+#10 transferring context: 87.66MB 5.0s
+#10 transferring context: 128.19MB 10.1s
+#10 transferring context: 163.58MB 15.2s
+#10 transferring context: 185.19MB 16.9s done
+#10 DONE 16.9s
+
+#25 [frontend-test 3/6] COPY frontend/package.json frontend/package-lock.json ./
+#25 CACHED
+
+#26 [frontend-test 2/6] WORKDIR /app
+#26 CACHED
+
+#27 [frontend-test 4/6] RUN npm ci --legacy-peer-deps
+#27 CACHED
+
+#28 [frontend-test 5/6] COPY frontend/ ./
+#28 DONE 3.3s
+
+#29 [frontend-test 6/6] RUN npx tsc -b && npm run build
+#29 4.199 
+#29 4.199 > frontend@0.0.0 build
+#29 4.199 > tsc -b && vite build
+#29 4.199 
+#29 7.016 vite v8.2.0 building client environment for production...
+#29 7.027 [2Ktransforming...✓ 1566 modules transformed.
+#29 7.199 [lightningcss minify] Unknown at rule: @tailwind
+#29 7.199 101 |    box-shadow: var(--shadow-glass);
+#29 7.199 102 |  }
+#29 7.199 103 |  @tailwind base;
+#29 7.199     |           ^
+#29 7.199 104 |  @tailwind components;
+#29 7.199 105 |  @tailwind utilities;
+#29 7.199 [lightningcss minify] Unknown at rule: @tailwind
+#29 7.199 102 |  }
+#29 7.199 103 |  @tailwind base;
+#29 7.199 104 |  @tailwind components;
+#29 7.199     |           ^
+#29 7.199 105 |  @tailwind utilities;
+#29 7.199 106 |  
+#29 7.200 [lightningcss minify] Unknown at rule: @tailwind
+#29 7.200 103 |  @tailwind base;
+#29 7.200 104 |  @tailwind components;
+#29 7.200 105 |  @tailwind utilities;
+#29 7.200     |           ^
+#29 7.200 106 |  
+#29 7.200 107 |    .doc-paragraph {
+#29 7.202 rendering chunks...
+#29 7.254 computing gzip size...
+#29 7.258 dist/index.html                   0.45 kB │ gzip:   0.29 kB
+#29 7.258 dist/assets/index-DJtr2D6h.css   10.46 kB │ gzip:   2.76 kB
+#29 7.258 dist/assets/index-BTvkBaRB.js   316.15 kB │ gzip: 100.24 kB
+#29 7.258 
+#29 7.259 ✓ built in 242ms
+#29 DONE 7.3s
+
+#30 [frontend-test] exporting to image
+#30 exporting layers
+#30 exporting layers 6.2s done
+#30 exporting manifest sha256:203f99b1242fc0042c5b58b7a037214594289ac5aeea03757b7268e51bd9b9ca 0.0s done
+#30 exporting config sha256:ab2e10988bcfabcc53a8eebf98cc739885c2cc5b3cdf39566e0d115cd813b5a1 0.0s done
+#30 exporting attestation manifest sha256:d2b0203da4767e1bcb023c642ea0894459319197620cd911ea054d875a7a9056 0.0s done
+#30 exporting manifest list sha256:6422fe8f10440b31ec6f73d5a43da803115c3b29a2ede02f1cc5264006658182 0.0s done
+#30 naming to docker.io/library/abst_gp_v52_validation-frontend-test:latest
+#30 naming to docker.io/library/abst_gp_v52_validation-frontend-test:latest done
+#30 unpacking to docker.io/library/abst_gp_v52_validation-frontend-test:latest
+#30 unpacking to docker.io/library/abst_gp_v52_validation-frontend-test:latest 1.3s done
+#30 DONE 7.7s
+
+#31 [frontend-test] resolving provenance for metadata file
+#31 DONE 0.0s
+ Image abst_gp_v52_validation-worker-test Built 
+ Image abst_gp_v52_validation-backend-app Built 
+ Image abst_gp_v52_validation-backend-test Built 
+ Image abst_gp_v52_validation-frontend-test Built 

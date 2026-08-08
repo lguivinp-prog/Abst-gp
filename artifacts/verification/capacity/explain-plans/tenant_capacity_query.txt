@@ -1,0 +1,1 @@
+﻿Index Scan using idx_processing_jobs_tenant_status on processing_jobs

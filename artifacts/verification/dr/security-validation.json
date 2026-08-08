@@ -1,0 +1,9 @@
+{
+  "status": "PASS",
+  "timestamp_utc": "2026-08-06T15:50:03.934911+00:00",
+  "manifest_hmac_verified": true,
+  "no_secrets_in_manifest": "[REDACTED]",
+  "no_secrets_in_artifacts": "[REDACTED]",
+  "path_traversal_protection": true,
+  "cross_tenant_isolation_intact": true
+}

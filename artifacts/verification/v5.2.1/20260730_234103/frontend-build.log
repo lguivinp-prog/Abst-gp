@@ -1,0 +1,58 @@
+#0 building with "desktop-linux" instance using docker driver
+
+#1 [internal] load build definition from Dockerfile.frontend.test
+#1 transferring dockerfile: 383B 0.1s done
+#1 DONE 0.1s
+
+#2 [internal] load metadata for docker.io/library/node:20.19.0-alpine
+#2 DONE 0.1s
+
+#3 [internal] load .dockerignore
+#3 transferring context: 2B done
+#3 DONE 0.0s
+
+#4 [internal] load build context
+#4 DONE 0.0s
+
+#5 [1/6] FROM docker.io/library/node:20.19.0-alpine@sha256:8bda036ddd59ea51a23bc1a1035d3b5c614e72c01366d989f4120e8adca196d4
+#5 resolve docker.io/library/node:20.19.0-alpine@sha256:8bda036ddd59ea51a23bc1a1035d3b5c614e72c01366d989f4120e8adca196d4
+#5 resolve docker.io/library/node:20.19.0-alpine@sha256:8bda036ddd59ea51a23bc1a1035d3b5c614e72c01366d989f4120e8adca196d4 0.3s done
+#5 DONE 0.3s
+
+#4 [internal] load build context
+#4 transferring context: 72.67MB 4.4s
+#4 transferring context: 100.65MB 9.4s
+#4 transferring context: 126.83MB 14.6s
+#4 transferring context: 128.52MB 19.6s
+#4 transferring context: 130.34MB 24.7s
+#4 transferring context: 151.18MB 29.7s
+#4 transferring context: 182.83MB 35.8s
+#4 transferring context: 184.46MB 35.9s done
+#4 DONE 36.2s
+
+#6 [2/6] WORKDIR /app
+#6 CACHED
+
+#7 [3/6] COPY frontend/package.json frontend/package-lock.json ./
+#7 CACHED
+
+#8 [4/6] RUN npm ci --legacy-peer-deps
+#8 CACHED
+
+#9 [5/6] COPY frontend/ ./
+#9 CACHED
+
+#10 [6/6] RUN npx tsc -b && npm run build
+#10 CACHED
+
+#11 exporting to image
+#11 exporting layers done
+#11 exporting manifest sha256:75a581c3295b8e3d4c3ac8b79ca8708904a608b37626d5ef4059a4872110fec4 done
+#11 exporting config sha256:806056f7ed6d33a3bf83b6cc8d60972852fe8e125955a7514248cc4c46d4779f done
+#11 exporting attestation manifest sha256:bf5bea63daf482f775c470899c3d1f3044197c7467289f146d8a4967350f4c59
+#11 exporting attestation manifest sha256:bf5bea63daf482f775c470899c3d1f3044197c7467289f146d8a4967350f4c59 0.1s done
+#11 exporting manifest list sha256:9b0b5fc6b31a426c6eaddb927ccd801d8556a613304bb641a242580d3ca23f4a 0.0s done
+#11 naming to docker.io/library/abst_gp_frontend_test:latest
+#11 naming to docker.io/library/abst_gp_frontend_test:latest done
+#11 unpacking to docker.io/library/abst_gp_frontend_test:latest 0.0s done
+#11 DONE 0.2s

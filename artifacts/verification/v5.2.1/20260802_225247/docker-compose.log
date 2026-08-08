@@ -1,0 +1,196 @@
+backend-app-1    | INFO:     Started server process [1]
+backend-app-1    | INFO:     Waiting for application startup.
+backend-app-1    | INFO:     Application startup complete.
+backend-app-1    | INFO:     Uvicorn running on http://0.0.0.0:8000 (Press CTRL+C to quit)
+backend-app-1    | INFO:     192.168.32.6:48492 - "GET /docs HTTP/1.1" 200 OK
+backend-app-1    | INFO:     192.168.32.6:48492 - "POST /auth/token HTTP/1.1" 200 OK
+backend-app-1    | INFO:     192.168.32.6:48492 - "POST /cases/ HTTP/1.1" 200 OK
+backend-app-1    | INFO:     192.168.32.6:48492 - "POST /cases/1/requirement/upload HTTP/1.1" 200 OK
+worker-test-1    | 03:55:23 Worker 16c09314eb2849398382bdc40ece9969: started with PID 1, version 2.10.0
+worker-test-1    | 03:55:23 Worker 16c09314eb2849398382bdc40ece9969: subscribing to channel rq:pubsub:16c09314eb2849398382bdc40ece9969
+db-test-1        | The files belonging to this database system will be owned by user "postgres".
+frontend-test-1  | 
+backend-app-1    | INFO:     192.168.32.6:48492 - "GET /cases/jobs/6d841e01-90a1-4518-a348-3b8ed226462f HTTP/1.1" 200 OK
+frontend-test-1  | > frontend@0.0.0 preview
+frontend-test-1  | > vite preview --host 0.0.0.0 --port 5173
+frontend-test-1  | 
+worker-test-1    | 03:55:23 *** Listening on default, document_tasks, ocr_tasks...
+worker-test-1    | 03:55:23 Worker 16c09314eb2849398382bdc40ece9969: cleaning registries for queue: default
+worker-test-1    | 03:55:23 Worker 16c09314eb2849398382bdc40ece9969: cleaning registries for queue: document_tasks
+worker-test-1    | 03:55:23 Worker 16c09314eb2849398382bdc40ece9969: cleaning registries for queue: ocr_tasks
+worker-test-1    | 03:55:42 default: app.worker.tasks.process_requirement_task(1, '/app/uploads/6ebbe054-395d-4cef-8cc1-d0a57abeeffd.pdf') (6d841e01-90a1-4518-a348-3b8ed226462f)
+frontend-test-1  |   ➜  Local:   http://localhost:5173/
+worker-test-1    | 03:55:43 Successfully completed app.worker.tasks.process_requirement_task(1, '/app/uploads/6ebbe054-395d-4cef-8cc1-d0a57abeeffd.pdf') job in 0:00:01.181657s on worker 16c09314eb2849398382bdc40ece9969
+redis-test-1     | 1:C 03 Aug 2026 03:54:04.354 * oO0OoO0OoO0Oo Redis is starting oO0OoO0OoO0Oo
+redis-test-1     | 1:C 03 Aug 2026 03:54:04.354 * Redis version=7.4.9, bits=64, commit=00000000, modified=0, pid=1, just started
+backend-app-1    | INFO:     192.168.32.6:48492 - "GET /cases/jobs/6d841e01-90a1-4518-a348-3b8ed226462f HTTP/1.1" 200 OK
+backend-app-1    | INFO:     192.168.32.6:48492 - "GET /cases/jobs/6d841e01-90a1-4518-a348-3b8ed226462f HTTP/1.1" 200 OK
+frontend-test-1  |   ➜  Network: http://192.168.32.6:5173/  eth0
+redis-test-1     | 1:C 03 Aug 2026 03:54:04.354 # Warning: no config file specified, using the default config. In order to specify a config file use redis-server /path/to/redis.conf
+redis-test-1     | 1:M 03 Aug 2026 03:54:04.355 * monotonic clock: POSIX clock_gettime
+redis-test-1     | 1:M 03 Aug 2026 03:54:04.359 * Running mode=standalone, port=6379.
+db-test-1        | This user must also own the server process.
+db-test-1        | 
+worker-test-1    | 03:55:43 default: Job OK (6d841e01-90a1-4518-a348-3b8ed226462f)
+worker-test-1    | 03:55:43 Result is kept for 500 seconds
+backend-app-1    | INFO:     192.168.32.6:48492 - "GET /cases/1/sections HTTP/1.1" 200 OK
+db-test-1        | The database cluster will be initialized with locale "en_US.utf8".
+worker-test-1    | 03:57:24 default: app.worker.tasks.process_requirement_task(2, '/app/uploads/0bff9b4d-5e65-4512-9a88-91d1ad894541.pdf') (44654e08-1cf2-42d2-a7df-241ed586a548)
+redis-test-1     | 1:M 03 Aug 2026 03:54:04.360 * Server initialized
+redis-test-1     | 1:M 03 Aug 2026 03:54:04.361 * Ready to accept connections tcp
+db-test-1        | The default database encoding has accordingly been set to "UTF8".
+db-test-1        | The default text search configuration will be set to "english".
+db-test-1        | 
+db-test-1        | Data page checksums are disabled.
+db-test-1        | 
+db-test-1        | fixing permissions on existing directory /var/lib/postgresql/data ... ok
+db-test-1        | creating subdirectories ... ok
+db-test-1        | selecting dynamic shared memory implementation ... posix
+worker-test-1    | 03:57:25 Successfully completed app.worker.tasks.process_requirement_task(2, '/app/uploads/0bff9b4d-5e65-4512-9a88-91d1ad894541.pdf') job in 0:00:01.033289s on worker 16c09314eb2849398382bdc40ece9969
+db-test-1        | selecting default max_connections ... 100
+db-test-1        | selecting default shared_buffers ... 128MB
+db-test-1        | selecting default time zone ... Etc/UTC
+db-test-1        | creating configuration files ... ok
+db-test-1        | running bootstrap script ... ok
+db-test-1        | performing post-bootstrap initialization ... ok
+db-test-1        | initdb: warning: enabling "trust" authentication for local connections
+db-test-1        | initdb: hint: You can change this by editing pg_hba.conf or using the option -A, or --auth-local and --auth-host, the next time you run initdb.
+db-test-1        | syncing data to disk ... ok
+db-test-1        | 
+db-test-1        | 
+db-test-1        | Success. You can now start the database server using:
+db-test-1        | 
+db-test-1        |     pg_ctl -D /var/lib/postgresql/data -l logfile start
+db-test-1        | 
+db-test-1        | waiting for server to start....2026-08-03 03:54:05.471 UTC [48] LOG:  starting PostgreSQL 15.18 (Debian 15.18-1.pgdg13+1) on x86_64-pc-linux-gnu, compiled by gcc (Debian 14.2.0-19) 14.2.0, 64-bit
+db-test-1        | 2026-08-03 03:54:05.474 UTC [48] LOG:  listening on Unix socket "/var/run/postgresql/.s.PGSQL.5432"
+worker-test-1    | 03:57:25 default: Job OK (44654e08-1cf2-42d2-a7df-241ed586a548)
+worker-test-1    | 03:57:25 Result is kept for 500 seconds
+db-test-1        | 2026-08-03 03:54:05.488 UTC [51] LOG:  database system was shut down at 2026-08-03 03:54:05 UTC
+backend-app-1    | INFO:     192.168.32.6:48492 - "POST /cases/1/sections/confirm HTTP/1.1" 200 OK
+db-test-1        | 2026-08-03 03:54:05.497 UTC [48] LOG:  database system is ready to accept connections
+backend-app-1    | Consider using the pymupdf_layout package for a greatly improved page layout analysis.
+backend-app-1    | INFO:     192.168.32.6:48492 - "POST /cases/1/quotation/upload HTTP/1.1" 200 OK
+backend-app-1    | INFO:     192.168.32.6:48492 - "POST /cases/1/comparison/run HTTP/1.1" 200 OK
+backend-app-1    | INFO:     192.168.32.6:48492 - "GET /cases/1/comparison HTTP/1.1" 200 OK
+backend-app-1    | INFO:     192.168.32.6:48492 - "POST /cases/1/generate/html HTTP/1.1" 200 OK
+backend-app-1    | INFO:     192.168.32.6:54266 - "POST /auth/token HTTP/1.1" 200 OK
+backend-app-1    | INFO:     192.168.32.6:54272 - "GET /cases/ HTTP/1.1" 200 OK
+backend-app-1    | INFO:     192.168.32.6:54276 - "POST /cases/ HTTP/1.1" 200 OK
+db-test-1        |  done
+db-test-1        | server started
+db-test-1        | CREATE DATABASE
+db-test-1        | 
+backend-app-1    | INFO:     192.168.32.6:54284 - "GET /cases/ HTTP/1.1" 200 OK
+backend-app-1    | INFO:     192.168.32.6:54288 - "GET /cases/2 HTTP/1.1" 200 OK
+db-test-1        | 
+db-test-1        | /usr/local/bin/docker-entrypoint.sh: ignoring /docker-entrypoint-initdb.d/*
+db-test-1        | 
+db-test-1        | waiting for server to shut down...2026-08-03 03:54:05.659 UTC [48] LOG:  received fast shutdown request
+db-test-1        | .2026-08-03 03:54:05.662 UTC [48] LOG:  aborting any active transactions
+db-test-1        | 2026-08-03 03:54:05.664 UTC [48] LOG:  background worker "logical replication launcher" (PID 54) exited with exit code 1
+db-test-1        | 2026-08-03 03:54:05.664 UTC [49] LOG:  shutting down
+backend-app-1    | INFO:     192.168.32.6:54298 - "GET /cases/2/sections HTTP/1.1" 200 OK
+backend-app-1    | INFO:     192.168.32.6:54312 - "POST /cases/2/requirement/upload HTTP/1.1" 200 OK
+backend-app-1    | INFO:     192.168.32.6:51152 - "GET /cases/jobs/44654e08-1cf2-42d2-a7df-241ed586a548 HTTP/1.1" 200 OK
+db-test-1        | 2026-08-03 03:54:05.666 UTC [49] LOG:  checkpoint starting: shutdown immediate
+backend-app-1    | INFO:     192.168.32.6:51158 - "GET /cases/2 HTTP/1.1" 200 OK
+backend-app-1    | INFO:     192.168.32.6:51162 - "GET /cases/2/sections HTTP/1.1" 200 OK
+backend-app-1    | INFO:     192.168.32.6:51172 - "GET /cases/2/documents/requirement/content HTTP/1.1" 200 OK
+backend-app-1    | INFO:     192.168.32.6:51184 - "POST /cases/2/sections/confirm HTTP/1.1" 200 OK
+backend-app-1    | INFO:     192.168.32.6:51200 - "POST /cases/2/quotation/upload HTTP/1.1" 200 OK
+backend-app-1    | INFO:     192.168.32.6:51214 - "GET /cases/2 HTTP/1.1" 200 OK
+backend-app-1    | INFO:     192.168.32.6:51218 - "GET /cases/2/sections HTTP/1.1" 200 OK
+db-test-1        | 2026-08-03 03:54:05.791 UTC [49] LOG:  checkpoint complete: wrote 922 buffers (5.6%); 0 WAL file(s) added, 0 removed, 0 recycled; write=0.020 s, sync=0.097 s, total=0.128 s; sync files=301, longest=0.009 s, average=0.001 s; distance=4239 kB, estimate=4239 kB
+db-test-1        | 2026-08-03 03:54:05.797 UTC [48] LOG:  database system is shut down
+db-test-1        |  done
+backend-app-1    | INFO:     192.168.32.6:51228 - "POST /cases/2/comparison/run HTTP/1.1" 200 OK
+backend-app-1    | INFO:     192.168.32.6:51242 - "GET /cases/2/comparison HTTP/1.1" 200 OK
+db-test-1        | server stopped
+db-test-1        | 
+db-test-1        | PostgreSQL init process complete; ready for start up.
+db-test-1        | 
+db-test-1        | 2026-08-03 03:54:05.885 UTC [1] LOG:  starting PostgreSQL 15.18 (Debian 15.18-1.pgdg13+1) on x86_64-pc-linux-gnu, compiled by gcc (Debian 14.2.0-19) 14.2.0, 64-bit
+db-test-1        | 2026-08-03 03:54:05.885 UTC [1] LOG:  listening on IPv4 address "0.0.0.0", port 5432
+db-test-1        | 2026-08-03 03:54:05.885 UTC [1] LOG:  listening on IPv6 address "::", port 5432
+db-test-1        | 2026-08-03 03:54:05.892 UTC [1] LOG:  listening on Unix socket "/var/run/postgresql/.s.PGSQL.5432"
+db-test-1        | 2026-08-03 03:54:05.900 UTC [64] LOG:  database system was shut down at 2026-08-03 03:54:05 UTC
+db-test-1        | 2026-08-03 03:54:05.908 UTC [1] LOG:  database system is ready to accept connections
+backend-app-1    | INFO:     192.168.32.6:51262 - "GET /cases/2/comparison HTTP/1.1" 200 OK
+backend-app-1    | INFO:     192.168.32.6:51254 - "GET /cases/2/output HTTP/1.1" 404 Not Found
+backend-app-1    | INFO:     192.168.32.6:51274 - "POST /cases/2/generate/html HTTP/1.1" 200 OK
+backend-app-1    | INFO:     192.168.32.6:51290 - "GET /cases/2/output HTTP/1.1" 200 OK
+backend-app-1    | INFO:     192.168.32.6:51294 - "GET /cases/2 HTTP/1.1" 200 OK
+db-test-1        | 2026-08-03 03:54:26.995 UTC [62] LOG:  checkpoint starting: immediate force wait
+backend-app-1    | INFO:     192.168.32.6:51304 - "GET /cases/2/sections HTTP/1.1" 200 OK
+backend-app-1    | INFO:     192.168.32.6:51306 - "POST /auth/token HTTP/1.1" 200 OK
+db-test-1        | 2026-08-03 03:54:27.092 UTC [62] LOG:  checkpoint complete: wrote 192 buffers (1.2%); 1 WAL file(s) added, 0 removed, 0 recycled; write=0.010 s, sync=0.051 s, total=0.098 s; sync files=185, longest=0.004 s, average=0.001 s; distance=5988 kB, estimate=5988 kB
+db-test-1        | 2026-08-03 03:54:28.858 UTC [62] LOG:  checkpoint starting: immediate force wait
+db-test-1        | 2026-08-03 03:54:28.882 UTC [62] LOG:  checkpoint complete: wrote 4 buffers (0.0%); 0 WAL file(s) added, 0 removed, 1 recycled; write=0.004 s, sync=0.006 s, total=0.025 s; sync files=4, longest=0.003 s, average=0.002 s; distance=5062 kB, estimate=5895 kB
+db-test-1        | 2026-08-03 03:54:30.916 UTC [118] ERROR:  Simulated PostgreSQL failure on second insert for rollback gate
+db-test-1        | 2026-08-03 03:54:30.916 UTC [118] CONTEXT:  PL/pgSQL function fail_second_insert_trg() line 8 at RAISE
+db-test-1        | 2026-08-03 03:54:30.916 UTC [118] STATEMENT:  INSERT INTO final_condition_comparisons (case_id, field_name, requirement_value, quotation_value, final_value, status) SELECT p0::INTEGER, p1::VARCHAR, p2::VARCHAR, p3::VARCHAR, p4::VARCHAR, p5::VARCHAR FROM (VALUES (998, 'Field 1', NULL, NULL, NULL, 'Coincide', 0), (998, 'Field 2', NULL, NULL, NULL, 'No Coincide', 1)) AS imp_sen(p0, p1, p2, p3, p4, p5, sen_counter) ORDER BY sen_counter RETURNING final_condition_comparisons.id, final_condition_comparisons.id AS id__1
+db-test-1        | 2026-08-03 03:54:52.972 UTC [102] ERROR:  new row for relation "ocr_processing_runs" violates check constraint "check_exclusive_scope"
+db-test-1        | 2026-08-03 03:54:52.972 UTC [102] DETAIL:  Failing row contains (7d4ce4b9-63ef-49ca-84a9-ed01c2572022, 9, 98c161da-39f9-4dec-83d1-2468b53e1fec, 7, PRIMARY, v2, RUNNING, null, 1, 0, 0, dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd, null, null, null, null, 2026-08-03 03:54:52.972086+00, null, null, null, null, null, null, null, null, null, 2026-08-03 03:54:52.969755+00, null, null, null, null).
+db-test-1        | 2026-08-03 03:54:52.972 UTC [102] STATEMENT:  INSERT INTO ocr_processing_runs (run_id, uploaded_document_id, validation_case_id, processing_job_id, execution_role, engine, status, quality_status, attempt_number, dispatch_attempt_count, worker_attempt_count, dispatch_owner, dispatch_token, dispatch_claimed_at, dispatch_lease_expires_at, run_dedup_key, source_run_id, rq_job_id, score, review_threshold, started_at, finished_at, heartbeat_at, last_dispatch_attempt_at, failure_code, failure_detail, last_dispatch_error, structured_document_path, structured_document_checksum) VALUES ('7d4ce4b9-63ef-49ca-84a9-ed01c2572022'::uuid::UUID, 9, '98c161da-39f9-4dec-83d1-2468b53e1fec'::uuid::UUID, 7, 'PRIMARY', 'v2', 'RUNNING', NULL, 1, 0, 0, NULL, NULL::UUID, NULL, NULL, 'dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd', NULL::UUID, NULL, NULL, NULL, '2026-08-03T03:54:52.972086+00:00'::timestamptz, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL) RETURNING ocr_processing_runs.created_at
+backend-app-1    | INFO:     192.168.32.6:51322 - "GET /cases/ HTTP/1.1" 200 OK
+backend-app-1    | INFO:     192.168.32.6:51330 - "GET /cases/999/output HTTP/1.1" 404 Not Found
+backend-app-1    | INFO:     192.168.32.6:51342 - "GET /cases/999/output HTTP/1.1" 404 Not Found
+db-test-1        | 2026-08-03 03:54:52.976 UTC [102] ERROR:  new row for relation "ocr_processing_runs" violates check constraint "check_exclusive_scope"
+db-test-1        | 2026-08-03 03:54:52.976 UTC [102] DETAIL:  Failing row contains (064f1051-13e2-4e15-9d09-175c989326da, 9, null, null, PRIMARY, v2, RUNNING, null, 1, 0, 0, eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee, null, null, null, null, 2026-08-03 03:54:52.975711+00, null, null, null, null, null, null, null, null, null, 2026-08-03 03:54:52.97452+00, null, null, null, null).
+backend-app-1    | INFO:     192.168.32.6:51354 - "POST /auth/token HTTP/1.1" 200 OK
+db-test-1        | 2026-08-03 03:54:52.976 UTC [102] STATEMENT:  INSERT INTO ocr_processing_runs (run_id, uploaded_document_id, validation_case_id, processing_job_id, execution_role, engine, status, quality_status, attempt_number, dispatch_attempt_count, worker_attempt_count, dispatch_owner, dispatch_token, dispatch_claimed_at, dispatch_lease_expires_at, run_dedup_key, source_run_id, rq_job_id, score, review_threshold, started_at, finished_at, heartbeat_at, last_dispatch_attempt_at, failure_code, failure_detail, last_dispatch_error, structured_document_path, structured_document_checksum) VALUES ('064f1051-13e2-4e15-9d09-175c989326da'::uuid::UUID, 9, NULL::UUID, NULL, 'PRIMARY', 'v2', 'RUNNING', NULL, 1, 0, 0, NULL, NULL::UUID, NULL, NULL, 'eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee', NULL::UUID, NULL, NULL, NULL, '2026-08-03T03:54:52.975711+00:00'::timestamptz, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL) RETURNING ocr_processing_runs.created_at
+db-test-1        | 2026-08-03 03:54:52.980 UTC [102] ERROR:  duplicate key value violates unique constraint "uq_ocr_run_dedup_key"
+backend-app-1    | INFO:     192.168.32.6:51370 - "GET /cases/ HTTP/1.1" 200 OK
+backend-app-1    | INFO:     192.168.32.6:51380 - "GET /cases/888/output HTTP/1.1" 404 Not Found
+db-test-1        | 2026-08-03 03:54:52.980 UTC [102] DETAIL:  Key (run_dedup_key)=(cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc) already exists.
+db-test-1        | 2026-08-03 03:54:52.980 UTC [102] STATEMENT:  INSERT INTO ocr_processing_runs (run_id, uploaded_document_id, validation_case_id, processing_job_id, execution_role, engine, status, quality_status, attempt_number, dispatch_attempt_count, worker_attempt_count, dispatch_owner, dispatch_token, dispatch_claimed_at, dispatch_lease_expires_at, run_dedup_key, source_run_id, rq_job_id, score, review_threshold, started_at, finished_at, heartbeat_at, last_dispatch_attempt_at, failure_code, failure_detail, last_dispatch_error, structured_document_path, structured_document_checksum) VALUES ('95867b90-26a2-4455-b8f6-4ae8c45e756c'::uuid::UUID, 9, NULL::UUID, 7, 'PRIMARY', 'v2', 'RUNNING', NULL, 1, 0, 0, NULL, NULL::UUID, NULL, NULL, 'cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc', NULL::UUID, NULL, NULL, NULL, '2026-08-03T03:54:52.979170+00:00'::timestamptz, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL) RETURNING ocr_processing_runs.created_at
+db-test-1        | 2026-08-03 03:54:52.990 UTC [102] ERROR:  duplicate key value violates unique constraint "ix_ocr_run_rq_job_id"
+db-test-1        | 2026-08-03 03:54:52.990 UTC [102] DETAIL:  Key (rq_job_id)=(job-123) already exists.
+backend-app-1    | INFO:     192.168.32.6:51382 - "POST /auth/token HTTP/1.1" 200 OK
+backend-app-1    | INFO:     192.168.32.6:51392 - "GET /cases/ HTTP/1.1" 200 OK
+backend-app-1    | INFO:     192.168.32.6:51408 - "POST /auth/token HTTP/1.1" 200 OK
+db-test-1        | 2026-08-03 03:54:52.990 UTC [102] STATEMENT:  INSERT INTO ocr_processing_runs (run_id, uploaded_document_id, validation_case_id, processing_job_id, execution_role, engine, status, quality_status, attempt_number, dispatch_attempt_count, worker_attempt_count, dispatch_owner, dispatch_token, dispatch_claimed_at, dispatch_lease_expires_at, run_dedup_key, source_run_id, rq_job_id, score, review_threshold, started_at, finished_at, heartbeat_at, last_dispatch_attempt_at, failure_code, failure_detail, last_dispatch_error, structured_document_path, structured_document_checksum) VALUES ('daa2d4db-11ec-45dd-83a8-417927692411'::uuid::UUID, 9, NULL::UUID, 7, 'PRIMARY', 'v2', 'RUNNING', NULL, 1, 0, 0, NULL, NULL::UUID, NULL, NULL, '1111111111111111111111111111111111111111111111111111111111111111', NULL::UUID, 'job-123', NULL, NULL, '2026-08-03T03:54:52.988741+00:00'::timestamptz, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL) RETURNING ocr_processing_runs.created_at
+db-test-1        | 2026-08-03 03:54:53.010 UTC [102] ERROR:  new row for relation "ocr_processing_runs" violates check constraint "check_role_engine_source"
+db-test-1        | 2026-08-03 03:54:53.010 UTC [102] DETAIL:  Failing row contains (479785d1-2882-45c0-8b43-ee88e7d61e02, 9, null, 7, PRIMARY, v2, RUNNING, null, 1, 0, 0, 4444444444444444444444444444444444444444444444444444444444444444, d1fcd1c9-a4e4-46ec-ad74-40b951bfb3ef, null, null, null, 2026-08-03 03:54:53.0058+00, null, null, null, null, null, null, null, null, null, 2026-08-03 03:54:53.003744+00, null, null, null, null).
+backend-app-1    | INFO:     192.168.32.6:51418 - "GET /cases/ HTTP/1.1" 200 OK
+backend-app-1    | INFO:     192.168.32.6:51434 - "POST /cases/ HTTP/1.1" 200 OK
+backend-app-1    | INFO:     192.168.32.6:51436 - "GET /cases/ HTTP/1.1" 200 OK
+backend-app-1    | INFO:     192.168.32.6:51446 - "GET /cases/3 HTTP/1.1" 200 OK
+backend-app-1    | INFO:     192.168.32.6:51454 - "GET /cases/3/sections HTTP/1.1" 200 OK
+db-test-1        | 2026-08-03 03:54:53.010 UTC [102] STATEMENT:  INSERT INTO ocr_processing_runs (run_id, uploaded_document_id, validation_case_id, processing_job_id, execution_role, engine, status, quality_status, attempt_number, dispatch_attempt_count, worker_attempt_count, dispatch_owner, dispatch_token, dispatch_claimed_at, dispatch_lease_expires_at, run_dedup_key, source_run_id, rq_job_id, score, review_threshold, started_at, finished_at, heartbeat_at, last_dispatch_attempt_at, failure_code, failure_detail, last_dispatch_error, structured_document_path, structured_document_checksum) VALUES ('479785d1-2882-45c0-8b43-ee88e7d61e02'::uuid::UUID, 9, NULL::UUID, 7, 'PRIMARY', 'v2', 'RUNNING', NULL, 1, 0, 0, NULL, NULL::UUID, NULL, NULL, '4444444444444444444444444444444444444444444444444444444444444444', 'd1fcd1c9-a4e4-46ec-ad74-40b951bfb3ef'::uuid::UUID, NULL, NULL, NULL, '2026-08-03T03:54:53.005800+00:00'::timestamptz, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL) RETURNING ocr_processing_runs.created_at
+db-test-1        | 2026-08-03 03:54:53.014 UTC [102] ERROR:  new row for relation "ocr_processing_runs" violates check constraint "check_role_engine_source"
+db-test-1        | 2026-08-03 03:54:53.014 UTC [102] DETAIL:  Failing row contains (9f03ae4f-24cb-4b1d-8a1b-4bc47ef8146b, 9, null, 7, SHADOW, v2, RUNNING, null, 1, 0, 0, 5555555555555555555555555555555555555555555555555555555555555555, null, null, null, null, 2026-08-03 03:54:53.013503+00, null, null, null, null, null, null, null, null, null, 2026-08-03 03:54:53.012232+00, null, null, null, null).
+db-test-1        | 2026-08-03 03:54:53.014 UTC [102] STATEMENT:  INSERT INTO ocr_processing_runs (run_id, uploaded_document_id, validation_case_id, processing_job_id, execution_role, engine, status, quality_status, attempt_number, dispatch_attempt_count, worker_attempt_count, dispatch_owner, dispatch_token, dispatch_claimed_at, dispatch_lease_expires_at, run_dedup_key, source_run_id, rq_job_id, score, review_threshold, started_at, finished_at, heartbeat_at, last_dispatch_attempt_at, failure_code, failure_detail, last_dispatch_error, structured_document_path, structured_document_checksum) VALUES ('9f03ae4f-24cb-4b1d-8a1b-4bc47ef8146b'::uuid::UUID, 9, NULL::UUID, 7, 'SHADOW', 'v2', 'RUNNING', NULL, 1, 0, 0, NULL, NULL::UUID, NULL, NULL, '5555555555555555555555555555555555555555555555555555555555555555', NULL::UUID, NULL, NULL, NULL, '2026-08-03T03:54:53.013503+00:00'::timestamptz, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL) RETURNING ocr_processing_runs.created_at
+db-test-1        | 2026-08-03 03:54:53.019 UTC [102] ERROR:  new row for relation "ocr_processing_runs" violates check constraint "check_role_engine_source"
+backend-app-1    | INFO:     192.168.32.6:51466 - "POST /auth/token HTTP/1.1" 200 OK
+backend-app-1    | INFO:     192.168.32.6:51480 - "GET /cases/ HTTP/1.1" 200 OK
+db-test-1        | 2026-08-03 03:54:53.019 UTC [102] DETAIL:  Failing row contains (69266af3-08b4-4e54-a7d6-530f2393c680, 9, null, 7, FALLBACK, v2, PENDING_DISPATCH, null, 1, 0, 0, 6666666666666666666666666666666666666666666666666666666666666666, d1fcd1c9-a4e4-46ec-ad74-40b951bfb3ef, null, null, null, null, null, null, null, null, null, null, null, null, null, 2026-08-03 03:54:53.015921+00, null, null, null, null).
+db-test-1        | 2026-08-03 03:54:53.019 UTC [102] STATEMENT:  INSERT INTO ocr_processing_runs (run_id, uploaded_document_id, validation_case_id, processing_job_id, execution_role, engine, status, quality_status, attempt_number, dispatch_attempt_count, worker_attempt_count, dispatch_owner, dispatch_token, dispatch_claimed_at, dispatch_lease_expires_at, run_dedup_key, source_run_id, rq_job_id, score, review_threshold, started_at, finished_at, heartbeat_at, last_dispatch_attempt_at, failure_code, failure_detail, last_dispatch_error, structured_document_path, structured_document_checksum) VALUES ('69266af3-08b4-4e54-a7d6-530f2393c680'::uuid::UUID, 9, NULL::UUID, 7, 'FALLBACK', 'v2', 'PENDING_DISPATCH', NULL, 1, 0, 0, NULL, NULL::UUID, NULL, NULL, '6666666666666666666666666666666666666666666666666666666666666666', 'd1fcd1c9-a4e4-46ec-ad74-40b951bfb3ef'::uuid::UUID, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL) RETURNING ocr_processing_runs.created_at
+db-test-1        | 2026-08-03 03:54:53.023 UTC [102] ERROR:  new row for relation "ocr_processing_runs" violates check constraint "check_status_quality_relation"
+db-test-1        | 2026-08-03 03:54:53.023 UTC [102] DETAIL:  Failing row contains (d528ec5a-9e81-4286-a3e2-cc24889ff7af, 9, null, 7, PRIMARY, v2, RUNNING, APPROVED, 1, 0, 0, 7777777777777777777777777777777777777777777777777777777777777777, null, null, null, null, 2026-08-03 03:54:53.022014+00, null, null, null, null, null, null, null, null, null, 2026-08-03 03:54:53.020733+00, null, null, null, null).
+db-test-1        | 2026-08-03 03:54:53.023 UTC [102] STATEMENT:  INSERT INTO ocr_processing_runs (run_id, uploaded_document_id, validation_case_id, processing_job_id, execution_role, engine, status, quality_status, attempt_number, dispatch_attempt_count, worker_attempt_count, dispatch_owner, dispatch_token, dispatch_claimed_at, dispatch_lease_expires_at, run_dedup_key, source_run_id, rq_job_id, score, review_threshold, started_at, finished_at, heartbeat_at, last_dispatch_attempt_at, failure_code, failure_detail, last_dispatch_error, structured_document_path, structured_document_checksum) VALUES ('d528ec5a-9e81-4286-a3e2-cc24889ff7af'::uuid::UUID, 9, NULL::UUID, 7, 'PRIMARY', 'v2', 'RUNNING', 'APPROVED', 1, 0, 0, NULL, NULL::UUID, NULL, NULL, '7777777777777777777777777777777777777777777777777777777777777777', NULL::UUID, NULL, NULL, NULL, '2026-08-03T03:54:53.022014+00:00'::timestamptz, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL) RETURNING ocr_processing_runs.created_at
+db-test-1        | 2026-08-03 03:54:53.026 UTC [102] ERROR:  new row for relation "ocr_processing_runs" violates check constraint "check_run_dedup_key_format"
+db-test-1        | 2026-08-03 03:54:53.026 UTC [102] DETAIL:  Failing row contains (963edc54-97b2-4cb7-a7bf-89afbc0dcdd7, 9, null, 7, PRIMARY, v2, RUNNING, null, 1, 0, 0, gggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggg, null, null, null, null, 2026-08-03 03:54:53.026005+00, null, null, null, null, null, null, null, null, null, 2026-08-03 03:54:53.024848+00, null, null, null, null).
+db-test-1        | 2026-08-03 03:54:53.026 UTC [102] STATEMENT:  INSERT INTO ocr_processing_runs (run_id, uploaded_document_id, validation_case_id, processing_job_id, execution_role, engine, status, quality_status, attempt_number, dispatch_attempt_count, worker_attempt_count, dispatch_owner, dispatch_token, dispatch_claimed_at, dispatch_lease_expires_at, run_dedup_key, source_run_id, rq_job_id, score, review_threshold, started_at, finished_at, heartbeat_at, last_dispatch_attempt_at, failure_code, failure_detail, last_dispatch_error, structured_document_path, structured_document_checksum) VALUES ('963edc54-97b2-4cb7-a7bf-89afbc0dcdd7'::uuid::UUID, 9, NULL::UUID, 7, 'PRIMARY', 'v2', 'RUNNING', NULL, 1, 0, 0, NULL, NULL::UUID, NULL, NULL, 'gggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggg', NULL::UUID, NULL, NULL, NULL, '2026-08-03T03:54:53.026005+00:00'::timestamptz, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL) RETURNING ocr_processing_runs.created_at
+db-test-1        | 2026-08-03 03:54:53.030 UTC [102] ERROR:  update or delete on table "uploaded_documents" violates foreign key constraint "processing_jobs_document_id_fkey" on table "processing_jobs"
+db-test-1        | 2026-08-03 03:54:53.030 UTC [102] DETAIL:  Key (id)=(9) is still referenced from table "processing_jobs".
+db-test-1        | 2026-08-03 03:54:53.030 UTC [102] STATEMENT:  DELETE FROM uploaded_documents WHERE uploaded_documents.id = 9
+db-test-1        | 2026-08-03 03:54:53.039 UTC [102] ERROR:  new row for relation "ocr_processing_runs" violates check constraint "check_status_quality_relation"
+db-test-1        | 2026-08-03 03:54:53.039 UTC [102] DETAIL:  Failing row contains (cbdd6bc9-5df0-498d-8fb3-b520296a6c90, 9, null, 7, PRIMARY, v2, COMPLETED, null, 1, 0, 0, 9999999999999999999999999999999999999999999999999999999999999999, null, null, null, null, 2026-08-03 03:54:53.038246+00, 2026-08-03 03:54:53.03825+00, null, null, null, null, null, null, null, null, 2026-08-03 03:54:53.036137+00, null, null, null, null).
+db-test-1        | 2026-08-03 03:54:53.039 UTC [102] STATEMENT:  INSERT INTO ocr_processing_runs (run_id, uploaded_document_id, validation_case_id, processing_job_id, execution_role, engine, status, quality_status, attempt_number, dispatch_attempt_count, worker_attempt_count, dispatch_owner, dispatch_token, dispatch_claimed_at, dispatch_lease_expires_at, run_dedup_key, source_run_id, rq_job_id, score, review_threshold, started_at, finished_at, heartbeat_at, last_dispatch_attempt_at, failure_code, failure_detail, last_dispatch_error, structured_document_path, structured_document_checksum) VALUES ('cbdd6bc9-5df0-498d-8fb3-b520296a6c90'::uuid::UUID, 9, NULL::UUID, 7, 'PRIMARY', 'v2', 'COMPLETED', NULL, 1, 0, 0, NULL, NULL::UUID, NULL, NULL, '9999999999999999999999999999999999999999999999999999999999999999', NULL::UUID, NULL, NULL, NULL, '2026-08-03T03:54:53.038246+00:00'::timestamptz, '2026-08-03T03:54:53.038250+00:00'::timestamptz, NULL, NULL, NULL, NULL, NULL, NULL, NULL) RETURNING ocr_processing_runs.created_at
+db-test-1        | 2026-08-03 03:54:57.253 UTC [102] ERROR:  duplicate key value violates unique constraint "ix_users_username"
+db-test-1        | 2026-08-03 03:54:57.253 UTC [102] DETAIL:  Key (username)=(unique_user) already exists.
+db-test-1        | 2026-08-03 03:54:57.253 UTC [102] STATEMENT:  INSERT INTO users (tenant_id, tenant_resolution_status, username, password_hash, role, is_active, must_change_password, created_by_user_id, last_login_at, failed_login_count, locked_until, password_changed_at, quarantined_at) VALUES ('test_tenant', 'RESOLVED', 'unique_user', 'hash', 'readonly', true, false, NULL, NULL, 0, NULL, NULL, NULL) RETURNING users.id, users.created_at
+db-test-1        | 2026-08-03 03:54:57.262 UTC [102] ERROR:  duplicate key value violates unique constraint "ix_users_username"
+db-test-1        | 2026-08-03 03:54:57.262 UTC [102] DETAIL:  Key (username)=(quarantined_user) already exists.
+db-test-1        | 2026-08-03 03:54:57.262 UTC [102] STATEMENT:  INSERT INTO users (tenant_id, tenant_resolution_status, username, password_hash, role, is_active, must_change_password, created_by_user_id, last_login_at, failed_login_count, locked_until, password_changed_at, quarantined_at) VALUES ('test_tenant', 'RESOLVED', 'quarantined_user', 'hash', 'readonly', true, false, NULL, NULL, 0, NULL, NULL, NULL) RETURNING users.id, users.created_at
+db-test-1        | 2026-08-03 03:54:57.270 UTC [102] ERROR:  duplicate key value violates unique constraint "ix_users_username"
+db-test-1        | 2026-08-03 03:54:57.270 UTC [102] DETAIL:  Key (username)=(inactive_user) already exists.
+db-test-1        | 2026-08-03 03:54:57.270 UTC [102] STATEMENT:  INSERT INTO users (tenant_id, tenant_resolution_status, username, password_hash, role, is_active, must_change_password, created_by_user_id, last_login_at, failed_login_count, locked_until, password_changed_at, quarantined_at) VALUES ('test_tenant', 'RESOLVED', 'inactive_user', 'hash', 'readonly', true, false, NULL, NULL, 0, NULL, NULL, NULL) RETURNING users.id, users.created_at
+db-test-1        | 2026-08-03 03:55:00.022 UTC [118] ERROR:  duplicate key value violates unique constraint "uq_comparison_run_requirement"
+db-test-1        | 2026-08-03 03:55:00.022 UTC [118] DETAIL:  Key (run_id, requirement_item_id)=(ca6bd1dd-646a-4930-94fe-50d535b4d448, b8f515c3-21c2-4166-980d-3811b56bcdbf) already exists.
+db-test-1        | 2026-08-03 03:55:00.022 UTC [118] STATEMENT:  INSERT INTO comparison_results (id, run_id, requirement_item_id, quotation_section_id, status, evaluation_method, confidence_score, reasoning, evidence_text, requirement_page, quotation_page) VALUES ('1a6d607b-e80f-4878-b0c4-94708ba9716e'::uuid::UUID, 'ca6bd1dd-646a-4930-94fe-50d535b4d448'::uuid::UUID, 'b8f515c3-21c2-4166-980d-3811b56bcdbf'::uuid::UUID, NULL, 'FAIL', 'NO_MATCH', 0.0, NULL, NULL, NULL, NULL), ('e53e4ab8-f049-4fd6-a632-90cb3688cf32'::uuid::UUID, 'ca6bd1dd-646a-4930-94fe-50d535b4d448'::uuid::UUID, 'b8f515c3-21c2-4166-980d-3811b56bcdbf'::uuid::UUID, NULL, 'FAIL', 'NO_MATCH', 0.0, NULL, NULL, NULL, NULL)
+db-test-1        | 2026-08-03 03:55:14.823 UTC [271] ERROR:  Simulated PostgreSQL failure on second insert for rollback gate
+db-test-1        | 2026-08-03 03:55:14.823 UTC [271] CONTEXT:  PL/pgSQL function fail_second_insert_trg() line 8 at RAISE
+db-test-1        | 2026-08-03 03:55:14.823 UTC [271] STATEMENT:  INSERT INTO final_condition_comparisons (case_id, field_name, requirement_value, quotation_value, final_value, status) SELECT p0::INTEGER, p1::VARCHAR, p2::VARCHAR, p3::VARCHAR, p4::VARCHAR, p5::VARCHAR FROM (VALUES (998, 'Field 1', NULL, NULL, NULL, 'Coincide', 0), (998, 'Field 2', NULL, NULL, NULL, 'No Coincide', 1)) AS imp_sen(p0, p1, p2, p3, p4, p5, sen_counter) ORDER BY sen_counter RETURNING final_condition_comparisons.id, final_condition_comparisons.id AS id__1

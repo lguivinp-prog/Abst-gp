@@ -1,0 +1,74 @@
+{
+  "timestamp_utc": "2026-08-08T12:42:41.220812+00:00",
+  "status": "PASS",
+  "reconciliation_matrix": [
+    {
+      "scenario": "1. QUEUED_FRESH",
+      "job_id": "ocr_processing_42_b733066c",
+      "initial_status": "QUEUED",
+      "final_status": "QUEUED",
+      "attempt_count": 1,
+      "action_taken": "NONE_PROCESSABLE",
+      "correct": true
+    },
+    {
+      "scenario": "2. PROCESSING_ACTIVE_WORKER",
+      "job_id": "document_extraction_42_8e73e220",
+      "initial_status": "PROCESSING",
+      "final_status": "PROCESSING",
+      "attempt_count": 1,
+      "action_taken": "NONE_ACTIVE",
+      "correct": true
+    },
+    {
+      "scenario": "3. PROCESSING_DEAD_WORKER",
+      "job_id": "ocr_processing_42_08a48181",
+      "initial_status": "PROCESSING",
+      "final_status": "QUEUED",
+      "attempt_count": 2,
+      "action_taken": "RETRY_QUEUED",
+      "correct": true
+    },
+    {
+      "scenario": "4. COMPLETED_TERMINAL",
+      "job_id": "table_extraction_42_33d3fabe",
+      "initial_status": "COMPLETED",
+      "final_status": "READY",
+      "attempt_count": 1,
+      "action_taken": "SKIPPED_TERMINAL",
+      "correct": true
+    },
+    {
+      "scenario": "5. FAILED_FINAL_TERMINAL",
+      "job_id": "document_validation_42_9854d6d3",
+      "initial_status": "FAILED",
+      "final_status": "FAILED",
+      "attempt_count": 1,
+      "action_taken": "SKIPPED_TERMINAL",
+      "correct": true
+    },
+    {
+      "scenario": "6. PROCESSING_MAX_RETRIES",
+      "job_id": "ocr_processing_42_75ac852b",
+      "initial_status": "PROCESSING",
+      "final_status": "FAILED",
+      "attempt_count": 3,
+      "action_taken": "MARKED_FAILED_FINAL",
+      "correct": true
+    }
+  ],
+  "audit_trail_verified": [
+    {
+      "action": "JOB_RECOVERY_RETRY",
+      "entity_id": "ocr_processing_42_08a48181",
+      "status": "QUEUED",
+      "details": "Job recuperado para reintento 2/3 (backoff 2s). Motivo: WORKER_HEARTBEAT_TIMEOUT: Worker sin respuesta durante PROCESSING"
+    },
+    {
+      "action": "JOB_RECOVERY_MAX_RETRIES_EXCEEDED",
+      "entity_id": "ocr_processing_42_75ac852b",
+      "status": "FAILED",
+      "details": "Job cancelado tras agotar 3 intentos (3/3). C\u00f3digo: WORKER_HEARTBEAT_TIMEOUT. Causa: WORKER_HEARTBEAT_TIMEOUT: Worker sin respuesta durante PROCESSING"
+    }
+  ]
+}

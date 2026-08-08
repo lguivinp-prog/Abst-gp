@@ -1,0 +1,11 @@
+{
+  "gate": "B",
+  "status": "PASS",
+  "backup_method": "pg_basebackup",
+  "target_time": "2026-08-07 23:34:21.173962+00",
+  "target_lsn": "0/6D001230",
+  "timeline_before": "1",
+  "timeline_after": "2",
+  "wal_replay": "PASS",
+  "post_recovery_validation": "PASS"
+}

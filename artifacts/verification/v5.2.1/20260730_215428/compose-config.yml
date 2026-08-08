@@ -1,0 +1,68 @@
+name: abst_gp_v52_validation
+services:
+  backend-test:
+    build:
+      context: C:\Users\PC\Documents\AbastLG\abst-v4_9-remediation-clean
+      dockerfile: Dockerfile.backend.test
+    command:
+      - pytest
+      - tests/
+      - -v
+    depends_on:
+      db-test:
+        condition: service_healthy
+        required: true
+    environment:
+      APP_ENV: test
+      DATABASE_URL: postgresql://validation_user:validation_password@db-test:5432/validation_db
+      ENVIRONMENT: test
+      PYTHONPATH: /app
+      SECRET_KEY: test_secret_key_v52_validation
+      UPLOADS_DIR: /tmp/test-uploads
+    networks:
+      default: null
+    volumes:
+      - type: bind
+        source: C:\Users\PC\Documents\AbastLG\abst-v4_9-remediation-clean\backend
+        target: /app
+        bind: {}
+      - type: volume
+        source: test-uploads
+        target: /tmp/test-uploads
+        volume: {}
+  db-test:
+    environment:
+      POSTGRES_DB: validation_db
+      POSTGRES_PASSWORD: validation_password
+      POSTGRES_USER: validation_user
+    healthcheck:
+      test:
+        - CMD-SHELL
+        - pg_isready -U validation_user -d validation_db
+      timeout: 5s
+      interval: 5s
+      retries: 5
+    image: postgres:15
+    networks:
+      default: null
+  frontend-test:
+    build:
+      context: C:\Users\PC\Documents\AbastLG\abst-v4_9-remediation-clean
+      dockerfile: Dockerfile.frontend.test
+    command:
+      - npm
+      - run
+      - test:unit
+    networks:
+      default: null
+    volumes:
+      - type: bind
+        source: C:\Users\PC\Documents\AbastLG\abst-v4_9-remediation-clean\frontend
+        target: /app
+        bind: {}
+networks:
+  default:
+    name: abst_gp_v52_validation_default
+volumes:
+  test-uploads:
+    name: abst_gp_v52_validation_test-uploads

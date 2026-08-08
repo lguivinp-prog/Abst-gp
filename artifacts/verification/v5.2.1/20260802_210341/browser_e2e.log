@@ -1,0 +1,358 @@
+ Container abst_gp_v52_validation-redis-test-1 Running 
+ Container abst_gp_v52_validation-backend-app-1 Running 
+ Container abst_gp_v52_validation-frontend-test-1 Running 
+ Container abst_gp_v52_validation-db-test-1 Running 
+ Container abst_gp_v52_validation-db-test-1 Waiting 
+ Container abst_gp_v52_validation-redis-test-1 Waiting 
+ Container abst_gp_v52_validation-redis-test-1 Healthy 
+ Container abst_gp_v52_validation-db-test-1 Healthy 
+ Container abst_gp_v52_validation-browser-test-run-9f2dcc99fe33 Creating 
+ Container abst_gp_v52_validation-browser-test-run-9f2dcc99fe33 Created 
+
+up to date, audited 6 packages in 754ms
+
+found 0 vulnerabilities
+Installing dependencies...
+Get:1 http://security.ubuntu.com/ubuntu jammy-security InRelease [129 kB]
+Get:2 https://deb.nodesource.com/node_20.x nodistro InRelease [12.1 kB]
+Get:3 http://archive.ubuntu.com/ubuntu jammy InRelease [270 kB]
+Get:4 https://deb.nodesource.com/node_20.x nodistro/main amd64 Packages [14.7 kB]
+Get:5 http://security.ubuntu.com/ubuntu jammy-security/multiverse amd64 Packages [84.1 kB]
+Get:6 http://security.ubuntu.com/ubuntu jammy-security/restricted amd64 Packages [7479 kB]
+Get:7 http://archive.ubuntu.com/ubuntu jammy-updates InRelease [128 kB]
+Get:8 http://archive.ubuntu.com/ubuntu jammy-backports InRelease [127 kB]
+Get:9 http://security.ubuntu.com/ubuntu jammy-security/universe amd64 Packages [1314 kB]
+Get:10 http://security.ubuntu.com/ubuntu jammy-security/main amd64 Packages [4155 kB]
+Get:11 http://archive.ubuntu.com/ubuntu jammy/multiverse amd64 Packages [266 kB]
+Get:12 http://archive.ubuntu.com/ubuntu jammy/universe amd64 Packages [17.5 MB]
+Get:13 http://archive.ubuntu.com/ubuntu jammy/restricted amd64 Packages [164 kB]
+Get:14 http://archive.ubuntu.com/ubuntu jammy/main amd64 Packages [1792 kB]
+Get:15 http://archive.ubuntu.com/ubuntu jammy-updates/multiverse amd64 Packages [92.7 kB]
+Get:16 http://archive.ubuntu.com/ubuntu jammy-updates/restricted amd64 Packages [7770 kB]
+Get:17 http://archive.ubuntu.com/ubuntu jammy-updates/main amd64 Packages [4488 kB]
+Get:18 http://archive.ubuntu.com/ubuntu jammy-updates/universe amd64 Packages [1616 kB]
+Get:19 http://archive.ubuntu.com/ubuntu jammy-backports/main amd64 Packages [82.8 kB]
+Get:20 http://archive.ubuntu.com/ubuntu jammy-backports/universe amd64 Packages [35.6 kB]
+Fetched 47.5 MB in 5s (9481 kB/s)
+Reading package lists...
+Reading package lists...
+Building dependency tree...
+Reading state information...
+fonts-freefont-ttf is already the newest version (20120503-10build1).
+fonts-liberation is already the newest version (1:1.07.4-11).
+libatk-bridge2.0-0 is already the newest version (2.38.0-3).
+libatk1.0-0 is already the newest version (2.36.0-3build1).
+libatspi2.0-0 is already the newest version (2.44.0-3).
+libfontconfig1 is already the newest version (2.13.1-4.2ubuntu5).
+libxcb1 is already the newest version (1.14-3ubuntu3).
+libxcomposite1 is already the newest version (1:0.4.5-1build2).
+libxdamage1 is already the newest version (1:1.1.5-2build2).
+libxext6 is already the newest version (2:1.3.4-1build1).
+libxfixes3 is already the newest version (1:6.0.0-1).
+libxkbcommon0 is already the newest version (1.4.0-1).
+libxrandr2 is already the newest version (2:1.5.2-1build1).
+xfonts-scalable is already the newest version (1:1.0.3-1.2ubuntu1).
+fonts-ipafont-gothic is already the newest version (00303-21ubuntu1).
+fonts-tlwg-loma-otf is already the newest version (1:0.7.3-1).
+fonts-unifont is already the newest version (1:14.0.01-1).
+fonts-wqy-zenhei is already the newest version (0.9.45-8).
+xfonts-cyrillic is already the newest version (1:1.0.5).
+libdbus-1-3 is already the newest version (1.12.20-2ubuntu4.1).
+libdrm2 is already the newest version (2.4.113-2~ubuntu0.22.04.1).
+libpango-1.0-0 is already the newest version (1.50.6+ds-2ubuntu1).
+libwayland-client0 is already the newest version (1.20.0-1ubuntu0.1).
+libx11-6 is already the newest version (2:1.7.5-1ubuntu0.3).
+The following additional packages will be installed:
+  libasound2-data libcairo-gobject2 libegl-mesa0 libgl1-mesa-dri libglapi-mesa
+  libglx-mesa0 xserver-common
+Suggested packages:
+  libasound2-plugins alsa-utils cups-common
+Recommended packages:
+  alsa-ucm-conf alsa-topology-conf libgl1-amber-dri libglib2.0-data
+  xdg-user-dirs xfonts-base
+The following packages will be upgraded:
+  fonts-noto-color-emoji libasound2 libasound2-data libcairo-gobject2
+  libcairo2 libcups2 libegl-mesa0 libfreetype6 libgbm1 libgl1-mesa-dri
+  libglapi-mesa libglib2.0-0 libglx-mesa0 libnspr4 libnss3 xserver-common xvfb
+17 upgraded, 0 newly installed, 0 to remove and 144 not upgraded.
+Need to get 24.8 MB of archives.
+After this operation, 337 kB of additional disk space will be used.
+Get:1 http://archive.ubuntu.com/ubuntu jammy-updates/main amd64 libglib2.0-0 amd64 2.72.4-0ubuntu2.9 [1467 kB]
+Get:2 http://archive.ubuntu.com/ubuntu jammy-updates/main amd64 fonts-noto-color-emoji all 2.047-0ubuntu0.22.04.1 [10.0 MB]
+Get:3 http://archive.ubuntu.com/ubuntu jammy-updates/main amd64 libasound2 amd64 1.2.6.1-1ubuntu1.2 [391 kB]
+Get:4 http://archive.ubuntu.com/ubuntu jammy-updates/main amd64 libasound2-data all 1.2.6.1-1ubuntu1.2 [19.3 kB]
+Get:5 http://archive.ubuntu.com/ubuntu jammy-updates/main amd64 libfreetype6 amd64 2.11.1+dfsg-1ubuntu0.3 [388 kB]
+Get:6 http://archive.ubuntu.com/ubuntu jammy-updates/main amd64 libcairo-gobject2 amd64 1.16.0-5ubuntu2.1 [19.5 kB]
+Get:7 http://archive.ubuntu.com/ubuntu jammy-updates/main amd64 libcairo2 amd64 1.16.0-5ubuntu2.1 [628 kB]
+Get:8 http://archive.ubuntu.com/ubuntu jammy-updates/main amd64 libcups2 amd64 2.4.1op1-1ubuntu4.21 [266 kB]
+Get:9 http://archive.ubuntu.com/ubuntu jammy-updates/main amd64 libegl-mesa0 amd64 23.2.1-1ubuntu3.1~22.04.4 [118 kB]
+Get:10 http://archive.ubuntu.com/ubuntu jammy-updates/main amd64 libgbm1 amd64 23.2.1-1ubuntu3.1~22.04.4 [33.7 kB]
+Get:11 http://archive.ubuntu.com/ubuntu jammy-updates/main amd64 libgl1-mesa-dri amd64 23.2.1-1ubuntu3.1~22.04.4 [8860 kB]
+Get:12 http://archive.ubuntu.com/ubuntu jammy-updates/main amd64 libglx-mesa0 amd64 23.2.1-1ubuntu3.1~22.04.4 [158 kB]
+Get:13 http://archive.ubuntu.com/ubuntu jammy-updates/main amd64 libglapi-mesa amd64 23.2.1-1ubuntu3.1~22.04.4 [35.6 kB]
+Get:14 http://archive.ubuntu.com/ubuntu jammy-updates/main amd64 libnspr4 amd64 2:4.35-0ubuntu0.22.04.1 [119 kB]
+Get:15 http://archive.ubuntu.com/ubuntu jammy-updates/main amd64 libnss3 amd64 2:3.98-0ubuntu0.22.04.4 [1347 kB]
+Get:16 http://archive.ubuntu.com/ubuntu jammy-updates/main amd64 xserver-common all 2:21.1.4-2ubuntu1.7~22.04.16 [29.5 kB]
+Get:17 http://archive.ubuntu.com/ubuntu jammy-updates/universe amd64 xvfb amd64 2:21.1.4-2ubuntu1.7~22.04.16 [866 kB]
+debconf: delaying package configuration, since apt-utils is not installed
+Fetched 24.8 MB in 3s (9804 kB/s)
+(Reading database ... (Reading database ... 5%(Reading database ... 10%(Reading database ... 15%(Reading database ... 20%(Reading database ... 25%(Reading database ... 30%(Reading database ... 35%(Reading database ... 40%(Reading database ... 45%(Reading database ... 50%(Reading database ... 55%(Reading database ... 60%(Reading database ... 65%(Reading database ... 70%(Reading database ... 75%(Reading database ... 80%(Reading database ... 85%(Reading database ... 90%(Reading database ... 95%(Reading database ... 100%(Reading database ... 34463 files and directories currently installed.)
+Preparing to unpack .../00-libglib2.0-0_2.72.4-0ubuntu2.9_amd64.deb ...
+Unpacking libglib2.0-0:amd64 (2.72.4-0ubuntu2.9) over (2.72.4-0ubuntu2.2) ...
+Preparing to unpack .../01-fonts-noto-color-emoji_2.047-0ubuntu0.22.04.1_all.deb ...
+Unpacking fonts-noto-color-emoji (2.047-0ubuntu0.22.04.1) over (2.042-0ubuntu0.22.04.1) ...
+Preparing to unpack .../02-libasound2_1.2.6.1-1ubuntu1.2_amd64.deb ...
+Unpacking libasound2:amd64 (1.2.6.1-1ubuntu1.2) over (1.2.6.1-1ubuntu1) ...
+Preparing to unpack .../03-libasound2-data_1.2.6.1-1ubuntu1.2_all.deb ...
+Unpacking libasound2-data (1.2.6.1-1ubuntu1.2) over (1.2.6.1-1ubuntu1) ...
+Preparing to unpack .../04-libfreetype6_2.11.1+dfsg-1ubuntu0.3_amd64.deb ...
+Unpacking libfreetype6:amd64 (2.11.1+dfsg-1ubuntu0.3) over (2.11.1+dfsg-1ubuntu0.2) ...
+Preparing to unpack .../05-libcairo-gobject2_1.16.0-5ubuntu2.1_amd64.deb ...
+Unpacking libcairo-gobject2:amd64 (1.16.0-5ubuntu2.1) over (1.16.0-5ubuntu2) ...
+Preparing to unpack .../06-libcairo2_1.16.0-5ubuntu2.1_amd64.deb ...
+Unpacking libcairo2:amd64 (1.16.0-5ubuntu2.1) over (1.16.0-5ubuntu2) ...
+Preparing to unpack .../07-libcups2_2.4.1op1-1ubuntu4.21_amd64.deb ...
+Unpacking libcups2:amd64 (2.4.1op1-1ubuntu4.21) over (2.4.1op1-1ubuntu4.7) ...
+Preparing to unpack .../08-libegl-mesa0_23.2.1-1ubuntu3.1~22.04.4_amd64.deb ...
+Unpacking libegl-mesa0:amd64 (23.2.1-1ubuntu3.1~22.04.4) over (23.2.1-1ubuntu3.1~22.04.2) ...
+Preparing to unpack .../09-libgbm1_23.2.1-1ubuntu3.1~22.04.4_amd64.deb ...
+Unpacking libgbm1:amd64 (23.2.1-1ubuntu3.1~22.04.4) over (23.2.1-1ubuntu3.1~22.04.2) ...
+Preparing to unpack .../10-libgl1-mesa-dri_23.2.1-1ubuntu3.1~22.04.4_amd64.deb ...
+Unpacking libgl1-mesa-dri:amd64 (23.2.1-1ubuntu3.1~22.04.4) over (23.2.1-1ubuntu3.1~22.04.2) ...
+Preparing to unpack .../11-libglx-mesa0_23.2.1-1ubuntu3.1~22.04.4_amd64.deb ...
+Unpacking libglx-mesa0:amd64 (23.2.1-1ubuntu3.1~22.04.4) over (23.2.1-1ubuntu3.1~22.04.2) ...
+Preparing to unpack .../12-libglapi-mesa_23.2.1-1ubuntu3.1~22.04.4_amd64.deb ...
+Unpacking libglapi-mesa:amd64 (23.2.1-1ubuntu3.1~22.04.4) over (23.2.1-1ubuntu3.1~22.04.2) ...
+Preparing to unpack .../13-libnspr4_2%3a4.35-0ubuntu0.22.04.1_amd64.deb ...
+Unpacking libnspr4:amd64 (2:4.35-0ubuntu0.22.04.1) over (2:4.32-3build1) ...
+Preparing to unpack .../14-libnss3_2%3a3.98-0ubuntu0.22.04.4_amd64.deb ...
+Unpacking libnss3:amd64 (2:3.98-0ubuntu0.22.04.4) over (2:3.68.2-0ubuntu1.2) ...
+Preparing to unpack .../15-xserver-common_2%3a21.1.4-2ubuntu1.7~22.04.16_all.deb ...
+Unpacking xserver-common (2:21.1.4-2ubuntu1.7~22.04.16) over (2:21.1.4-2ubuntu1.7~22.04.8) ...
+Preparing to unpack .../16-xvfb_2%3a21.1.4-2ubuntu1.7~22.04.16_amd64.deb ...
+Unpacking xvfb (2:21.1.4-2ubuntu1.7~22.04.16) over (2:21.1.4-2ubuntu1.7~22.04.8) ...
+Setting up libgbm1:amd64 (23.2.1-1ubuntu3.1~22.04.4) ...
+Setting up fonts-noto-color-emoji (2.047-0ubuntu0.22.04.1) ...
+Setting up libglib2.0-0:amd64 (2.72.4-0ubuntu2.9) ...
+Setting up libasound2-data (1.2.6.1-1ubuntu1.2) ...
+Setting up libfreetype6:amd64 (2.11.1+dfsg-1ubuntu0.3) ...
+Setting up libnspr4:amd64 (2:4.35-0ubuntu0.22.04.1) ...
+Setting up libglapi-mesa:amd64 (23.2.1-1ubuntu3.1~22.04.4) ...
+Setting up libcups2:amd64 (2.4.1op1-1ubuntu4.21) ...
+Setting up libasound2:amd64 (1.2.6.1-1ubuntu1.2) ...
+Setting up xserver-common (2:21.1.4-2ubuntu1.7~22.04.16) ...
+Setting up xvfb (2:21.1.4-2ubuntu1.7~22.04.16) ...
+Setting up libgl1-mesa-dri:amd64 (23.2.1-1ubuntu3.1~22.04.4) ...
+Setting up libnss3:amd64 (2:3.98-0ubuntu0.22.04.4) ...
+Setting up libcairo2:amd64 (1.16.0-5ubuntu2.1) ...
+Setting up libegl-mesa0:amd64 (23.2.1-1ubuntu3.1~22.04.4) ...
+Setting up libcairo-gobject2:amd64 (1.16.0-5ubuntu2.1) ...
+Setting up libglx-mesa0:amd64 (23.2.1-1ubuntu3.1~22.04.4) ...
+Processing triggers for fontconfig (2.13.1-4.2ubuntu5) ...
+Processing triggers for libc-bin (2.35-0ubuntu3.6) ...
+Removing unused browser at /ms-playwright/chromium-1105
+Removing unused browser at /ms-playwright/ffmpeg-1009
+Removing unused browser at /ms-playwright/firefox-1440
+Removing unused browser at /ms-playwright/webkit-1983
+Downloading Chrome for Testing 151.0.7922.34 (playwright chromium v1234) from https://cdn.playwright.dev/builds/cft/151.0.7922.34/linux64/chrome-linux64.zip
+|                                                                                |   0% of 184.3 MiB
+|■■■■■■■■                                                                        |  10% of 184.3 MiB
+|■■■■■■■■■■■■■■■■                                                                |  20% of 184.3 MiB
+|■■■■■■■■■■■■■■■■■■■■■■■■                                                        |  30% of 184.3 MiB
+|■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■                                                |  40% of 184.3 MiB
+|■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■                                        |  50% of 184.3 MiB
+|■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■                                |  60% of 184.3 MiB
+|■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■                        |  70% of 184.3 MiB
+|■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■                |  80% of 184.3 MiB
+|■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■        |  90% of 184.3 MiB
+|■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■| 100% of 184.3 MiB
+Chrome for Testing 151.0.7922.34 (playwright chromium v1234) downloaded to /ms-playwright/chromium-1234
+Downloading FFmpeg (playwright ffmpeg v1011) from https://cdn.playwright.dev/dbazure/download/playwright/builds/ffmpeg/1011/ffmpeg-linux.zip
+|                                                                                |   0% of 2.3 MiB
+|■■■■■■■■                                                                        |  10% of 2.3 MiB
+|■■■■■■■■■■■■■■■■                                                                |  20% of 2.3 MiB
+|■■■■■■■■■■■■■■■■■■■■■■■■                                                        |  30% of 2.3 MiB
+|■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■                                                |  40% of 2.3 MiB
+|■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■                                        |  50% of 2.3 MiB
+|■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■                                |  60% of 2.3 MiB
+|■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■                        |  70% of 2.3 MiB
+|■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■                |  80% of 2.3 MiB
+|■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■        |  90% of 2.3 MiB
+|■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■| 100% of 2.3 MiB
+FFmpeg (playwright ffmpeg v1011) downloaded to /ms-playwright/ffmpeg-1011
+Downloading Chrome Headless Shell 151.0.7922.34 (playwright chromium-headless-shell v1234) from https://cdn.playwright.dev/builds/cft/151.0.7922.34/linux64/chrome-headless-shell-linux64.zip
+|                                                                                |   0% of 114.7 MiB
+|■■■■■■■■                                                                        |  10% of 114.7 MiB
+|■■■■■■■■■■■■■■■■                                                                |  20% of 114.7 MiB
+|■■■■■■■■■■■■■■■■■■■■■■■■                                                        |  30% of 114.7 MiB
+|■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■                                                |  40% of 114.7 MiB
+|■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■                                        |  50% of 114.7 MiB
+|■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■                                |  60% of 114.7 MiB
+|■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■                        |  70% of 114.7 MiB
+|■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■                |  80% of 114.7 MiB
+|■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■        |  90% of 114.7 MiB
+|■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■| 100% of 114.7 MiB
+Chrome Headless Shell 151.0.7922.34 (playwright chromium-headless-shell v1234) downloaded to /ms-playwright/chromium_headless_shell-1234
+npm notice 
+npm notice New major version of npm available! 10.2.4 -> 12.0.2
+npm notice Changelog: <https://github.com/npm/cli/releases/tag/v12.0.2>
+npm notice Run `npm install -g npm@12.0.2` to update!
+npm notice 
+
+> e2e-tests@1.0.0 test
+> playwright test
+
+
+Running 8 tests using 1 worker
+
+[1/8] [chromium] › tests/happy_path.spec.ts:12:7 › Document Intelligence E2E - Happy Path › should complete the full happy path
+  1) [chromium] › tests/happy_path.spec.ts:12:7 › Document Intelligence E2E - Happy Path › should complete the full happy path 
+
+    Error: expect(locator).toBeVisible() failed
+
+    Locator: locator('text=Secciones Detectadas').or(locator('text=Secciones extraídas'))
+    Expected: visible
+    Timeout: 45000ms
+    Error: element(s) not found
+
+    Call log:
+      - Expect "toBeVisible" with timeout 45000ms
+      - waiting for locator('text=Secciones Detectadas').or(locator('text=Secciones extraídas'))
+
+
+      39 |     // Check processing state
+      40 |     await expect(page.locator('text=Procesando').first()).toBeVisible({ timeout: 15000 });
+    > 41 |     await expect(page.locator('text=Secciones Detectadas').or(page.locator('text=Secciones extraídas'))).toBeVisible({ timeout: 45000 });
+         |                                                                                                          ^
+      42 |
+      43 |     // 4. Confirm Sections
+      44 |     await page.click('button:has-text("Confirmar")');
+        at /e2e/tests/happy_path.spec.ts:41:106
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    test-results/happy_path-Document-Intell-05ea5-omplete-the-full-happy-path-chromium/test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: test-results/happy_path-Document-Intell-05ea5-omplete-the-full-happy-path-chromium/error-context.md
+
+
+[2/8] [chromium] › tests/resilience.spec.ts:13:7 › Document Intelligence E2E - Resiliencia e Hidratación › hidratación tras recarga
+  2) [chromium] › tests/resilience.spec.ts:13:7 › Document Intelligence E2E - Resiliencia e Hidratación › hidratación tras recarga 
+
+    Error: expect(locator).toBeEnabled() failed
+
+    Locator: button:has-text("Generar Anexo Final").or(button:has-text("Generar"))
+    Expected: enabled
+    Error: Unexpected token "or(" while parsing css selector "button:has-text("Generar Anexo Final").or(button:has-text("Generar"))". Did you mean to CSS.escape it?
+
+    Call log:
+      - Expect "toBeEnabled" with timeout 5000ms
+      - waiting for button:has-text("Generar Anexo Final").or(button:has-text("Generar"))
+
+
+      54 |     // Confirm that the results table appears and the button is enabled
+      55 |     await expect(page.locator('table')).toBeVisible({ timeout: 10000 });
+    > 56 |     await expect(page.locator('button:has-text("Generar Anexo Final").or(button:has-text("Generar"))')).toBeEnabled();
+         |                                                                                                         ^
+      57 |
+      58 |     // Reload the page
+      59 |     await page.reload();
+        at /e2e/tests/resilience.spec.ts:56:105
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    test-results/resilience-Document-Intell-8a944-ón-hidratación-tras-recarga-chromium/test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: test-results/resilience-Document-Intell-8a944-ón-hidratación-tras-recarga-chromium/error-context.md
+
+
+[3/8] [chromium] › tests/resilience.spec.ts:69:7 › Document Intelligence E2E - Resiliencia e Hidratación › reconciliación de estado uncertain
+  3) [chromium] › tests/resilience.spec.ts:69:7 › Document Intelligence E2E - Resiliencia e Hidratación › reconciliación de estado uncertain 
+
+    Error: page.click: Unexpected token "or(" while parsing css selector "button:has-text("Ejecutar Comparación").or(button:has-text("Comparar"))". Did you mean to CSS.escape it?
+    Call log:
+      - waiting for button:has-text("Ejecutar Comparación").or(button:has-text("Comparar"))
+
+
+      92 |
+      93 |     // Click to compare
+    > 94 |     await page.click('button:has-text("Ejecutar Comparación").or(button:has-text("Comparar"))');
+         |                ^
+      95 |
+      96 |     // State should become uncertain. Check for error message or 'Verificar Estado'
+      97 |     await expect(page.locator('text=Verificar Estado').or(page.locator('text=Se perdió la comunicación'))).toBeVisible({ timeout: 10000 });
+        at /e2e/tests/resilience.spec.ts:94:16
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    test-results/resilience-Document-Intell-beef3-liación-de-estado-uncertain-chromium/test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: test-results/resilience-Document-Intell-beef3-liación-de-estado-uncertain-chromium/error-context.md
+
+
+[4/8] [chromium] › tests/resilience.spec.ts:133:7 › Document Intelligence E2E - Resiliencia e Hidratación › protección contra doble clic
+  4) [chromium] › tests/resilience.spec.ts:133:7 › Document Intelligence E2E - Resiliencia e Hidratación › protección contra doble clic 
+
+    Error: locator.click: Unexpected token "or(" while parsing css selector "button:has-text("Ejecutar Comparación").or(button:has-text("Comparar"))". Did you mean to CSS.escape it?
+    Call log:
+      - waiting for button:has-text("Ejecutar Comparación").or(button:has-text("Comparar"))
+
+
+      160 |     // Click twice rapidly
+      161 |     const compareBtn = page.locator('button:has-text("Ejecutar Comparación").or(button:has-text("Comparar"))');
+    > 162 |     await compareBtn.click();
+          |                      ^
+      163 |     await compareBtn.click({ force: true }).catch(() => {}); // force in case it's disabled instantly
+      164 |
+      165 |     // Verify it was disabled
+        at /e2e/tests/resilience.spec.ts:162:22
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    test-results/resilience-Document-Intell-c219c-rotección-contra-doble-clic-chromium/test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: test-results/resilience-Document-Intell-c219c-rotección-contra-doble-clic-chromium/error-context.md
+
+
+[5/8] [chromium] › tests/roles.spec.ts:8:7 › Document Intelligence E2E - Matriz de Roles › ADMIN puede crear expedientes y ejecutar comparaciones
+[6/8] [chromium] › tests/roles.spec.ts:29:7 › Document Intelligence E2E - Matriz de Roles › OPERATOR solo ve expedientes asignados
+[7/8] [chromium] › tests/roles.spec.ts:51:7 › Document Intelligence E2E - Matriz de Roles › READONLY no puede modificar expedientes
+  5) [chromium] › tests/roles.spec.ts:51:7 › Document Intelligence E2E - Matriz de Roles › READONLY no puede modificar expedientes 
+
+    Error: expect(locator).toBeVisible() failed
+
+    Locator: locator('text=View Only')
+    Expected: visible
+    Timeout: 10000ms
+    Error: element(s) not found
+
+    Call log:
+      - Expect "toBeVisible" with timeout 10000ms
+      - waiting for locator('text=View Only')
+
+
+      72 |
+      73 |     await page.goto('/cases/202');
+    > 74 |     await expect(page.locator('text=View Only')).toBeVisible({ timeout: 10000 });
+         |                                                  ^
+      75 |   });
+      76 |
+      77 |   // Test Anti-IDOR
+        at /e2e/tests/roles.spec.ts:74:50
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    test-results/roles-Document-Intelligenc-e44af-puede-modificar-expedientes-chromium/test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: test-results/roles-Document-Intelligenc-e44af-puede-modificar-expedientes-chromium/error-context.md
+
+
+[8/8] [chromium] › tests/roles.spec.ts:78:7 › Document Intelligence E2E - Matriz de Roles › Otro tenant (Anti-IDOR) recibe 404 manejado
+  5 failed
+    [chromium] › tests/happy_path.spec.ts:12:7 › Document Intelligence E2E - Happy Path › should complete the full happy path 
+    [chromium] › tests/resilience.spec.ts:13:7 › Document Intelligence E2E - Resiliencia e Hidratación › hidratación tras recarga 
+    [chromium] › tests/resilience.spec.ts:69:7 › Document Intelligence E2E - Resiliencia e Hidratación › reconciliación de estado uncertain 
+    [chromium] › tests/resilience.spec.ts:133:7 › Document Intelligence E2E - Resiliencia e Hidratación › protección contra doble clic 
+    [chromium] › tests/roles.spec.ts:51:7 › Document Intelligence E2E - Matriz de Roles › READONLY no puede modificar expedientes 
+  3 passed (1.2m)
+

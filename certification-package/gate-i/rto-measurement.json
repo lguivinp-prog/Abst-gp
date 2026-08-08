@@ -1,0 +1,16 @@
+{
+  "timestamp_utc": "2026-08-08T13:16:29.698661+00:00",
+  "target_rto_seconds": 900.0,
+  "measured_rto_seconds": 3.3412,
+  "formula": "RTO_total = T7 - T1",
+  "status": "PASS",
+  "sla_compliance": true,
+  "phase_breakdown_seconds": {
+    "t1_to_t2_detection_seconds": 0.0632,
+    "t2_to_t3_postgres_restore_seconds": 2.918,
+    "t3_to_t4_redis_rebuild_seconds": 0.068,
+    "t4_to_t5_worker_reconciliation_seconds": 0.0997,
+    "t5_to_t6_document_processing_seconds": 0.081,
+    "t6_to_t7_pipeline_readiness_seconds": 0.1112
+  }
+}

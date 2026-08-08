@@ -58,9 +58,15 @@ def setup_test_db_schema():
 @pytest.fixture(scope="function")
 def db_session():
     """Provee una sesion limpia para cada test y limpia las tablas transaccionales"""
-    session = TestingSessionLocal()
+    tables = [
+        "users", "audit_logs", "case_files", "uploaded_documents", 
+        "parsed_sections", "quotation_extractions", "comparison_runs", 
+        "comparison_results", "requirement_items", "generated_outputs", 
+        "processing_jobs", "processing_metrics", "worker_heartbeats"
+    ]
     
     with engine.begin() as conn:
+        conn.execute(text(f"TRUNCATE TABLE {', '.join(tables)} RESTART IDENTITY CASCADE"))
         conn.execute(text("INSERT INTO tenants (id, name, created_at) VALUES ('mega_tenant', 'Mega Tenant', NOW()) ON CONFLICT DO NOTHING"))
         conn.execute(text("INSERT INTO rollout_tenant_assignments (tenant_id, routing_mode, assignment_version) VALUES ('mega_tenant', 'FORCE_LEGACY', 'v1') ON CONFLICT DO NOTHING"))
         conn.execute(text("""
@@ -70,7 +76,9 @@ def db_session():
             (2, 'admin', 'mock', 'ADMIN', true, false, 'mega_tenant')
             ON CONFLICT DO NOTHING
         """))
+        conn.execute(text("SELECT setval('users_id_seq', (SELECT MAX(id) FROM users))"))
 
+    session = TestingSessionLocal()
     
     yield session
     
@@ -83,12 +91,6 @@ def db_session():
     
     # Truncate tables between tests (preservando esquema y tablas de config)
     with engine.begin() as conn:
-        tables = [
-            "users", "audit_logs", "case_files", "uploaded_documents", 
-            "parsed_sections", "quotation_extractions", "comparison_runs", 
-            "comparison_results", "requirement_items", "generated_outputs", 
-            "processing_jobs"
-        ]
         # RESTART IDENTITY asegura que las IDs vuelvan a 1. CASCADE limpia dependencias.
         conn.execute(text(f"TRUNCATE TABLE {', '.join(tables)} RESTART IDENTITY CASCADE"))
         

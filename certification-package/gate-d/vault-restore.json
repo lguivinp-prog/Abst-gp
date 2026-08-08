@@ -1,0 +1,49 @@
+{
+  "timestamp_utc": "2026-08-08T12:34:29.116971+00:00",
+  "status": "PASS",
+  "backup_id": "vault-snapshot-gate-d-1786192451",
+  "restore_duration_seconds": 0.04904196500137914,
+  "total_documents_restored": 5,
+  "restored_documents": [
+    {
+      "name": "DOC_A",
+      "filename": "doc_a_dr-tenant-alpha-gate-d-1786192451.pdf",
+      "tenant_id": "dr-tenant-alpha-gate-d-1786192451",
+      "sha256": "0a82fa98e73c66d572513d847252b6e7571bf5bd8accc73c87d3ef07a6078978",
+      "expected_sha256": "0a82fa98e73c66d572513d847252b6e7571bf5bd8accc73c87d3ef07a6078978",
+      "match": true
+    },
+    {
+      "name": "DOC_B",
+      "filename": "doc_b_dr-tenant-alpha-gate-d-1786192451.pdf",
+      "tenant_id": "dr-tenant-alpha-gate-d-1786192451",
+      "sha256": "0a0a3da78de3fa492bfcb811b4d1ee6dfbddff07735ed4a49385e55496ff1386",
+      "expected_sha256": "0a0a3da78de3fa492bfcb811b4d1ee6dfbddff07735ed4a49385e55496ff1386",
+      "match": true
+    },
+    {
+      "name": "DOC_C",
+      "filename": "doc_c_dr-tenant-alpha-gate-d-1786192451.pdf",
+      "tenant_id": "dr-tenant-alpha-gate-d-1786192451",
+      "sha256": "9dbce128b70757a2d7ed92b901e60c865d6055cedbf62a8b7c0fc3b0e62f1f4c",
+      "expected_sha256": "9dbce128b70757a2d7ed92b901e60c865d6055cedbf62a8b7c0fc3b0e62f1f4c",
+      "match": true
+    },
+    {
+      "name": "DOC_D",
+      "filename": "doc_d_dr-tenant-alpha-gate-d-1786192451.pdf",
+      "tenant_id": "dr-tenant-alpha-gate-d-1786192451",
+      "sha256": "f1a36871f5b5507417c61e745d81e5de60a74a2eaf13e2ede8363b39c6be15d1",
+      "expected_sha256": "f1a36871f5b5507417c61e745d81e5de60a74a2eaf13e2ede8363b39c6be15d1",
+      "match": true
+    },
+    {
+      "name": "DOC_BETA",
+      "filename": "doc_beta_dr-tenant-beta-gate-d-1786192451.pdf",
+      "tenant_id": "dr-tenant-beta-gate-d-1786192451",
+      "sha256": "e426e19f31052d9c51928874a92237e5e891b1a3bf5fdc25d6aa4b83cef0fe91",
+      "expected_sha256": "e426e19f31052d9c51928874a92237e5e891b1a3bf5fdc25d6aa4b83cef0fe91",
+      "match": true
+    }
+  ]
+}

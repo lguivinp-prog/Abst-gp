@@ -1,0 +1,95 @@
+ Container abst_gp_v52_validation-redis-test-1 Running 
+ Container abst_gp_v52_validation-db-test-1 Running 
+ Container abst_gp_v52_validation-db-test-1 Waiting 
+ Container abst_gp_v52_validation-redis-test-1 Waiting 
+ Container abst_gp_v52_validation-redis-test-1 Healthy 
+ Container abst_gp_v52_validation-db-test-1 Healthy 
+ Container abst_gp_v52_validation-backend-test-run-432e4e1c5e40 Creating 
+ Container abst_gp_v52_validation-backend-test-run-432e4e1c5e40 Created 
+============================= test session starts ==============================
+platform linux -- Python 3.12.3, pytest-9.1.1, pluggy-1.6.0 -- /usr/local/bin/python
+cachedir: .pytest_cache
+rootdir: /app
+configfile: pytest.ini
+plugins: mock-3.15.1, asyncio-1.4.0, anyio-4.14.2
+asyncio: mode=Mode.STRICT, debug=False, asyncio_default_fixture_loop_scope=None, asyncio_default_test_loop_scope=function
+collecting ... collected 1 item
+
+tests/e2e/test_full_document_pipeline.py::test_full_document_pipeline FAILED [100%]
+
+=================================== FAILURES ===================================
+_________________________ test_full_document_pipeline __________________________
+
+    def test_full_document_pipeline():
+        with httpx.Client(base_url=BASE_URL, timeout=60.0) as client:
+            # Wait for the service to be ready
+            for i in range(30):
+                try:
+                    # Basic health check
+                    client.get("/docs")
+                    break
+                except httpx.ConnectError:
+                    time.sleep(1)
+            else:
+                pytest.fail("Backend app did not start in time.")
+    
+            # 1. Login
+            response = client.post("/auth/token", data={
+                "username": "admin",
+                "password": "adminpassword"
+            })
+            assert response.status_code == 200, f"Could not login: {response.text}"
+    
+            token = response.json().get("access_token")
+            headers = {"Authorization": f"Bearer {token}"}
+    
+            # 2. Create case
+            response = client.post("/cases/", json={
+                "title": "E2E Case",
+                "contract_type": "Standard"
+            }, headers=headers)
+            assert response.status_code == 200, f"Case creation failed: {response.text}"
+            case_id = response.json()["id"]
+    
+            # 3. Upload requirement
+            with tempfile.NamedTemporaryFile(suffix=".pdf", delete=False) as tf:
+                tf.write(b"%PDF-1.4 mock pdf content for requirement")
+                tf_path = tf.name
+    
+            try:
+                with open(tf_path, "rb") as f:
+                    response = client.post(
+                        f"/cases/{case_id}/documents/requirement",
+                        files={"file": ("req.pdf", f, "application/pdf")},
+                        headers=headers
+                    )
+>               assert response.status_code == 200, f"Upload req failed: {response.text}"
+E               AssertionError: Upload req failed: {"detail":"Not Found"}
+E               assert 404 == 200
+E                +  where 404 = <Response [404 Not Found]>.status_code
+
+tests/e2e/test_full_document_pipeline.py:88: AssertionError
+---------------------------- Captured stdout setup -----------------------------
+
+--- Pytest running against isolated DB: test_db ---
+---------------------------- Captured stderr setup -----------------------------
+INFO  [alembic.runtime.migration] Context impl PostgresqlImpl.
+INFO  [alembic.runtime.migration] Will assume transactional DDL.
+=============================== warnings summary ===============================
+app/models/base.py:3
+  /app/app/models/base.py:3: MovedIn20Warning: The ``declarative_base()`` function is now available as sqlalchemy.orm.declarative_base(). (deprecated since: 2.0) (Background on SQLAlchemy 2.0 at: https://sqlalche.me/e/b8d9)
+    Base = declarative_base()
+
+../usr/local/lib/python3.12/site-packages/passlib/utils/__init__.py:854
+  /usr/local/lib/python3.12/site-packages/passlib/utils/__init__.py:854: DeprecationWarning: 'crypt' is deprecated and slated for removal in Python 3.13
+    from crypt import crypt as _crypt
+
+app/core/config.py:4
+  /app/app/core/config.py:4: PydanticDeprecatedSince20: Support for class-based `config` is deprecated, use ConfigDict instead. Deprecated in Pydantic V2.0 to be removed in V3.0. See Pydantic V2 Migration Guide at https://errors.pydantic.dev/2.13/migration/
+    class Settings(BaseSettings):
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED tests/e2e/test_full_document_pipeline.py::test_full_document_pipeline
+======================== 1 failed, 3 warnings in 2.34s =========================
+

@@ -1,0 +1,121 @@
+{
+  "phase": "FASE 7.4-C",
+  "title": "Abst-GP V5.5 Disaster Recovery Formal Certification Plan",
+  "generated_at_utc": "2026-08-07T21:35:00Z",
+  "git_context": {
+    "branch": "feature/phase5-ring1",
+    "head": "38ea7f715fad6ab5a9b700d316e0b15052507c8a",
+    "working_tree_preserved": true
+  },
+  "gates": [
+    {
+      "gate": "Gate A",
+      "name": "PostgreSQL Base Backup (pg_basebackup) & Physical Recovery",
+      "scenario": "Scenario A: Full PostgreSQL Loss and Physical Base Backup Restoration",
+      "command": "docker compose -p abst_gp_dr_certification -f verification/docker-compose.dr.yml run --rm backend-dr pytest tests/dr/test_disaster_recovery.py -k 'test_scenario_a_full_postgresql_recovery or test_7_4_a'",
+      "expected_artifacts": [
+        "artifacts/verification/dr/database-integrity.json",
+        "artifacts/verification/dr/backup-manifest.json",
+        "artifacts/verification/dr/backup-checksums.json"
+      ],
+      "pass_criteria": "pg_basebackup plain directory backup with sha256 checksums, verified via pg_verifybackup, fail-closed without pg_dump fallback, restored to clean cluster with 100% table and row consistency.",
+      "current_status": "NOT MEASURED"
+    },
+    {
+      "gate": "Gate B",
+      "name": "Point-in-Time Recovery (PITR) & Continuous WAL Replay",
+      "scenario": "Scenario B: Accidental Logical Deletion PITR Drill",
+      "command": "docker cp verification/dr/run_pitr_drill.sh verification-db-dr-1:/tmp/run_pitr_drill.sh; docker exec -u postgres verification-db-dr-1 sh /tmp/run_pitr_drill.sh",
+      "expected_artifacts": [
+        "artifacts/verification/dr/pitr-validation.json",
+        "artifacts/verification/dr/restore-timeline.json",
+        "artifacts/verification/dr/recovery-target.json",
+        "artifacts/verification/dr/wal-replay-report.json",
+        "artifacts/verification/dr/pitr-command-log.txt"
+      ],
+      "pass_criteria": "Physical base backup + WAL replay from /var/lib/postgresql/archive to exact recovery target timestamp/LSN, automatic promotion to Timeline 2, baseline T0 and target T2 transactions restored, post-target T3 corruption excluded.",
+      "current_status": "NOT MEASURED"
+    },
+    {
+      "gate": "Gate C",
+      "name": "Corrupted Backup Rejection & Fail-Closed Integrity",
+      "scenario": "Scenario C: Tampered Manifest and Corrupted Segment Rejection",
+      "command": "docker compose -p abst_gp_dr_certification -f verification/docker-compose.dr.yml run --rm backend-dr pytest tests/dr/test_disaster_recovery.py -k 'test_scenario_c_corrupted_backup_rejection or test_7_4_a_failure_of_pg_verifybackup'",
+      "expected_artifacts": [
+        "artifacts/verification/dr/security-validation.json",
+        "artifacts/verification/dr/alerts-validation.json"
+      ],
+      "pass_criteria": "Immediate rejection on tampered SHA256 checksums or HMAC signature mismatch, fail-closed execution, SRE critical alert fired and logged in AuditLog.",
+      "current_status": "NOT MEASURED"
+    },
+    {
+      "gate": "Gate D",
+      "name": "Redis Loss & Clean Rebuild from PostgreSQL SSOT",
+      "scenario": "Scenario D: Complete Redis Ephemeral State Loss and Rebuild",
+      "command": "docker compose -p abst_gp_dr_certification -f verification/docker-compose.dr.yml run --rm backend-dr pytest tests/dr/test_disaster_recovery.py -k 'test_scenario_d_lost_redis_rebuild'",
+      "expected_artifacts": [
+        "artifacts/verification/dr/redis-rebuild.json",
+        "artifacts/verification/dr/job-reconciliation.json"
+      ],
+      "pass_criteria": "Redis FLUSHALL simulated loss, PostgreSQL SSOT untouched, clean rebuild of Redis key namespaces, zero duplicate job re-executions for READY/FAILED_FINAL states.",
+      "current_status": "NOT MEASURED"
+    },
+    {
+      "gate": "Gate E",
+      "name": "Dead Worker Reconciliation & Safe Exponential Retry",
+      "scenario": "Scenario E: Worker Crash During PROCESSING and Stale Heartbeat Recovery",
+      "command": "docker compose -p abst_gp_dr_certification -f verification/docker-compose.dr.yml run --rm backend-dr pytest tests/dr/test_disaster_recovery.py -k 'test_scenario_e_dead_worker_reconciliation'",
+      "expected_artifacts": [
+        "artifacts/verification/dr/job-reconciliation.json"
+      ],
+      "pass_criteria": "Orphaned PROCESSING jobs with expired heartbeat identified, returned to QUEUED with attempt_count incremented and failure_classification=RETRYABLE.",
+      "current_status": "NOT MEASURED"
+    },
+    {
+      "gate": "Gate F",
+      "name": "Missing Document Detection & Inconsistency Alerting",
+      "scenario": "Scenario F: Storage Inconsistency and Missing Physical File Detection",
+      "command": "docker compose -p abst_gp_dr_certification -f verification/docker-compose.dr.yml run --rm backend-dr pytest tests/dr/test_disaster_recovery.py -k 'test_scenario_f_missing_document_detection'",
+      "expected_artifacts": [
+        "artifacts/verification/dr/document-integrity.json"
+      ],
+      "pass_criteria": "Unresolved documents in database lacking filesystem files detected with status=FAIL, specific document IDs cataloged, valid restore returns status=PASS.",
+      "current_status": "NOT MEASURED"
+    },
+    {
+      "gate": "Gate G",
+      "name": "Multi-Tenant Isolation & SRE Contract Enforcement",
+      "scenario": "Scenario G: Cross-Tenant Isolation Boundaries under DR and SRE Telemetry Contracts",
+      "command": "docker compose -p abst_gp_dr_certification -f verification/docker-compose.dr.yml run --rm backend-dr pytest tests/dr/test_disaster_recovery.py -k 'test_scenario_g_monitoring_and_sre_contracts or test_dr_telemetry'",
+      "expected_artifacts": [
+        "artifacts/verification/dr/functional-validation.json",
+        "artifacts/verification/dr/alerts-validation.json"
+      ],
+      "pass_criteria": "Tenant A is strictly isolated from Tenant B data/documents/jobs/alerts during and after DR restoration, SRE telemetry metrics enforce non-null and typed contracts.",
+      "current_status": "NOT MEASURED"
+    },
+    {
+      "gate": "Gate H",
+      "name": "Recovery Point Objective (RPO <= 5 min)",
+      "scenario": "Scenario H: Quantitative RPO Measurement from Incident Timestamp",
+      "command": "docker compose -p abst_gp_dr_certification -f verification/docker-compose.dr.yml run --rm backend-dr pytest tests/dr/test_disaster_recovery.py -k 'test_dr_rpo_rto_quantitative_measurement'",
+      "expected_artifacts": [
+        "artifacts/verification/dr/rpo-rto.json"
+      ],
+      "pass_criteria": "Effective RPO = MAX(PostgreSQL RPO, Document RPO) <= 300 seconds.",
+      "current_status": "NOT MEASURED"
+    },
+    {
+      "gate": "Gate I",
+      "name": "Recovery Time Objective (RTO <= 15 min)",
+      "scenario": "Scenario I: End-to-End Recovery Stopwatch from Disaster to Pipeline Readiness",
+      "command": "docker compose -p abst_gp_dr_certification -f verification/docker-compose.dr.yml run --rm backend-dr pytest tests/dr/test_disaster_recovery.py -k 'test_dr_rpo_rto_quantitative_measurement'",
+      "expected_artifacts": [
+        "artifacts/verification/dr/rpo-rto.json",
+        "artifacts/verification/dr/summary.json"
+      ],
+      "pass_criteria": "Total RTO from disaster declaration to full E2E document processing operational readiness <= 900 seconds.",
+      "current_status": "NOT MEASURED"
+    }
+  ]
+}

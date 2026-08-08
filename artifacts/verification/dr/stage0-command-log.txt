@@ -1,0 +1,98 @@
+================================================================================
+ABST-GP V5.5 ENTERPRISE OPERATIONS - FASE 7.4 ETAPA 0 COMMAND LOG
+Timestamp UTC: 2026-08-06T15:53:20Z
+Environment: Windows 11 / PowerShell / Docker Desktop
+================================================================================
+
+[COMMAND 1]
+Timestamp UTC: 2026-08-06T15:53:21Z
+Command: git rev-parse --show-toplevel
+Exit Code: 0
+Output:
+C:/Users/PC/Documents/AbastLG/abst-v4_9-remediation-clean
+
+[COMMAND 2]
+Timestamp UTC: 2026-08-06T15:53:21Z
+Command: git branch --show-current
+Exit Code: 0
+Output:
+feature/phase5-ring1
+
+[COMMAND 3]
+Timestamp UTC: 2026-08-06T15:53:21Z
+Command: git rev-parse HEAD
+Exit Code: 0
+Output:
+38ea7f715fad6ab5a9b700d316e0b15052507c8a
+
+[COMMAND 4]
+Timestamp UTC: 2026-08-06T15:53:21Z
+Command: git status --short --branch
+Exit Code: 0
+Output:
+## feature/phase5-ring1...origin/feature/phase5-ring1 [ahead 1]
+ M backend/alembic/versions/8527a001a1bc_add_bootstrap_ledger.py
+ M backend/app/api/routers/admin.py
+ M backend/app/api/routers/cases.py
+ M backend/app/cli/admin_bootstrap.py
+ M backend/app/core/config.py
+ M backend/app/core/database.py
+ M backend/app/main.py
+ M backend/app/models/__init__.py
+ M backend/app/models/domain.py
+ M backend/app/services/extraction_engine/utils/persistence.py
+ M backend/app/worker/ocr_worker_tasks.py
+ D backend/scripts/bootstrap_tenant.py
+ D backend/scripts/insert_users.py
+ M backend/tests/conftest.py
+ M frontend/package.json
+ M frontend/src/App.tsx
+ M frontend/src/api/client.ts
+ M frontend/src/components/Layout/Layout.tsx
+ M frontend/src/features/cases/CaseDetail.tsx
+ M frontend/src/features/cases/CasesList.tsx
+ M frontend/src/features/cases/components/ComparisonTable.tsx
+ M frontend/src/features/cases/components/OutputGenerator.tsx
+ M frontend/src/features/cases/components/ProcessingStatus.tsx
+ M frontend/src/features/cases/components/QuotationUpload.tsx
+ M frontend/src/features/cases/components/RequirementUpload.tsx
+ M frontend/src/types/index.ts
+ M frontend/tsconfig.app.json
+ M frontend/vite.config.ts
+
+[COMMAND 5]
+Timestamp UTC: 2026-08-06T15:53:22Z
+Command: git log -n 15 --date=iso-strict --pretty=format:'%H%x09%ad%x09%an%x09%s'
+Exit Code: 0
+Output:
+38ea7f715fad6ab5a9b700d316e0b15052507c8a	2026-07-25T09:15:19-05:00	Luis Guivin	Apply V4.8.1 Release Candidate Patch
+827c19f17f1dc9c0cc8a1b623cd48df151dca2b7	2026-07-19T00:41:59-05:00	Luis Guivin	Fix quarantine backup table sequences and clean up old tests
+23394ddd88186d01f86d1bfe2aa8f82c23d115a3	2026-07-18T23:35:27-05:00	Luis Guivin	Correct quarantine migration and clean up temp files
+754b4cee52d1a146172080f0ae52bcb0abdbff4e	2026-07-17T21:52:07-05:00	Luis Guivin	Fix document_id migration, constraints and comparison engine
+8d9157fbc2e102212e4c540f569e109754aba67e	2026-07-17T12:44:07-05:00	Luis Guivin	docs: add project context and continuity documentation
+648bb237c014dc396c294ba37110f44e3c3b4d35	2026-07-17T12:38:42-05:00	Luis Guivin	fix: stabilize OCR V2 integration pipeline and E2E validation
+92a6be920c8f20e56d7a7671ae349231dc0be250	2026-07-16T20:32:11-05:00	Luis Guivin	test: add authz model and migration contract tests
+364b75e01a78a6c192eebfe1041ae154e7081b06	2026-07-16T20:03:53-05:00	Luis Guivin	docs(security): finalize authentication and authorization design
+7daaf34e8896ad537ce1a20bbb4c20300d289e19	2026-07-16T17:34:05-05:00	Luis Guivin	chore: add reportlab to test requirements
+74fe02a87fff4010f8360d56629d527aa9d70253	2026-07-16T17:33:39-05:00	Luis Guivin	chore: integrate alembic test harness
+4554fcb7b9e23bc6d463c3ffe56334ee46176414	2026-07-16T17:14:36-05:00	Luis Guivin	test: run integrations against alembic-managed schema
+25f0510dc9d1057865337b5a3b1499f0321be93c	2026-07-16T15:45:11-05:00	Luis Guivin	merge: verified core baseline and isolated test harness
+0ccf03452c14d384acd5cc5b33f3de98610ae1b6	2026-07-16T15:15:49-05:00	Luis Guivin	test: add deterministic e2e tests for V1 and V2 and fix schema setup for API tests
+3f25b2702f472a4acc774c0a0af7ac1ea077f651	2026-07-16T15:06:33-05:00	Luis Guivin	fix: reject empty requirement extraction
+8ae3527457582f3fed388ebe47cf2aa3dc30b816	2026-07-15T16:48:11-05:00	Luis Guivin	fix: preserve narrative introductions in structure parsing
+
+[COMMAND 6]
+Timestamp UTC: 2026-08-06T15:53:45Z
+Command: docker compose -f docker-compose.yml config --services / --volumes / --images
+Exit Code: 0
+Services: redis, db, api, web, worker, worker-ocr
+Volumes: pgdata, redisdata, uploads
+Images: redis:7-alpine, postgres:15-alpine, abst-v4_9-remediation-clean-api, abst-v4_9-remediation-clean-worker, abst-v4_9-remediation-clean-worker-ocr, abst-v4_9-remediation-clean-web
+
+[COMMAND 7]
+Timestamp UTC: 2026-08-06T15:53:48Z
+Command: docker compose -f verification/docker-compose.dr.yml config --services / --volumes / --images
+Exit Code: 0
+Services: db-dr, redis-dr, backend-dr, worker-dr
+Volumes: dr-db-data, dr-wal-archive, dr-backup-vault, dr-redis-data, dr-uploads
+Images: postgres:16-alpine, redis:7-alpine, verification-backend-dr, verification-worker-dr

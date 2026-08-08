@@ -1,0 +1,96 @@
+services:
+  db-dr:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: dr_user
+      POSTGRES_PASSWORD: dr_password
+      POSTGRES_DB: dr_db
+      POSTGRES_INITDB_ARGS: "--auth-host=scram-sha-256 --auth-local=scram-sha-256"
+    command: >
+      postgres
+      -c wal_level=replica
+      -c archive_mode=on
+      -c archive_command='test ! -f /var/lib/postgresql/archive/%f && cp %p /var/lib/postgresql/archive/%f'
+      -c archive_timeout=60
+      -c max_wal_senders=10
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U dr_user -d dr_db"]
+      interval: 3s
+      timeout: 3s
+      retries: 10
+      start_period: 3s
+    volumes:
+      - dr-db-data:/var/lib/postgresql/data
+      - dr-wal-archive:/var/lib/postgresql/archive
+      - dr-backup-vault:/var/lib/postgresql/backup_vault
+      - ./dr/init-replication.sh:/docker-entrypoint-initdb.d/01-replication.sh:ro
+
+  redis-dr:
+    image: redis:7-alpine
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 3s
+      timeout: 3s
+      retries: 10
+    volumes:
+      - dr-redis-data:/data
+
+  backend-dr:
+    build:
+      context: ..
+      dockerfile: Dockerfile.backend.test
+    depends_on:
+      db-dr:
+        condition: service_healthy
+      redis-dr:
+        condition: service_healthy
+    environment:
+      - DATABASE_URL=postgresql://dr_user:dr_password@db-dr:5432/dr_db
+      - REDIS_URL=redis://redis-dr:6379/2
+      - SECRET_KEY=dr_isolated_secret_key_certification_phase_7_4
+      - UPLOADS_DIR=/app/dr_uploads
+      - BACKUP_VAULT_DIR=/app/dr_vault
+      - WAL_ARCHIVE_DIR=/app/dr_wal_archive
+      - PYTHONPATH=/app
+      - APP_ENV=test
+      - ENVIRONMENT=test
+      - FEATURE_ASYNC_PROCESSING=true
+      - CAPACITY_GOVERNOR_ENABLED=true
+    volumes:
+      - ../backend:/app
+      - ../verification:/app/verification
+      - ../artifacts:/app/artifacts
+      - dr-uploads:/app/dr_uploads
+      - dr-backup-vault:/app/dr_vault
+      - dr-wal-archive:/app/dr_wal_archive
+    command: ["/bin/sh", "-c", "sleep infinity"]
+
+  worker-dr:
+    build:
+      context: ..
+      dockerfile: Dockerfile.backend.test
+    depends_on:
+      db-dr:
+        condition: service_healthy
+      redis-dr:
+        condition: service_healthy
+    environment:
+      - DATABASE_URL=postgresql://dr_user:dr_password@db-dr:5432/dr_db
+      - REDIS_URL=redis://redis-dr:6379/2
+      - SECRET_KEY=dr_isolated_secret_key_certification_phase_7_4
+      - UPLOADS_DIR=/app/dr_uploads
+      - PYTHONPATH=/app
+      - APP_ENV=test
+      - ENVIRONMENT=test
+      - FEATURE_ASYNC_PROCESSING=true
+    volumes:
+      - ../backend:/app
+      - dr-uploads:/app/dr_uploads
+    command: ["rq", "worker", "-u", "redis://redis-dr:6379/2", "default", "document_tasks", "ocr_tasks"]
+
+volumes:
+  dr-db-data:
+  dr-wal-archive:
+  dr-backup-vault:
+  dr-uploads:
+  dr-redis-data:

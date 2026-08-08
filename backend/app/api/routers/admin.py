@@ -7,8 +7,11 @@ from app.models.domain import User
 from app.schemas.auth import UserCreate, UserResponse
 from app.api.auth import get_current_user, require_role, get_password_hash
 from app.api.exceptions import ConflictException
+from app.api.admin import monitoring
 
 router = APIRouter()
+router.include_router(monitoring.router, prefix="/monitoring", tags=["admin-monitoring"])
+
 
 @router.post("/users", response_model=UserResponse, status_code=status.HTTP_201_CREATED)
 def create_user(

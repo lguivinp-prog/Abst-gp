@@ -1,0 +1,144 @@
+﻿#1 [internal] load local bake definitions
+#1 reading from stdin 2.31kB 0.0s done
+#1 DONE 0.0s
+
+#2 [frontend-test internal] load build definition from Dockerfile.frontend.test
+#2 transferring dockerfile: 455B done
+#2 DONE 0.0s
+
+#3 [backend-app internal] load build definition from Dockerfile.backend.test
+#3 transferring dockerfile: 792B 0.0s done
+#3 DONE 0.0s
+
+#4 [backend-app internal] load metadata for docker.io/library/python:3.12.3-slim
+#4 DONE 0.1s
+
+#5 [frontend-test internal] load metadata for docker.io/library/node:20.19.0-alpine@sha256:8bda036ddd59ea51a23bc1a1035d3b5c614e72c01366d989f4120e8adca196d4
+#5 DONE 0.2s
+
+#6 [backend-app internal] load .dockerignore
+#6 transferring context: 2B done
+#6 DONE 0.0s
+
+#7 [frontend-test 1/6] FROM docker.io/library/node:20.19.0-alpine@sha256:8bda036ddd59ea51a23bc1a1035d3b5c614e72c01366d989f4120e8adca196d4
+#7 resolve docker.io/library/node:20.19.0-alpine@sha256:8bda036ddd59ea51a23bc1a1035d3b5c614e72c01366d989f4120e8adca196d4 0.1s done
+#7 DONE 0.1s
+
+#8 [worker-test 1/9] FROM docker.io/library/python:3.12.3-slim@sha256:afc139a0a640942491ec481ad8dda10f2c5b753f5c969393b12480155fe15a63
+#8 resolve docker.io/library/python:3.12.3-slim@sha256:afc139a0a640942491ec481ad8dda10f2c5b753f5c969393b12480155fe15a63 0.1s done
+#8 DONE 0.1s
+
+#9 [backend-test internal] load build context
+#9 transferring context: 2.45MB 0.3s done
+#9 DONE 0.3s
+
+#10 [frontend-test internal] load build context
+#10 ...
+
+#11 [backend-test 2/9] RUN apt-get update && apt-get install -y     libpq-dev gcc     tesseract-ocr     ghostscript     && rm -rf /var/lib/apt/lists/*
+#11 CACHED
+
+#12 [backend-test 4/9] COPY backend/requirements.validation.lock ./requirements.txt
+#12 CACHED
+
+#13 [backend-test 5/9] COPY backend/requirements-test.txt ./requirements-test.txt
+#13 CACHED
+
+#14 [backend-test 6/9] RUN pip install --no-cache-dir -r requirements.txt
+#14 CACHED
+
+#15 [backend-test 3/9] WORKDIR /app
+#15 CACHED
+
+#16 [backend-test 7/9] RUN pip install --no-cache-dir -r requirements-test.txt
+#16 CACHED
+
+#17 [backend-app 8/9] RUN pip check
+#17 CACHED
+
+#10 [frontend-test internal] load build context
+#10 ...
+
+#18 [backend-test 9/9] COPY backend/ ./
+#18 DONE 0.2s
+
+#10 [frontend-test internal] load build context
+#10 ...
+
+#19 [backend-app] exporting to image
+#19 exporting layers 0.3s done
+#19 exporting manifest sha256:3f9b6b021b3abc586fe9e7800d1871924159db5aa16cb9ea4faaf364d46abfcf 0.1s done
+#19 exporting config sha256:775f5c3c956ca109183e2e33d3e8ff100df0c316bbae7892242755856a4db0f5 0.1s done
+#19 exporting attestation manifest sha256:054f6af64bee0c1fc44cfb1958484c5561572b836e8e72ecbb5c6ec228b6a321 0.1s done
+#19 exporting manifest list sha256:2816450624b6ed8de2336fc7b59d193eb6a999e3aa6daa3c97f9c8836fc3ccb6 0.1s done
+#19 naming to docker.io/library/abst_gp_v52_validation-backend-app:latest 0.0s done
+#19 unpacking to docker.io/library/abst_gp_v52_validation-backend-app:latest 0.1s done
+#19 DONE 1.0s
+
+#20 [worker-test] exporting to image
+#20 exporting layers 0.3s done
+#20 exporting manifest sha256:9a1fd3871521f550ec0f9d97ca29000c2b8c893e8a02c38183036b29a28ef292 0.1s done
+#20 exporting config sha256:aebeec63eb28273d3bdbe3e90c5116beb19e92026fdfa582eec21267b07086bb 0.1s done
+#20 exporting attestation manifest sha256:b4990d407f475f862b491d5e1af7e50ffd4aa1d2f6b0901b83b031baa8d5dd66 0.1s done
+#20 exporting manifest list sha256:b570e834564972add5521515986f5dfe65c75d6229440f2c0561efdb8e105c7c 0.1s done
+#20 naming to docker.io/library/abst_gp_v52_validation-worker-test:latest 0.0s done
+#20 unpacking to docker.io/library/abst_gp_v52_validation-worker-test:latest 0.1s done
+#20 DONE 1.0s
+
+#10 [frontend-test internal] load build context
+#10 ...
+
+#21 [backend-test] exporting to image
+#21 exporting layers 0.3s done
+#21 exporting manifest sha256:95b279afecb95265137e27c7541f0ba946dede7453c30d14e30a37a24863c6b9 0.1s done
+#21 exporting config sha256:73ca16f8704ea80a924489c6bf57f87723f244bcaa7d4980b93585e7ff71920d 0.1s done
+#21 exporting attestation manifest sha256:50e3b860ace16dd3cff5da4a3c5292ff535b63f4144db0b6a01ab8d9f0511dfa 0.2s done
+#21 exporting manifest list sha256:3c7fc874a07d9f820f377428dbabf7c4a8883cca170f8ac43aa80e4d44a815e3 0.0s done
+#21 naming to docker.io/library/abst_gp_v52_validation-backend-test:latest done
+#21 unpacking to docker.io/library/abst_gp_v52_validation-backend-test:latest 0.1s done
+#21 DONE 1.0s
+
+#10 [frontend-test internal] load build context
+#10 ...
+
+#22 [worker-test] resolving provenance for metadata file
+#22 DONE 0.2s
+
+#10 [frontend-test internal] load build context
+#10 ...
+
+#23 [backend-app] resolving provenance for metadata file
+#23 DONE 0.2s
+
+#24 [backend-test] resolving provenance for metadata file
+#24 DONE 0.1s
+
+#10 [frontend-test internal] load build context
+#10 transferring context: 86.24MB 5.3s
+#10 transferring context: 165.28MB 10.3s
+#10 transferring context: 184.84MB 11.2s done
+#10 DONE 11.2s
+
+#25 [frontend-test 2/6] WORKDIR /app
+#25 CACHED
+
+#26 [frontend-test 3/6] COPY frontend/package.json frontend/package-lock.json ./
+#26 CACHED
+
+#27 [frontend-test 4/6] RUN npm ci --legacy-peer-deps
+#27 CACHED
+
+#28 [frontend-test 5/6] COPY frontend/ ./
+#28 DONE 1.5s
+
+#29 [frontend-test 6/6] RUN npx tsc -b && npm run build
+#29 2.699 src/__tests__/v53_frontend_integration.test.ts(1,8): error TS6133: 'test' is declared but its value is never read.
+#29 2.699 src/__tests__/v53_frontend_integration.test.ts(1,36): error TS2591: Cannot find name 'node:test'. Do you need to install type definitions for node? Try `npm i --save-dev @types/node` and then add 'node' to the types field in your tsconfig.
+#29 2.699 src/__tests__/v53_frontend_integration.test.ts(2,20): error TS2591: Cannot find name 'node:assert/strict'. Do you need to install type definitions for node? Try `npm i --save-dev @types/node` and then add 'node' to the types field in your tsconfig.
+#29 ERROR: process "/bin/sh -c npx tsc -b && npm run build" did not complete successfully: exit code: 2
+------
+ > [frontend-test 6/6] RUN npx tsc -b && npm run build:
+2.699 src/__tests__/v53_frontend_integration.test.ts(1,8): error TS6133: 'test' is declared but its value is never read.
+2.699 src/__tests__/v53_frontend_integration.test.ts(1,36): error TS2591: Cannot find name 'node:test'. Do you need to install type definitions for node? Try `npm i --save-dev @types/node` and then add 'node' to the types field in your tsconfig.
+2.699 src/__tests__/v53_frontend_integration.test.ts(2,20): error TS2591: Cannot find name 'node:assert/strict'. Do you need to install type definitions for node? Try `npm i --save-dev @types/node` and then add 'node' to the types field in your tsconfig.
+------

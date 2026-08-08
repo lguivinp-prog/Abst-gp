@@ -1,0 +1,7 @@
+time="2026-07-30T22:09:28-05:00" level=warning msg="C:\\Users\\PC\\Documents\\AbastLG\\abst-v4_9-remediation-clean\\verification\\docker-compose.test.yml: the attribute `version` is obsolete, it will be ignored, please remove it to avoid potential confusion"
+ Container abst_gp_v52_validation-db-test-1 Running 
+ Container abst_gp_v52_validation-db-test-1 Waiting 
+ Container abst_gp_v52_validation-db-test-1 Healthy 
+ Container abst_gp_v52_validation-backend-test-run-5dbb0a1bdcb9 Creating 
+ Container abst_gp_v52_validation-backend-test-run-5dbb0a1bdcb9 Created 
+Error response from daemon: failed to create task for container: failed to create shim task: OCI runtime create failed: runc create failed: unable to start container process: error during container init: exec: "pytest": executable file not found in $PATH

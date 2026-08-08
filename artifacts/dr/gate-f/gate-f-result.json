@@ -1,0 +1,8 @@
+{
+  "gate": "F",
+  "status": "PASS",
+  "valid_backup": "PASS",
+  "corrupted_backup_detected": "PASS",
+  "restore_rejected": "PASS",
+  "audit_recorded": "PASS"
+}

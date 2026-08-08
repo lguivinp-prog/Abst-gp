@@ -1,0 +1,11 @@
+{
+  "archived_count": 83,
+  "last_archived_wal": "000000010000000000000041",
+  "last_archived_time": "2026-08-07 19:45:03.115804+00",
+  "failed_count": 0,
+  "last_failed_wal": null,
+  "last_failed_time": null,
+  "stats_reset": "2026-08-07 14:07:29.364128+00",
+  "failed_count_delta": 0,
+  "archive_success_status": "PASS"
+}

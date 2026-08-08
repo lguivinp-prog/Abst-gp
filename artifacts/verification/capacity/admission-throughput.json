@@ -1,0 +1,12 @@
+﻿{
+    "samples":  100,
+    "scenario":  "C - Admission Throughput Benchmark",
+    "failed_txns":  0,
+    "p50_ms":  4.2,
+    "operations":  "create_job + QUEUED + commit",
+    "rollbacks":  0,
+    "throughput_jobs_per_sec":  82.5,
+    "p99_ms":  18.5,
+    "status":  "PASS",
+    "p95_ms":  12.8
+}

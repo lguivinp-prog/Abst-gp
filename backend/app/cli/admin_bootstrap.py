@@ -56,6 +56,10 @@ def create_admin(password_file: str = None, operation_id: str = "bootstrap"):
     if len(password) < 8:
         print("Error: Password must be at least 8 characters long.")
         sys.exit(1)
+        
+    if len(password.encode('utf-8')) > 72:
+        print("Error: Password exceeds maximum length of 72 bytes.")
+        sys.exit(1)
 
     payload_hash = hashlib.sha256(password.encode('utf-8')).hexdigest()
 
@@ -79,7 +83,7 @@ def create_admin(password_file: str = None, operation_id: str = "bootstrap"):
                 print("SUCCESS + CONFLICT")
                 sys.exit(1)
 
-        existing_admin = db.query(User).filter(User.username == "bootstrap_admin").first()
+        existing_admin = db.query(User).filter(User.role == "ADMIN").first()
         if existing_admin:
             print("SUCCESS + ADMIN_ALREADY_EXISTS")
             return

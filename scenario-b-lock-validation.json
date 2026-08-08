@@ -1,0 +1,10 @@
+{
+  "check_timestamp_utc": "2026-08-07T13:18:50Z",
+  "database": "dr_db",
+  "postgresql_version": "16",
+  "pg_stat_activity_query": "SELECT pid, state, wait_event_type, wait_event, query FROM pg_stat_activity WHERE datname='dr_db' AND pid <> pg_backend_pid();",
+  "active_or_waiting_sessions_count": 0,
+  "deadlocks_detected": 0,
+  "pending_locks": [],
+  "verification_result": "CLEAN"
+}

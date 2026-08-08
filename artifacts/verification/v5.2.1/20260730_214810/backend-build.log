@@ -1,0 +1,52 @@
+#0 building with "desktop-linux" instance using docker driver
+
+#1 [internal] load build definition from Dockerfile.backend.test
+#1 transferring dockerfile: 648B 0.0s done
+#1 DONE 0.1s
+
+#2 [internal] load metadata for docker.io/library/python:3.12.3-slim
+#2 DONE 0.1s
+
+#3 [internal] load .dockerignore
+#3 transferring context: 2B done
+#3 DONE 0.0s
+
+#4 [internal] load build context
+#4 ...
+
+#5 [1/7] FROM docker.io/library/python:3.12.3-slim@sha256:afc139a0a640942491ec481ad8dda10f2c5b753f5c969393b12480155fe15a63
+#5 resolve docker.io/library/python:3.12.3-slim@sha256:afc139a0a640942491ec481ad8dda10f2c5b753f5c969393b12480155fe15a63 0.1s done
+#5 DONE 0.1s
+
+#4 [internal] load build context
+#4 transferring context: 1.26MB 0.8s done
+#4 DONE 0.8s
+
+#6 [6/7] RUN pip check
+#6 CACHED
+
+#7 [2/7] RUN apt-get update && apt-get install -y     libpq-dev gcc     tesseract-ocr     ghostscript     && rm -rf /var/lib/apt/lists/*
+#7 CACHED
+
+#8 [3/7] WORKDIR /app
+#8 CACHED
+
+#9 [4/7] COPY backend/requirements.validation.lock ./requirements.txt
+#9 CACHED
+
+#10 [5/7] RUN pip install --no-cache-dir -r requirements.txt
+#10 CACHED
+
+#11 [7/7] COPY backend/ ./
+#11 CACHED
+
+#12 exporting to image
+#12 exporting layers done
+#12 exporting manifest sha256:0b13db3b416fcdd71542d5d579717d4313a4e48cae1afa9e84678bbc179717cf done
+#12 exporting config sha256:d6be65f73182afe365d1d49d84284b310e9da46b11cd4501d89858c22d988114 done
+#12 exporting attestation manifest sha256:1f45bdb7bed4bfced1e61ca32b14d2a7e26cd23183f34a9c8eecd337dba74b98 0.1s done
+#12 exporting manifest list sha256:5cd4cdd4084339701f24efac014ebb50a4f15026d15e2d05517d230f33433bae
+#12 exporting manifest list sha256:5cd4cdd4084339701f24efac014ebb50a4f15026d15e2d05517d230f33433bae 0.1s done
+#12 naming to docker.io/library/abst_gp_backend_test:latest 0.0s done
+#12 unpacking to docker.io/library/abst_gp_backend_test:latest 0.0s done
+#12 DONE 0.3s

@@ -1,5 +1,10 @@
 from .base import Base
-from .domain import User, SystemSettings, CaseFile, UploadedDocument, ParsedSection, QuotationExtraction, FinalConditionComparison, GeneratedOutput, AuditLog, ValidationDocumentCase, OCRProcessingRun
+from .domain import (
+    User, SystemSettings, CaseFile, UploadedDocument, ParsedSection,
+    QuotationExtraction, FinalConditionComparison, GeneratedOutput,
+    AuditLog, ValidationDocumentCase, OCRProcessingRun,
+    ProcessingJob, ProcessingMetrics, WorkerHeartbeat
+)
 
 __all__ = [
     "Base",
@@ -13,5 +18,8 @@ __all__ = [
     "GeneratedOutput",
     "AuditLog",
     "ValidationDocumentCase",
-    "OCRProcessingRun"
+    "OCRProcessingRun",
+    "ProcessingJob",
+    "ProcessingMetrics",
+    "WorkerHeartbeat"
 ]

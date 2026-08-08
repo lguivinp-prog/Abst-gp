@@ -1,0 +1,29 @@
+[2026-08-08T12:42:40.920803+00:00] ================================================================================
+[2026-08-08T12:42:40.920873+00:00] GATE E: WORKER RECOVERY & JOB RECONCILIATION DRILL
+[2026-08-08T12:42:40.920896+00:00] ================================================================================
+[2026-08-08T12:42:40.922062+00:00] --- [T0] Creando Tenant, Expediente y Jobs en los 5 Estados Canónicos ---
+[2026-08-08T12:42:41.151519+00:00] Jobs inicializados en PostgreSQL SSOT:
+[2026-08-08T12:42:41.152552+00:00]   - 1. QUEUED (Fresco): ocr_processing_42_b733066c | Status: QUEUED | Attempts: 1
+[2026-08-08T12:42:41.153304+00:00]   - 2. PROCESSING (Activo): document_extraction_42_8e73e220 | Worker: worker_node_alive_1 | Status: PROCESSING
+[2026-08-08T12:42:41.154040+00:00]   - 3. PROCESSING (Huérfano/Muerto): ocr_processing_42_08a48181 | Worker: worker_dead_crashed_node_99 | Heartbeat: 2026-08-08 12:27:40.976942+00:00
+[2026-08-08T12:42:41.155065+00:00]   - 4. COMPLETED: table_extraction_42_33d3fabe | Status: READY
+[2026-08-08T12:42:41.156951+00:00]   - 5. FAILED FINAL: document_validation_42_9854d6d3 | Classification: FINAL
+[2026-08-08T12:42:41.157062+00:00]   - 6. PROCESSING (Max Retries): ocr_processing_42_75ac852b | Attempts: 3/3
+[2026-08-08T12:42:41.157087+00:00] --- [T1] Simulando Desastre: Muerte Abrupta de Worker y Pérdida Total de Heartbeat ---
+[2026-08-08T12:42:41.157102+00:00] Worker 'worker_dead_crashed_node_99' finalizado abruptamente sin enviar mensaje de terminación.
+[2026-08-08T12:42:41.157113+00:00] --- [T2] Ejecutando JobRecoveryEngine con escaneo de latidos y reconciliación SSOT ---
+[2026-08-08T12:42:41.198205+00:00] JobRecoveryEngine finalizado en 0.0410s.
+[2026-08-08T12:42:41.198241+00:00] Reporte de Escaneo: Total=2, StaleProcessing=2, RecoveredRetried=1, MarkedFailedMaxRetries=1
+[2026-08-08T12:42:41.198256+00:00] --- [T3] Verificando Reglas de Consistencia y Reconciliación en Base de Datos ---
+[2026-08-08T12:42:41.208417+00:00] 1. Detección de Worker Muerto (dead_worker_detection): PASS
+[2026-08-08T12:42:41.208571+00:00] 2. Re-encolado de Job Huérfano (job_requeue): PASS (Status: QUEUED, Attempts: 2)
+[2026-08-08T12:42:41.208607+00:00] 3. Cero Duplicación y Protección de Estados Terminales (duplicate_execution): PASS
+[2026-08-08T12:42:41.208626+00:00]      - COMPLETED status: READY
+[2026-08-08T12:42:41.208640+00:00]      - FAILED_FINAL status: FAILED
+[2026-08-08T12:42:41.208654+00:00]      - QUEUED fresco status: QUEUED
+[2026-08-08T12:42:41.208669+00:00]      - PROCESSING activo status: PROCESSING
+[2026-08-08T12:42:41.208686+00:00]      - MAX_RETRIES job status: FAILED
+[2026-08-08T12:42:41.212479+00:00] AuditLogs registrados para Tenant dr-tenant-gate-e-1786192960: ['JOB_RECOVERY_RETRY', 'JOB_RECOVERY_MAX_RETRIES_EXCEEDED']
+[2026-08-08T12:42:41.212546+00:00] 4. Integridad de Auditoría en AuditLog (audit_integrity): PASS
+[2026-08-08T12:42:41.212566+00:00] --- [T4] Escribiendo Artefactos Formales en artifacts/dr/gate-e/ ---
+[2026-08-08T12:42:41.235437+00:00] === Gate E Drill Finalizado con Éxito ===

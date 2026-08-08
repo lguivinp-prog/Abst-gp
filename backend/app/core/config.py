@@ -20,6 +20,28 @@ class Settings(BaseSettings):
     OCR_SHADOW_MODE: bool = os.getenv("OCR_SHADOW_MODE", "false").lower() == "true"
     OCR_REVIEW_THRESHOLD: float = float(os.getenv("OCR_REVIEW_THRESHOLD", "0.85"))
 
+    # Feature Flags V5.3 (Async Processing & Domain Workers)
+    FEATURE_ASYNC_PROCESSING: bool = os.getenv("FEATURE_ASYNC_PROCESSING", "false").lower() == "true"
+    FEATURE_ASYNC_QUOTATION: bool = os.getenv("FEATURE_ASYNC_QUOTATION", "false").lower() == "true"
+    FEATURE_ASYNC_COMPARISON: bool = os.getenv("FEATURE_ASYNC_COMPARISON", "false").lower() == "true"
+
+    def is_async_quotation_enabled(self) -> bool:
+        return self.FEATURE_ASYNC_PROCESSING or self.FEATURE_ASYNC_QUOTATION
+
+    def is_async_comparison_enabled(self) -> bool:
+        return self.FEATURE_ASYNC_PROCESSING or self.FEATURE_ASYNC_COMPARISON
+
+    # Database Connection Pool Configuration (Fase 7.3)
+    DB_POOL_SIZE: int = int(os.getenv("DB_POOL_SIZE", "20"))
+    DB_MAX_OVERFLOW: int = int(os.getenv("DB_MAX_OVERFLOW", "10"))
+    DB_POOL_TIMEOUT: int = int(os.getenv("DB_POOL_TIMEOUT", "30"))
+    DB_POOL_RECYCLE: int = int(os.getenv("DB_POOL_RECYCLE", "1800"))
+
+    # Tenant Capacity Governance (Fase 7.3)
+    TENANT_MAX_CONCURRENT_PROCESSING_JOBS: int = int(os.getenv("TENANT_MAX_CONCURRENT_PROCESSING_JOBS", "5"))
+    SYSTEM_MAX_CONCURRENT_PROCESSING_JOBS: int = int(os.getenv("SYSTEM_MAX_CONCURRENT_PROCESSING_JOBS", "20"))
+    CAPACITY_GOVERNOR_ENABLED: bool = os.getenv("CAPACITY_GOVERNOR_ENABLED", "true").lower() == "true"
+
     class Config:
         case_sensitive = True
 

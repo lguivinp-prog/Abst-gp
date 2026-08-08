@@ -1,0 +1,55 @@
+ Network abst_gp_v52_validation_default Creating 
+ Network abst_gp_v52_validation_default Created 
+ Container abst_gp_v52_validation-frontend-test-run-46f92b04d124 Creating 
+ Container abst_gp_v52_validation-frontend-test-run-46f92b04d124 Created 
+
+added 69 packages, and audited 70 packages in 29s
+
+17 packages are looking for funding
+  run `npm fund` for details
+
+2 moderate severity vulnerabilities
+
+To address all issues, run:
+  npm audit fix
+
+Run `npm audit` for details.
+
+> frontend@0.0.0 build
+> tsc -b && vite build
+
+vite v8.2.0 building client environment for production...
+[2Ktransforming...✓ 1566 modules transformed.
+[lightningcss minify] Unknown at rule: @tailwind
+101 |    box-shadow: var(--shadow-glass);
+102 |  }
+103 |  @tailwind base;
+    |           ^
+104 |  @tailwind components;
+105 |  @tailwind utilities;
+[lightningcss minify] Unknown at rule: @tailwind
+102 |  }
+103 |  @tailwind base;
+104 |  @tailwind components;
+    |           ^
+105 |  @tailwind utilities;
+106 |  
+[lightningcss minify] Unknown at rule: @tailwind
+103 |  @tailwind base;
+104 |  @tailwind components;
+105 |  @tailwind utilities;
+    |           ^
+106 |  
+107 |    .doc-paragraph {
+rendering chunks...
+computing gzip size...
+dist/index.html                   0.45 kB │ gzip:   0.29 kB
+dist/assets/index-DJtr2D6h.css   10.46 kB │ gzip:   2.76 kB
+dist/assets/index-WdxVQlcT.js   316.30 kB │ gzip: 100.29 kB
+
+[33m[PLUGIN_TIMINGS] [0mYour build spent significant time in plugins. Here is a breakdown:
+  - rolldown:vite-resolve (56%)
+  - vite:css (39%)
+See https://rolldown.rs/reference/InputOptions.checks#plugintimings for more details.
+
+✓ built in 5.08s

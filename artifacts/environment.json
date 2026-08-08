@@ -1,0 +1,10 @@
+{
+  "generated_at_utc": "2026-08-05T04:26:08.058522+00:00",
+  "version": "V5.5 Enterprise Operations",
+  "environment": "dr-certified",
+  "os": "windows",
+  "python_version": "3.12.3 (main, May 14 2024, 07:34:56) [GCC 12.2.0]",
+  "postgres_version": "PostgreSQL 16",
+  "redis_version": "Redis 7",
+  "features_enabled": {}
+}

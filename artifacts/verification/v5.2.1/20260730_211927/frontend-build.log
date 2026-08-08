@@ -1,0 +1,103 @@
+#0 building with "desktop-linux" instance using docker driver
+
+#1 [internal] load build definition from Dockerfile.frontend.test
+#1 transferring dockerfile: 383B 0.0s done
+#1 DONE 0.1s
+
+#2 [internal] load metadata for docker.io/library/node:20.19.0-alpine
+#2 DONE 0.2s
+
+#3 [internal] load .dockerignore
+#3 transferring context: 2B done
+#3 DONE 0.0s
+
+#4 [internal] load build context
+#4 DONE 0.0s
+
+#5 [1/6] FROM docker.io/library/node:20.19.0-alpine@sha256:8bda036ddd59ea51a23bc1a1035d3b5c614e72c01366d989f4120e8adca196d4
+#5 resolve docker.io/library/node:20.19.0-alpine@sha256:8bda036ddd59ea51a23bc1a1035d3b5c614e72c01366d989f4120e8adca196d4 0.1s done
+#5 DONE 0.1s
+
+#4 [internal] load build context
+#4 transferring context: 391.15kB 0.3s done
+#4 DONE 0.5s
+
+#6 [2/6] WORKDIR /app
+#6 CACHED
+
+#7 [3/6] COPY frontend/package.json frontend/package-lock.json ./
+#7 CACHED
+
+#8 [4/6] RUN npm ci --legacy-peer-deps
+#8 6.038 
+#8 6.038 added 69 packages, and audited 70 packages in 6s
+#8 6.038 
+#8 6.038 17 packages are looking for funding
+#8 6.038   run `npm fund` for details
+#8 6.070 
+#8 6.070 2 moderate severity vulnerabilities
+#8 6.070 
+#8 6.070 To address all issues, run:
+#8 6.070   npm audit fix
+#8 6.070 
+#8 6.070 Run `npm audit` for details.
+#8 6.071 npm notice
+#8 6.071 npm notice New major version of npm available! 10.8.2 -> 12.0.2
+#8 6.071 npm notice Changelog: https://github.com/npm/cli/releases/tag/v12.0.2
+#8 6.071 npm notice To update run: npm install -g npm@12.0.2
+#8 6.071 npm notice
+#8 DONE 9.3s
+
+#9 [5/6] COPY frontend/ ./
+#9 DONE 9.0s
+
+#10 [6/6] RUN npx tsc -b && npm run build
+#10 6.092 
+#10 6.092 > frontend@0.0.0 build
+#10 6.092 > tsc -b && vite build
+#10 6.092 
+#10 9.056 vite v8.2.0 building client environment for production...
+#10 9.073 [2Ktransforming...✓ 1566 modules transformed.
+#10 9.470 [lightningcss minify] Unknown at rule: @tailwind
+#10 9.470 101 |    box-shadow: var(--shadow-glass);
+#10 9.470 102 |  }
+#10 9.470 103 |  @tailwind base;
+#10 9.470     |           ^
+#10 9.470 104 |  @tailwind components;
+#10 9.470 105 |  @tailwind utilities;
+#10 9.470 [lightningcss minify] Unknown at rule: @tailwind
+#10 9.470 102 |  }
+#10 9.470 103 |  @tailwind base;
+#10 9.470 104 |  @tailwind components;
+#10 9.470     |           ^
+#10 9.470 105 |  @tailwind utilities;
+#10 9.470 106 |  
+#10 9.471 [lightningcss minify] Unknown at rule: @tailwind
+#10 9.471 103 |  @tailwind base;
+#10 9.471 104 |  @tailwind components;
+#10 9.471 105 |  @tailwind utilities;
+#10 9.471     |           ^
+#10 9.471 106 |  
+#10 9.471 107 |    .doc-paragraph {
+#10 9.474 rendering chunks...
+#10 9.544 computing gzip size...
+#10 9.549 dist/index.html                   0.45 kB │ gzip:   0.29 kB
+#10 9.549 dist/assets/index-DJtr2D6h.css   10.46 kB │ gzip:   2.76 kB
+#10 9.549 dist/assets/index-Cn3b_AkS.js   315.42 kB │ gzip: 100.08 kB
+#10 9.549 
+#10 9.550 ✓ built in 492ms
+#10 DONE 10.4s
+
+#11 exporting to image
+#11 exporting layers
+#11 exporting layers 13.5s done
+#11 exporting manifest sha256:75a581c3295b8e3d4c3ac8b79ca8708904a608b37626d5ef4059a4872110fec4 0.0s done
+#11 exporting config sha256:806056f7ed6d33a3bf83b6cc8d60972852fe8e125955a7514248cc4c46d4779f 0.0s done
+#11 exporting attestation manifest sha256:13ab45b2d401087d9e6fef520bddfea2601cbf44add01ca72fc4934ead97f202
+#11 exporting attestation manifest sha256:13ab45b2d401087d9e6fef520bddfea2601cbf44add01ca72fc4934ead97f202 0.1s done
+#11 exporting manifest list sha256:9d654dad0a59700f14c1e02aaf0dd3f1ba0496d31ac37b41c7fceda412dcb5c0 0.0s done
+#11 naming to docker.io/library/abst_gp_frontend_test:latest
+#11 naming to docker.io/library/abst_gp_frontend_test:latest done
+#11 unpacking to docker.io/library/abst_gp_frontend_test:latest
+#11 unpacking to docker.io/library/abst_gp_frontend_test:latest 3.2s done
+#11 DONE 17.0s

@@ -6,8 +6,9 @@ from redis import Redis
 from app.core.config import settings
 from app.core.database import get_db
 from app.api.routers import cases, validation
-
 from app.api.exceptions import setup_exception_handlers
+from app.core.telemetry import OpenTelemetryMiddleware, metrics_registry
+from fastapi.responses import Response
 
 app = FastAPI(
     title=settings.PROJECT_NAME,
@@ -16,6 +17,9 @@ app = FastAPI(
 )
 
 setup_exception_handlers(app)
+
+# Telemetría OpenTelemetry y Prometheus
+app.add_middleware(OpenTelemetryMiddleware)
 
 # CORS config
 app.add_middleware(
@@ -62,3 +66,16 @@ def read_health(db: Session = Depends(get_db)):
         pass
         
     return health_status
+
+
+@app.get("/metrics", tags=["sre"])
+def get_prometheus_metrics():
+    """
+    Endpoint de scraping para Prometheus / Grafana.
+    Retorna métricas técnicas y de negocio en formato estándar OpenMetrics (text/plain).
+    """
+    metrics_text = metrics_registry.generate_latest()
+    return Response(
+        content=metrics_text,
+        media_type="text/plain; version=0.0.4; charset=utf-8"
+    )

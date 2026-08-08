@@ -1,0 +1,36 @@
+[2026-08-08T12:34:11.009126+00:00] ================================================================================
+[2026-08-08T12:34:11.009287+00:00] GATE D: DOCUMENT & STORAGE CONSISTENCY / VAULT RESTORE DRILL
+[2026-08-08T12:34:11.009329+00:00] ================================================================================
+[2026-08-08T12:34:11.020730+00:00] --- [T0] Creando Tenants, Casos y Documentos con Checksums SHA-256 en SSOT ---
+[2026-08-08T12:34:11.132847+00:00] Documentos creados y registrados en PostgreSQL SSOT:
+[2026-08-08T12:34:11.135228+00:00]   - DOC_A (ID 25): SHA-256=0a82fa98e73c66d572513d847252b6e7571bf5bd8accc73c87d3ef07a6078978
+[2026-08-08T12:34:11.137219+00:00]   - DOC_B (ID 26): SHA-256=0a0a3da78de3fa492bfcb811b4d1ee6dfbddff07735ed4a49385e55496ff1386
+[2026-08-08T12:34:11.138134+00:00]   - DOC_C (ID 27): SHA-256=9dbce128b70757a2d7ed92b901e60c865d6055cedbf62a8b7c0fc3b0e62f1f4c
+[2026-08-08T12:34:11.139243+00:00]   - DOC_D (ID 28): SHA-256=f1a36871f5b5507417c61e745d81e5de60a74a2eaf13e2ede8363b39c6be15d1
+[2026-08-08T12:34:11.140213+00:00]   - DOC_BETA (ID 29): SHA-256=e426e19f31052d9c51928874a92237e5e891b1a3bf5fdc25d6aa4b83cef0fe91
+[2026-08-08T12:34:11.140252+00:00] --- [T1] Creando Snapshot y Respaldo Criptográfico Prístino en el Vault ---
+[2026-08-08T12:34:28.867439+00:00] Snapshot en Vault creado exitosamente: vault-snapshot-gate-d-1786192451
+[2026-08-08T12:34:28.913648+00:00] Validación Inicial Prístina: status=PASS, matched=5, missing=0, mismatches=0
+[2026-08-08T12:34:28.913689+00:00] --- [T2] Simulando Desastre 1: Eliminación Física de DOC_D del Almacenamiento ---
+[2026-08-08T12:34:28.953776+00:00] Resultado Validación tras eliminar DOC_D: status=FAIL, missing_count=1
+[2026-08-08T12:34:28.953834+00:00] Detección de Documento Faltante (missing_document_detection): PASS
+[2026-08-08T12:34:28.953868+00:00] --- [T3] Simulando Desastre 2: Alteración de Bytes y Tampering en DOC_C ---
+[2026-08-08T12:34:28.957835+00:00] DOC_C alterado en disco: nuevo SHA-256=21105f7b5cca40eac0a0fd389d2f3fcc8871e68d1ab2a1ed44e05ca068edc851 vs esperado=9dbce128b70757a2d7ed92b901e60c865d6055cedbf62a8b7c0fc3b0e62f1f4c
+[2026-08-08T12:34:28.993531+00:00] Resultado Validación tras alterar DOC_C: status=FAIL, mismatches_count=1
+[2026-08-08T12:34:28.993578+00:00] Detección de Checksum Mismatch (checksum_validation): PASS
+[2026-08-08T12:34:28.993599+00:00] --- [T4] Ejecutando Restauración Documental desde Vault Snapshot ---
+[2026-08-08T12:34:29.042855+00:00] Archivos restaurados desde Vault en 0.0490s
+[2026-08-08T12:34:29.093276+00:00] Validación Post-Restore: status=PASS, matched=5, missing=0, mismatches=0
+[2026-08-08T12:34:29.107664+00:00] Verificación individual SHA-256 Post-Restore:
+[2026-08-08T12:34:29.107710+00:00]   - DOC_A: True (0a82fa98e73c66d572513d847252b6e7571bf5bd8accc73c87d3ef07a6078978)
+[2026-08-08T12:34:29.107725+00:00]   - DOC_B: True (0a0a3da78de3fa492bfcb811b4d1ee6dfbddff07735ed4a49385e55496ff1386)
+[2026-08-08T12:34:29.107750+00:00]   - DOC_C: True (9dbce128b70757a2d7ed92b901e60c865d6055cedbf62a8b7c0fc3b0e62f1f4c)
+[2026-08-08T12:34:29.107780+00:00]   - DOC_D: True (f1a36871f5b5507417c61e745d81e5de60a74a2eaf13e2ede8363b39c6be15d1)
+[2026-08-08T12:34:29.107812+00:00]   - DOC_BETA: True (e426e19f31052d9c51928874a92237e5e891b1a3bf5fdc25d6aa4b83cef0fe91)
+[2026-08-08T12:34:29.107845+00:00] Resultado Restauración Vault (vault_restore): PASS
+[2026-08-08T12:34:29.107865+00:00] --- [T5] Validando Aislamiento Multi-Tenant (Cero Cross-Tenant Access) ---
+[2026-08-08T12:34:29.111625+00:00] Documentos recuperados para Tenant Alpha: [25, 26, 27, 28]
+[2026-08-08T12:34:29.112639+00:00] Documentos recuperados para Tenant Beta: [29]
+[2026-08-08T12:34:29.112680+00:00] Aislamiento Multi-Tenant sin fuga cruzada: PASS
+[2026-08-08T12:34:29.112711+00:00] --- [T6] Escribiendo Artefactos Formales en artifacts/dr/gate-d/ ---
+[2026-08-08T12:34:29.124952+00:00] === Gate D Drill Finalizado con Éxito ===

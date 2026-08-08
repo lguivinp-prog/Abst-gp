@@ -1,0 +1,28 @@
+{
+  "timestamp_utc": "2026-08-08T12:47:12.391628+00:00",
+  "status": "PASS",
+  "pristine_backup": {
+    "backup_id": "backup-pristine-gate-f-1786193155",
+    "vault_path": "/app/data/vault_dr_gate_f/backup-pristine-gate-f-1786193155",
+    "manifest_sha256": "525f51f00630aeefd643b0c076fef0ef9a0da550f1511d1d911d44a8f78219bb",
+    "status": "VALID"
+  },
+  "corrupted_backup": {
+    "backup_id": "backup-corrupted-gate-f-1786193155",
+    "vault_path": "/app/data/vault_dr_gate_f/backup-corrupted-gate-f-1786193155",
+    "tampered_file": "physical_basebackup/backup_manifest",
+    "original_sha256": "525f51f00630aeefd643b0c076fef0ef9a0da550f1511d1d911d44a8f78219bb",
+    "corrupted_sha256": "02c8f2a09348d03fd0daf163eb8db63b1dbadc7c445a40d20e2c1dc7bf267b73",
+    "original_size_bytes": 285124,
+    "corrupted_size_bytes": 285187,
+    "injection_payload": "TAMPERED_BYTES_CORRUPTION_INJECTION_FAIL_VERIFYBACKUP_7_4_C",
+    "status": "CORRUPTED_INVALID"
+  },
+  "rejection_summary": {
+    "pg_verifybackup_exit_code": 1,
+    "restore_blocked": true,
+    "rejection_exception": "CHECKSUM_MISMATCH: backup_manifest SHA-256 inv\u00e1lido (02c8f2a09348d03fd0daf163eb8db63b1dbadc7c445a40d20e2c1dc7bf267b73 != 525f51f00630aeefd643b0c076fef0ef9a0da550f1511d1d911d44a8f78219bb)",
+    "fallback_pg_dump_used": false,
+    "database_tampered": false
+  }
+}

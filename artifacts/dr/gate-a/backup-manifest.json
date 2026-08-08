@@ -1,0 +1,53 @@
+{
+  "backup_id": "gate-a-certification-drill",
+  "created_at_utc": "2026-08-07T23:30:10.681694+00:00",
+  "application": "Abst-gp",
+  "version": "V5.5 Enterprise Operations",
+  "alembic_version": "c4d5e6f7a8b9",
+  "postgres_version": "PostgreSQL 16.14 on x86_64-pc-linux-musl, compiled by gcc (Alpine 15.2.0) 15.2.0, 64-bit",
+  "server_version_num": 160014,
+  "physical_basebackup": {
+    "method": "pg_basebackup",
+    "format": "plain_physical_directory",
+    "directory": "physical_basebackup",
+    "wal_method": "stream",
+    "manifest_checksum_sha256": "94815315f16af21356246a44985f1216644ca115a9623c6ec852d9eb2f50bff3",
+    "verified_by": "pg_verifybackup",
+    "verification_status": "PASSED",
+    "start_lsn": "0/67000028",
+    "stop_lsn": "0/69000000",
+    "timeline_id": 1
+  },
+  "logical_backup": {
+    "type": "complementary_logical_dump",
+    "filename": "logical_complementary.dump",
+    "size_bytes": 89555,
+    "sha256": "76e69febf6b01f0f3abd6931fb726d1d32bb9c0a31d0642acd2f18d7b4034ea7",
+    "is_physical_fallback": false
+  },
+  "globals": {
+    "filename": "globals_sanitized.sql",
+    "sha256": "1abe0d763b39d98648f6b37dc93f206b7a1a228df84e8462b0369b7fb37b3b8e"
+  },
+  "documents_snapshot": {
+    "filename": "documents_snapshot.tar.gz",
+    "size_bytes": 68,
+    "sha256": "780372696a62779517833133269b98f88715d579982060093b4266d04d79425d",
+    "total_files": 0,
+    "checksums_file": "backup-checksums.json",
+    "checksums_sha256": "1392212a6dc7977b7f823ece496ad961527692e5135f5e65a3f0cbe22becd5d9"
+  },
+  "wal_archive": {
+    "segments_count": 0,
+    "segments": [],
+    "first_recoverable_time_utc": "2026-08-07T23:30:10.681694+00:00",
+    "last_recoverable_time_utc": "2026-08-07T23:30:10.681694+00:00"
+  },
+  "security": {
+    "algorithm": "HMAC-SHA256",
+    "key_id": "abst_gp_dr_key_v1",
+    "contains_secrets": false,
+    "sanitized": true,
+    "signature": "361755538ffa6cc6772558eec1ccac40919b902db64a35fff32a7eac443db27a"
+  }
+}

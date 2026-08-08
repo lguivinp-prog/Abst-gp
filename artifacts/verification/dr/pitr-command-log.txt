@@ -1,0 +1,93 @@
+=== PITR END-TO-END DRILL EXECUTION LOG ===
+Timestamp: 2026-08-07T21:23:09Z
+
+--- STEP 0: Inserting T0 Baseline Data ---
+DROP TABLE
+CREATE TABLE
+INSERT 0 1
+
+--- STEP 1: Running Physical Base Backup (pg_basebackup) ---
+pg_basebackup: initiating base backup, waiting for checkpoint to complete
+pg_basebackup: checkpoint completed
+pg_basebackup: write-ahead log start point: 0/46000028 on timeline 1
+pg_basebackup: starting background WAL receiver
+pg_basebackup: created temporary replication slot "pg_basebackup_112943"
+   64/33372 kB (0%), 0/1 tablespace (/tmp/pitr_drill/basebackup/global/2672)
+33383/33383 kB (100%), 0/1 tablespace (/tmp/pitr_drill/basebackup/global/pg_control)
+33383/33383 kB (100%), 1/1 tablespace                                         
+pg_basebackup: write-ahead log end point: 0/46000100
+pg_basebackup: waiting for background process to finish streaming ...
+pg_basebackup: syncing data to disk ...
+pg_basebackup: renaming backup_manifest.tmp to backup_manifest
+pg_basebackup: base backup completed
+
+--- STEP 1.1: Verifying Base Backup with pg_verifybackup ---
+backup successfully verified
+
+--- STEP 2: Inserting T2 Target Data & Capturing Recovery Target ---
+INSERT 0 1
+TARGET_TIME (Point-in-Time target): 2026-08-07 21:23:20.513057+00
+TARGET_LSN (Point-in-Time target LSN): 0/470040D8
+
+--- STEP 3: Simulating Disaster / Destructive Action at T3 ---
+INSERT 0 1
+
+--- STEP 3.1: Flushing WAL to Archive ---
+Flushed WAL: 0/470041D8
+
+--- STEP 4: Restoring Physical Base Backup to New Isolated Cluster ---
+cp -a /tmp/pitr_drill/basebackup /tmp/pitr_drill/restored_cluster
+
+--- STEP 5: Configuring PITR Parameters in Restored Cluster ---
+touch /tmp/pitr_drill/restored_cluster/recovery.signal
+postgresql.auto.conf configured with target time: 2026-08-07 21:23:20.513057+00
+
+--- STEP 6: Starting Isolated Restored PostgreSQL Instance on Port 5433 ---
+pg_ctl -D /tmp/pitr_drill/restored_cluster -l /tmp/pitr_drill/restored_cluster.log -o "-p 5433" start
+waiting for server to start....... done
+server started
+Waiting for recovery and promotion...
+localhost:5433 - accepting connections
+Restored instance is UP, PROMOTED and accepting connections (pg_is_in_recovery = false)!
+
+--- STEP 7: Validating Data and Timeline Integrity on Restored Cluster ---
+ id |     stage      |                         description                         |          inserted_at          
+----+----------------+-------------------------------------------------------------+-------------------------------
+  1 | T0_BASELINE    | Baseline state before physical base backup                  | 2026-08-07 21:23:10.420113+00
+  2 | T2_TARGET_DATA | Critical production transaction committed prior to disaster | 2026-08-07 21:23:20.500259+00
+(2 rows)
+
+Validation Summary: HAS_T0=1 (expected 1), HAS_T2=1 (expected 1), HAS_T3=0 (expected 0)
+
+--- STEP 8: Inspecting Timeline & Control Data ---
+Restored Timeline ID: 2
+Restored DB State: in production
+
+--- RESTORE LOG ENTRIES (WAL REPLAY) ---
+2026-08-07 21:23:24.691 UTC [113020] LOG:  starting PostgreSQL 16.14 on x86_64-pc-linux-musl, compiled by gcc (Alpine 15.2.0) 15.2.0, 64-bit
+2026-08-07 21:23:24.691 UTC [113020] LOG:  listening on IPv4 address "0.0.0.0", port 5433
+2026-08-07 21:23:24.691 UTC [113020] LOG:  listening on IPv6 address "::", port 5433
+2026-08-07 21:23:24.698 UTC [113020] LOG:  listening on Unix socket "/var/run/postgresql/.s.PGSQL.5433"
+2026-08-07 21:23:24.707 UTC [113023] LOG:  database system was interrupted; last known up at 2026-08-07 21:23:15 UTC
+2026-08-07 21:23:28.217 UTC [113023] LOG:  starting point-in-time recovery to 2026-08-07 21:23:20.513057+00
+2026-08-07 21:23:28.217 UTC [113023] LOG:  starting backup recovery with redo LSN 0/46000028, checkpoint LSN 0/46000060, on timeline ID 1
+2026-08-07 21:23:28.225 UTC [113023] LOG:  restored log file "000000010000000000000046" from archive
+2026-08-07 21:23:28.247 UTC [113023] LOG:  redo starts at 0/46000028
+2026-08-07 21:23:28.251 UTC [113023] LOG:  restored log file "000000010000000000000047" from archive
+2026-08-07 21:23:28.267 UTC [113023] LOG:  completed backup recovery with redo LSN 0/46000028 and end LSN 0/46000100
+2026-08-07 21:23:28.267 UTC [113023] LOG:  consistent recovery state reached at 0/46000100
+2026-08-07 21:23:28.267 UTC [113020] LOG:  database system is ready to accept read-only connections
+2026-08-07 21:23:28.268 UTC [113023] LOG:  recovery stopping before commit of transaction 1943, time 2026-08-07 21:23:22.520072+00
+2026-08-07 21:23:28.268 UTC [113023] LOG:  redo done at 0/47004198 system usage: CPU: user: 0.00 s, system: 0.00 s, elapsed: 0.02 s
+2026-08-07 21:23:28.268 UTC [113023] LOG:  last completed transaction was at log time 2026-08-07 21:23:20.500413+00
+2026-08-07 21:23:28.275 UTC [113023] LOG:  restored log file "000000010000000000000047" from archive
+2026-08-07 21:23:28.288 UTC [113023] LOG:  selected new timeline ID: 2
+2026-08-07 21:23:28.971 UTC [113023] LOG:  archive recovery complete
+2026-08-07 21:23:28.975 UTC [113021] LOG:  checkpoint starting: end-of-recovery immediate wait
+2026-08-07 21:23:29.010 UTC [113021] LOG:  checkpoint complete: wrote 12 buffers (0.1%); 0 WAL file(s) added, 0 removed, 1 recycled; write=0.007 s, sync=0.013 s, total=0.039 s; sync files=9, longest=0.004 s, average=0.002 s; distance=16400 kB, estimate=16400 kB; lsn=0/47004198, redo lsn=0/47004198
+2026-08-07 21:23:29.016 UTC [113020] LOG:  database system is ready to accept connections
+
+--- STEP 9: Stopping Restored Instance ---
+waiting for server to shut down.... done
+server stopped
+=== PITR DRILL COMPLETED SUCCESSFULLY ===

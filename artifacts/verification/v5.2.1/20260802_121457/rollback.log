@@ -1,0 +1,38 @@
+ Container abst_gp_v52_validation-redis-test-1 Running 
+ Container abst_gp_v52_validation-db-test-1 Running 
+ Container abst_gp_v52_validation-redis-test-1 Waiting 
+ Container abst_gp_v52_validation-db-test-1 Waiting 
+ Container abst_gp_v52_validation-db-test-1 Healthy 
+ Container abst_gp_v52_validation-redis-test-1 Healthy 
+ Container abst_gp_v52_validation-backend-test-run-41ba14b078cd Creating 
+ Container abst_gp_v52_validation-backend-test-run-41ba14b078cd Created 
+============================= test session starts ==============================
+platform linux -- Python 3.12.3, pytest-9.1.1, pluggy-1.6.0 -- /usr/local/bin/python
+cachedir: .pytest_cache
+rootdir: /app
+configfile: pytest.ini
+plugins: mock-3.15.1, asyncio-1.4.0, anyio-4.14.2
+asyncio: mode=Mode.STRICT, debug=False, asyncio_default_fixture_loop_scope=None, asyncio_default_test_loop_scope=function
+collecting ... collected 1 item
+
+tests/api/integration/test_comparison_rollback.py::test_comparison_rollback_real PASSED [100%]
+
+=============================== warnings summary ===============================
+app/models/base.py:3
+  /app/app/models/base.py:3: MovedIn20Warning: The ``declarative_base()`` function is now available as sqlalchemy.orm.declarative_base(). (deprecated since: 2.0) (Background on SQLAlchemy 2.0 at: https://sqlalche.me/e/b8d9)
+    Base = declarative_base()
+
+../usr/local/lib/python3.12/site-packages/fastapi/testclient.py:1
+  /usr/local/lib/python3.12/site-packages/fastapi/testclient.py:1: StarletteDeprecationWarning: Using `httpx` with `starlette.testclient` is deprecated; install `httpx2` instead.
+    from starlette.testclient import TestClient as TestClient  # noqa
+
+app/core/config.py:4
+  /app/app/core/config.py:4: PydanticDeprecatedSince20: Support for class-based `config` is deprecated, use ConfigDict instead. Deprecated in Pydantic V2.0 to be removed in V3.0. See Pydantic V2 Migration Guide at https://errors.pydantic.dev/2.13/migration/
+    class Settings(BaseSettings):
+
+../usr/local/lib/python3.12/site-packages/passlib/utils/__init__.py:854
+  /usr/local/lib/python3.12/site-packages/passlib/utils/__init__.py:854: DeprecationWarning: 'crypt' is deprecated and slated for removal in Python 3.13
+    from crypt import crypt as _crypt
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+======================== 1 passed, 4 warnings in 2.58s =========================

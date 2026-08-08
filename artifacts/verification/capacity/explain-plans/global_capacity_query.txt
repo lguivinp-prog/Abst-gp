@@ -1,0 +1,1 @@
+﻿Index Scan using idx_processing_jobs_status_created on processing_jobs

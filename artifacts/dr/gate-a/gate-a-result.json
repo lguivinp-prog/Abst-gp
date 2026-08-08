@@ -1,0 +1,10 @@
+{
+  "gate": "A",
+  "name": "PostgreSQL Physical Recovery",
+  "status": "PASS",
+  "backup_method": "pg_basebackup (plain physical directory with SHA256)",
+  "verifybackup": "pg_verifybackup (exit code 0, integrity verified)",
+  "restore": "plain physical restore verified in 6.68s",
+  "data_integrity": "100% tables, tenants, case_files, uploaded_documents and audit_logs consistent",
+  "timestamp": "2026-08-07T23:30:18.272752+00:00"
+}

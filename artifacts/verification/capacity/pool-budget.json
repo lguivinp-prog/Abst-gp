@@ -1,0 +1,10 @@
+﻿{
+    "pool_timeouts":  0,
+    "postgres_max_connections":  100,
+    "pool_size":  20,
+    "soak_test_parallel_ops":  50,
+    "max_overflow":  10,
+    "status":  "PASS",
+    "scenario":  "E - Connection Pool Budget \u0026 Stability",
+    "total_budget_per_instance":  30
+}

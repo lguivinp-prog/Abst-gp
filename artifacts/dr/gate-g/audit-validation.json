@@ -1,0 +1,30 @@
+{
+  "timestamp_utc": "2026-08-08T12:56:06.469801+00:00",
+  "status": "PASS",
+  "audit_events_verified": [
+    {
+      "action": "SECURITY_CROSS_TENANT_ACCESS_DENIED",
+      "tenant_id": "tenant-alpha-1786193741",
+      "entity_type": "CASE_FILE",
+      "entity_id": "49",
+      "status": "REJECTED",
+      "details": "Intento de acceso cruzado denegado: Tenant tenant-alpha-1786193741 intent\u00f3 acceder al expediente 49 de Tenant tenant-bravo-1786193741."
+    },
+    {
+      "action": "SECURITY_CROSS_TENANT_MUTATION_DENIED",
+      "tenant_id": "tenant-alpha-1786193741",
+      "entity_type": "PROCESSING_JOB",
+      "entity_id": "table_extraction_49_bbd0dbfb",
+      "status": "REJECTED",
+      "details": "Intento de mutaci\u00f3n de job denegado: Tenant tenant-alpha-1786193741 no tiene autorizaci\u00f3n sobre job table_extraction_49_bbd0dbfb."
+    },
+    {
+      "action": "SECURITY_CROSS_TENANT_METRICS_DENIED",
+      "tenant_id": "tenant-alpha-1786193741",
+      "entity_type": "PROCESSING_METRICS",
+      "entity_id": "49",
+      "status": "REJECTED",
+      "details": "Consulta cruzada de m\u00e9tricas bloqueada: Tenant tenant-alpha-1786193741 intent\u00f3 acceder a m\u00e9tricas de 49."
+    }
+  ]
+}

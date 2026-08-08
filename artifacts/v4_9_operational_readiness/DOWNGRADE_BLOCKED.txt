@@ -1,0 +1,12 @@
+﻿--- DOWNGRADE BLOCKED (>=2 ADMINs) ---
+Setup: 2 ADMINs
+Command: alembic downgrade -1
+Result: Failed closed, transaction rolled back.
+Output:
+Exception: Cannot downgrade: There are 2 ADMIN users. The target schema requires a singleton ADMIN. You must manually resolve this before downgrading.
+
+Follow-up Command: alembic upgrade head
+Result: Success (Idempotent, no changes needed)
+Output:
+INFO  [alembic.runtime.migration] Context impl PostgresqlImpl.
+INFO  [alembic.runtime.migration] Will assume transactional DDL.

@@ -1,0 +1,54 @@
+{
+  "status": "PASS",
+  "backup_id": "gate-a-certification-drill",
+  "target_database": "dr_db",
+  "target_uploads_dir": "/app/dr_uploads",
+  "elapsed_seconds": 6.680689066997729,
+  "timeline": [
+    {
+      "milestone": "RESTORE_INITIATED",
+      "elapsed_seconds": 0.0,
+      "timestamp_utc": "2026-08-07T23:30:11.591451+00:00"
+    },
+    {
+      "milestone": "MANIFEST_LOADED",
+      "elapsed_seconds": 0.0006,
+      "timestamp_utc": "2026-08-07T23:30:11.592064+00:00"
+    },
+    {
+      "milestone": "MANIFEST_SIGNATURE_VERIFIED",
+      "elapsed_seconds": 0.0009,
+      "timestamp_utc": "2026-08-07T23:30:11.592364+00:00"
+    },
+    {
+      "milestone": "ARTIFACTS_CHECKSUMS_VERIFIED",
+      "elapsed_seconds": 0.0015,
+      "timestamp_utc": "2026-08-07T23:30:11.592957+00:00"
+    },
+    {
+      "milestone": "POSTGRES_RESTORE_STARTED",
+      "elapsed_seconds": 0.0016,
+      "timestamp_utc": "2026-08-07T23:30:11.593048+00:00"
+    },
+    {
+      "milestone": "POSTGRES_RESTORE_COMPLETED",
+      "elapsed_seconds": 6.6801,
+      "timestamp_utc": "2026-08-07T23:30:18.271590+00:00"
+    },
+    {
+      "milestone": "DOCUMENTS_RESTORE_STARTED",
+      "elapsed_seconds": 6.6803,
+      "timestamp_utc": "2026-08-07T23:30:18.271781+00:00"
+    },
+    {
+      "milestone": "DOCUMENTS_RESTORE_COMPLETED",
+      "elapsed_seconds": 6.6806,
+      "timestamp_utc": "2026-08-07T23:30:18.272067+00:00"
+    },
+    {
+      "milestone": "RESTORE_SUCCESS",
+      "elapsed_seconds": 6.6807,
+      "timestamp_utc": "2026-08-07T23:30:18.272136+00:00"
+    }
+  ]
+}

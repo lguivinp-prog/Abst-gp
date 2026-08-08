@@ -1,0 +1,7 @@
+NAME                                       IMAGE                     COMMAND                  SERVICE      CREATED          STATUS                      PORTS
+verification-backend-dr-run-99eb15dd0f2d   verification-backend-dr   "pytest -v tests/dr/…"   backend-dr   21 minutes ago   Up 21 minutes               
+verification-backend-dr-run-bd42c6791841   verification-backend-dr   "pytest -v tests/dr/…"   backend-dr   4 hours ago      Up 4 hours                  
+verification-db-dr-1                       postgres:16-alpine        "docker-entrypoint.s…"   db-dr        6 hours ago      Up 6 hours (healthy)        5432/tcp
+verification-db-test-1                     postgres:15               "docker-entrypoint.s…"   db-test      3 days ago       Exited (255) 11 hours ago   5432/tcp
+verification-redis-dr-1                    redis:7-alpine            "docker-entrypoint.s…"   redis-dr     6 hours ago      Up 6 hours (healthy)        6379/tcp
+verification-redis-test-1                  redis:7-alpine            "docker-entrypoint.s…"   redis-test   3 days ago       Exited (255) 11 hours ago   6379/tcp

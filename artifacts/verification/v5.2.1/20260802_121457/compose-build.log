@@ -1,0 +1,153 @@
+ Image abst_gp_v52_validation-backend-test Building 
+ Image abst_gp_v52_validation-backend-app Building 
+ Image abst_gp_v52_validation-worker-test Building 
+ Image abst_gp_v52_validation-frontend-test Building 
+#1 [internal] load local bake definitions
+#1 reading from stdin 2.31kB 0.0s done
+#1 DONE 0.0s
+
+#2 [worker-test internal] load build definition from Dockerfile.backend.test
+#2 DONE 0.0s
+
+#2 [worker-test internal] load build definition from Dockerfile.backend.test
+#2 transferring dockerfile: 792B done
+#2 DONE 0.0s
+
+#3 [frontend-test internal] load build definition from Dockerfile.frontend.test
+#3 transferring dockerfile: 455B done
+#3 DONE 0.0s
+
+#4 [backend-app internal] load metadata for docker.io/library/python:3.12.3-slim
+#4 DONE 0.1s
+
+#5 [frontend-test internal] load metadata for docker.io/library/node:20.19.0-alpine@sha256:8bda036ddd59ea51a23bc1a1035d3b5c614e72c01366d989f4120e8adca196d4
+#5 DONE 0.1s
+
+#6 [backend-test internal] load .dockerignore
+#6 transferring context: 2B done
+#6 DONE 0.0s
+
+#7 [worker-test internal] load build context
+#7 transferring context: 36.78kB 0.0s done
+#7 DONE 0.0s
+
+#8 [frontend-test 1/6] FROM docker.io/library/node:20.19.0-alpine@sha256:8bda036ddd59ea51a23bc1a1035d3b5c614e72c01366d989f4120e8adca196d4
+#8 resolve docker.io/library/node:20.19.0-alpine@sha256:8bda036ddd59ea51a23bc1a1035d3b5c614e72c01366d989f4120e8adca196d4 0.1s done
+#8 DONE 0.1s
+
+#9 [backend-app 1/9] FROM docker.io/library/python:3.12.3-slim@sha256:afc139a0a640942491ec481ad8dda10f2c5b753f5c969393b12480155fe15a63
+#9 resolve docker.io/library/python:3.12.3-slim@sha256:afc139a0a640942491ec481ad8dda10f2c5b753f5c969393b12480155fe15a63 0.1s done
+#9 DONE 0.1s
+
+#10 [frontend-test internal] load build context
+#10 ...
+
+#11 [backend-test 7/9] RUN pip install --no-cache-dir -r requirements-test.txt
+#11 CACHED
+
+#12 [backend-test 5/9] COPY backend/requirements-test.txt ./requirements-test.txt
+#12 CACHED
+
+#13 [backend-test 8/9] RUN pip check
+#13 CACHED
+
+#14 [backend-test 2/9] RUN apt-get update && apt-get install -y     libpq-dev gcc     tesseract-ocr     ghostscript     && rm -rf /var/lib/apt/lists/*
+#14 CACHED
+
+#15 [backend-test 3/9] WORKDIR /app
+#15 CACHED
+
+#16 [backend-test 4/9] COPY backend/requirements.validation.lock ./requirements.txt
+#16 CACHED
+
+#17 [backend-test 6/9] RUN pip install --no-cache-dir -r requirements.txt
+#17 CACHED
+
+#18 [backend-test 9/9] COPY backend/ ./
+#18 CACHED
+
+#10 [frontend-test internal] load build context
+#10 ...
+
+#19 [backend-test] exporting to image
+#19 exporting layers 0.0s done
+#19 exporting manifest sha256:3c723e3db2308e5fb1b097aea200bbc6722600f844b64304d0f424bfd6d708fd done
+#19 exporting config sha256:3cbe8d240fb878501a969be529d0bb50dc0a44e62e6b58f6482f890d18eefa80 0.0s done
+#19 exporting attestation manifest sha256:ba9868ad44cc5e8fa711cb42553782bfc8e78ac2feb5464c5609f697b245445e 0.2s done
+#19 exporting manifest list sha256:134e059ee43c8e259e84a7836e37774c3e47223b743958d3fc368450a60a657a 0.1s done
+#19 naming to docker.io/library/abst_gp_v52_validation-backend-test:latest 0.0s done
+#19 unpacking to docker.io/library/abst_gp_v52_validation-backend-test:latest 0.0s done
+#19 DONE 0.5s
+
+#20 [worker-test] exporting to image
+#20 exporting layers 0.0s done
+#20 exporting manifest sha256:dd03415f6da00a7ad2b20a284751e2331e1da50af3fc9eaf4d1444aaf1a2332a done
+#20 exporting config sha256:c550000f50cd504c4c5553c8aabe6fc4167400b77cc7e615326514e4904d1da4 done
+#20 exporting attestation manifest sha256:81ef90e12b921304e01de6908ddf67ec195a672e6e12f8a1904041665b45e781 0.2s done
+#20 exporting manifest list sha256:ed64a09d39cde1ba3bed240d604fe3ac9e1e72aa4b1d76a736d8358131bc24a6 0.1s done
+#20 naming to docker.io/library/abst_gp_v52_validation-worker-test:latest 0.0s done
+#20 unpacking to docker.io/library/abst_gp_v52_validation-worker-test:latest 0.0s done
+#20 DONE 0.5s
+
+#21 [backend-app] exporting to image
+#21 exporting layers 0.0s done
+#21 exporting manifest sha256:1532bb2fb0757858c92b4ff8902969e4908973cfeabd64bad7ae1a54590c6359 done
+#21 exporting config sha256:c8e183c418d09ce35657da5cb34da71e79488243a3eaded8b1e43c48b28a7f49 0.0s done
+#21 exporting attestation manifest sha256:f2b3d6cec5794e08469cd174a56678ed7fb6702a488872f31a662704835e9fad 0.2s done
+#21 exporting manifest list sha256:5c8fbd8c2907859ac9b69a3b726c9e54831f2b602dea485bbf329d4269f868f5 0.1s done
+#21 naming to docker.io/library/abst_gp_v52_validation-backend-app:latest done
+#21 unpacking to docker.io/library/abst_gp_v52_validation-backend-app:latest 0.0s done
+#21 DONE 0.5s
+
+#10 [frontend-test internal] load build context
+#10 ...
+
+#22 [worker-test] resolving provenance for metadata file
+#22 DONE 0.2s
+
+#10 [frontend-test internal] load build context
+#10 ...
+
+#23 [backend-test] resolving provenance for metadata file
+#23 DONE 0.2s
+
+#24 [backend-app] resolving provenance for metadata file
+#24 DONE 0.2s
+
+#10 [frontend-test internal] load build context
+#10 transferring context: 96.28MB 5.1s
+#10 transferring context: 184.24MB 9.3s done
+#10 DONE 9.4s
+
+#25 [frontend-test 5/6] COPY frontend/ ./
+#25 CACHED
+
+#26 [frontend-test 2/6] WORKDIR /app
+#26 CACHED
+
+#27 [frontend-test 3/6] COPY frontend/package.json frontend/package-lock.json ./
+#27 CACHED
+
+#28 [frontend-test 4/6] RUN npm ci --legacy-peer-deps
+#28 CACHED
+
+#29 [frontend-test 6/6] RUN npx tsc -b && npm run build
+#29 CACHED
+
+#30 [frontend-test] exporting to image
+#30 exporting layers done
+#30 exporting manifest sha256:bcba472dbaef5d3a922e05539ef747fd255916810d325829f6b6da6d4df9c5bf done
+#30 exporting config sha256:5d973ecedc2775e8b4f0c88ae976d3a0d9624ef49cc6d922b0aba60dfbfb30b3 done
+#30 exporting attestation manifest sha256:abecd11dc56aebb8ee83d0a54f1c7e2504a7dbdb9926e9c0ebc7b084efe821ce 0.1s done
+#30 exporting manifest list sha256:fcc586727b283467f506f051fb9d22789bfc024fba34bcc8c56259f62ac66544 0.0s done
+#30 naming to docker.io/library/abst_gp_v52_validation-frontend-test:latest
+#30 naming to docker.io/library/abst_gp_v52_validation-frontend-test:latest done
+#30 unpacking to docker.io/library/abst_gp_v52_validation-frontend-test:latest 0.0s done
+#30 DONE 0.2s
+
+#31 [frontend-test] resolving provenance for metadata file
+#31 DONE 0.0s
+ Image abst_gp_v52_validation-backend-test Built 
+ Image abst_gp_v52_validation-frontend-test Built 
+ Image abst_gp_v52_validation-worker-test Built 
+ Image abst_gp_v52_validation-backend-app Built 

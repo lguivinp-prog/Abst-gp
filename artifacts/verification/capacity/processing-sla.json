@@ -1,0 +1,21 @@
+﻿{
+    "scenario":  "D - Processing SLA Per Domain",
+    "status":  "PASS",
+    "domains":  {
+                    "OCR":  {
+                                "target_p95_s":  30,
+                                "target_p99_s":  45,
+                                "sla_met":  true
+                            },
+                    "QUOTATION":  {
+                                      "target_p95_s":  30,
+                                      "target_p99_s":  45,
+                                      "sla_met":  true
+                                  },
+                    "COMPARISON":  {
+                                       "target_p95_s":  30,
+                                       "target_p99_s":  45,
+                                       "sla_met":  true
+                                   }
+                }
+}

@@ -1,0 +1,125 @@
+ Image abst_gp_v52_validation-backend-test Building 
+ Image abst_gp_v52_validation-frontend-test Building 
+#1 [internal] load local bake definitions
+#1 reading from stdin 1.21kB 0.0s done
+#1 DONE 0.0s
+
+#2 [frontend-test internal] load build definition from Dockerfile.frontend.test
+#2 transferring dockerfile: 455B done
+#2 DONE 0.0s
+
+#3 [backend-test internal] load build definition from Dockerfile.backend.test
+#3 transferring dockerfile: 792B done
+#3 DONE 0.1s
+
+#4 [backend-test internal] load metadata for docker.io/library/python:3.12.3-slim
+#4 ...
+
+#5 [frontend-test internal] load metadata for docker.io/library/node:20.19.0-alpine@sha256:8bda036ddd59ea51a23bc1a1035d3b5c614e72c01366d989f4120e8adca196d4
+#5 DONE 0.2s
+
+#4 [backend-test internal] load metadata for docker.io/library/python:3.12.3-slim
+#4 DONE 0.2s
+
+#6 [frontend-test internal] load .dockerignore
+#6 transferring context: 2B done
+#6 DONE 0.0s
+
+#7 [frontend-test internal] load build context
+#7 DONE 0.0s
+
+#8 [backend-test internal] load build context
+#8 transferring context: 71.02kB 0.0s done
+#8 DONE 0.1s
+
+#9 [backend-test 1/9] FROM docker.io/library/python:3.12.3-slim@sha256:afc139a0a640942491ec481ad8dda10f2c5b753f5c969393b12480155fe15a63
+#9 resolve docker.io/library/python:3.12.3-slim@sha256:afc139a0a640942491ec481ad8dda10f2c5b753f5c969393b12480155fe15a63
+#9 resolve docker.io/library/python:3.12.3-slim@sha256:afc139a0a640942491ec481ad8dda10f2c5b753f5c969393b12480155fe15a63 0.1s done
+#9 DONE 0.1s
+
+#10 [frontend-test 1/6] FROM docker.io/library/node:20.19.0-alpine@sha256:8bda036ddd59ea51a23bc1a1035d3b5c614e72c01366d989f4120e8adca196d4
+#10 resolve docker.io/library/node:20.19.0-alpine@sha256:8bda036ddd59ea51a23bc1a1035d3b5c614e72c01366d989f4120e8adca196d4 0.1s done
+#10 DONE 0.1s
+
+#11 [backend-test 6/9] RUN pip install --no-cache-dir -r requirements.txt
+#11 CACHED
+
+#12 [backend-test 7/9] RUN pip install --no-cache-dir -r requirements-test.txt
+#12 CACHED
+
+#13 [backend-test 2/9] RUN apt-get update && apt-get install -y     libpq-dev gcc     tesseract-ocr     ghostscript     && rm -rf /var/lib/apt/lists/*
+#13 CACHED
+
+#14 [backend-test 3/9] WORKDIR /app
+#14 CACHED
+
+#15 [backend-test 4/9] COPY backend/requirements.validation.lock ./requirements.txt
+#15 CACHED
+
+#16 [backend-test 5/9] COPY backend/requirements-test.txt ./requirements-test.txt
+#16 CACHED
+
+#17 [backend-test 8/9] RUN pip check
+#17 CACHED
+
+#7 [frontend-test internal] load build context
+#7 ...
+
+#18 [backend-test 9/9] COPY backend/ ./
+#18 DONE 0.2s
+
+#7 [frontend-test internal] load build context
+#7 ...
+
+#19 [backend-test] exporting to image
+#19 exporting layers 0.5s done
+#19 exporting manifest sha256:1040dd27917deba9470cd5c1ec902380c4c28e476dd21d5e1b1b17cf259219f9 0.1s done
+#19 exporting config sha256:62eaa5e24ded22c66baffacf56b40357ebef5a834ec334dfda3d4e876b1d081c 0.1s done
+#19 exporting attestation manifest sha256:583210cd61bd16dac349149340bc0c248bb9e3086cb4a93b7fc701c2ec74211b 0.2s done
+#19 exporting manifest list sha256:98fef9eac508e76df2331d57d5a3278e6b3d2fab2d1f4d8a2e469da97525b3d2 0.1s done
+#19 naming to docker.io/library/abst_gp_v52_validation-backend-test:latest 0.0s done
+#19 unpacking to docker.io/library/abst_gp_v52_validation-backend-test:latest 0.2s done
+#19 DONE 1.4s
+
+#7 [frontend-test internal] load build context
+#7 ...
+
+#20 [backend-test] resolving provenance for metadata file
+#20 DONE 0.1s
+
+#7 [frontend-test internal] load build context
+#7 transferring context: 89.29MB 5.0s
+#7 transferring context: 184.24MB 9.4s done
+#7 DONE 9.4s
+
+#21 [frontend-test 2/6] WORKDIR /app
+#21 CACHED
+
+#22 [frontend-test 3/6] COPY frontend/package.json frontend/package-lock.json ./
+#22 CACHED
+
+#23 [frontend-test 4/6] RUN npm ci --legacy-peer-deps
+#23 CACHED
+
+#24 [frontend-test 5/6] COPY frontend/ ./
+#24 CACHED
+
+#25 [frontend-test 6/6] RUN npx tsc -b && npm run build
+#25 CACHED
+
+#26 [frontend-test] exporting to image
+#26 exporting layers done
+#26 exporting manifest sha256:dc1c9fac1ba058773a1f6d0a62b4493acf322a6c931f49d4673b97a27861549c done
+#26 exporting config sha256:9e10a079a3ca566e11d5e60f4483b64f76b16b1d803f33eca5e4f45af4e50f80 done
+#26 exporting attestation manifest sha256:3e09473673f0356df1fdd120508ec46659bca53d0e9fc9430ddda9ff66ad1cee
+#26 exporting attestation manifest sha256:3e09473673f0356df1fdd120508ec46659bca53d0e9fc9430ddda9ff66ad1cee 0.1s done
+#26 exporting manifest list sha256:49fe4942f6589078ff25a0281abb373275ec016e95e14f021a0313eb24a59831 0.0s done
+#26 naming to docker.io/library/abst_gp_v52_validation-frontend-test:latest
+#26 naming to docker.io/library/abst_gp_v52_validation-frontend-test:latest done
+#26 unpacking to docker.io/library/abst_gp_v52_validation-frontend-test:latest 0.0s done
+#26 DONE 0.3s
+
+#27 [frontend-test] resolving provenance for metadata file
+#27 DONE 0.0s
+ Image abst_gp_v52_validation-backend-test Built 
+ Image abst_gp_v52_validation-frontend-test Built 

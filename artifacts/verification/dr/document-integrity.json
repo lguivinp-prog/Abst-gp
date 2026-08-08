@@ -1,0 +1,13 @@
+{
+  "timestamp_utc": "2026-08-06T15:50:03.873493+00:00",
+  "status": "PASS",
+  "uploads_dir": "/app/dr_uploads",
+  "db_documents_count": 1,
+  "fs_files_count": 1,
+  "matched_documents": 1,
+  "missing_files_in_fs": [],
+  "orphan_files_in_fs": [],
+  "checksum_mismatches": [],
+  "path_violations": [],
+  "tenant_isolation_violations": []
+}

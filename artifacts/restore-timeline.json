@@ -1,0 +1,9 @@
+{
+  "status": "PASS",
+  "timeline": [
+    {
+      "milestone": "RESTORE_SUCCESS",
+      "elapsed_seconds": 185.0
+    }
+  ]
+}

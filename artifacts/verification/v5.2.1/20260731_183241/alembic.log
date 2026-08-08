@@ -1,0 +1,10 @@
+ Container abst_gp_v52_validation-db-test-1 Running 
+ Container abst_gp_v52_validation-redis-test-1 Running 
+ Container abst_gp_v52_validation-redis-test-1 Waiting 
+ Container abst_gp_v52_validation-db-test-1 Waiting 
+ Container abst_gp_v52_validation-redis-test-1 Healthy 
+ Container abst_gp_v52_validation-db-test-1 Healthy 
+ Container abst_gp_v52_validation-backend-test-run-43557c250ea8 Creating 
+ Container abst_gp_v52_validation-backend-test-run-43557c250ea8 Created 
+INFO  [alembic.runtime.migration] Context impl PostgresqlImpl.
+INFO  [alembic.runtime.migration] Will assume transactional DDL.

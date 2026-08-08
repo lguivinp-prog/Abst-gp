@@ -1,0 +1,15 @@
+﻿--- DOWNGRADE ALLOWED (0/1 ADMIN) ---
+Setup: 1 ADMIN
+Command: alembic downgrade -1
+Result: Success
+Output:
+INFO  [alembic.runtime.migration] Context impl PostgresqlImpl.
+INFO  [alembic.runtime.migration] Will assume transactional DDL.
+INFO  [alembic.runtime.migration] Running downgrade 8527a001a1bc -> c3c1858c1db2, add bootstrap ledger
+
+Follow-up Command: alembic upgrade head
+Result: Success
+Output:
+INFO  [alembic.runtime.migration] Context impl PostgresqlImpl.
+INFO  [alembic.runtime.migration] Will assume transactional DDL.
+INFO  [alembic.runtime.migration] Running upgrade c3c1858c1db2 -> 8527a001a1bc, add bootstrap ledger

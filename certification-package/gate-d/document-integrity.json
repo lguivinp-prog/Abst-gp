@@ -1,0 +1,13 @@
+{
+  "timestamp_utc": "2026-08-08T12:34:29.043359+00:00",
+  "status": "PASS",
+  "uploads_dir": "/app/data/uploads_dr_gate_d",
+  "db_documents_count": 5,
+  "fs_files_count": 5,
+  "matched_documents": 5,
+  "missing_files_in_fs": [],
+  "orphan_files_in_fs": [],
+  "checksum_mismatches": [],
+  "path_violations": [],
+  "tenant_isolation_violations": []
+}

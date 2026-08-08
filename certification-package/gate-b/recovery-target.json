@@ -1,0 +1,9 @@
+{
+  "target_time": "2026-08-07 23:34:21.173962+00",
+  "target_lsn": "0/6D001230",
+  "recovery_target_action": "promote",
+  "recovery_target_inclusive": true,
+  "timeline_before": 1,
+  "timeline_after": 2,
+  "timestamp_utc": "2026-08-07T23:34:33Z"
+}

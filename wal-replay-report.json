@@ -1,0 +1,17 @@
+{
+  "wal_archive_path": "/var/lib/postgresql/archive",
+  "restored_wal_segments": [
+    "000000010000000000000046",
+    "000000010000000000000047"
+  ],
+  "redo_start_lsn": "0/46000028",
+  "redo_done_lsn": "0/47004198",
+  "wal_replay_duration_seconds": 0.02,
+  "redo_system_usage": {
+    "cpu_user": "0.00s",
+    "cpu_system": "0.00s",
+    "elapsed": "0.02s"
+  },
+  "wal_consistency_status": "PASS",
+  "wal_replay_integrity": "EXCELLENT"
+}

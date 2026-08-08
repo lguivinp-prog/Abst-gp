@@ -1,0 +1,36 @@
+FROM python:3.12.3-slim
+
+RUN apt-get update && apt-get install -y \
+    curl ca-certificates gnupg lsb-release \
+    libpq-dev gcc \
+    tesseract-ocr \
+    ghostscript \
+    && curl -fsSL https://www.postgresql.org/media/keys/ACCC4CF8.asc | gpg --dearmor -o /etc/apt/trusted.gpg.d/postgresql.gpg \
+    && echo "deb http://apt.postgresql.org/pub/repos/apt $(lsb_release -cs)-pgdg main" > /etc/apt/sources.list.d/pgdg.list \
+    && apt-get update \
+    && apt-get install -y --no-install-recommends postgresql-client-16 postgresql-16 \
+    && rm -rf /var/lib/apt/lists/*
+
+ENV PATH="/usr/lib/postgresql/16/bin:${PATH}"
+
+# Set working directory
+WORKDIR /app
+
+# Copy requirements
+COPY backend/requirements.validation.lock ./requirements.txt
+COPY backend/requirements-test.txt ./requirements-test.txt
+
+# Install dependencies strictly from lockfile
+RUN pip install --no-cache-dir -r requirements.txt
+
+# Install test dependencies
+RUN pip install --no-cache-dir -r requirements-test.txt
+
+# Verify no dependency conflicts
+RUN pip check
+
+# Copy backend code
+COPY backend/ ./
+
+# Command to run tests (or start app)
+CMD ["pytest", "tests/", "-v"]

@@ -1,0 +1,19 @@
+﻿
+added 69 packages, and audited 70 packages in 25s
+
+17 packages are looking for funding
+  run `npm fund` for details
+
+2 moderate severity vulnerabilities
+
+To address all issues, run:
+  npm audit fix
+
+Run `npm audit` for details.
+
+> frontend@0.0.0 build
+> tsc -b && vite build
+
+src/__tests__/v53_frontend_integration.test.ts(1,8): error TS6133: 'test' is declared but its value is never read.
+src/__tests__/v53_frontend_integration.test.ts(1,36): error TS2591: Cannot find name 'node:test'. Do you need to install type definitions for node? Try `npm i --save-dev @types/node` and then add 'node' to the types field in your tsconfig.
+src/__tests__/v53_frontend_integration.test.ts(2,20): error TS2591: Cannot find name 'node:assert/strict'. Do you need to install type definitions for node? Try `npm i --save-dev @types/node` and then add 'node' to the types field in your tsconfig.

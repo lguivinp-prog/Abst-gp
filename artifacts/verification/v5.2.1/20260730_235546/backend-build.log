@@ -1,0 +1,57 @@
+#0 building with "desktop-linux" instance using docker driver
+
+#1 [internal] load build definition from Dockerfile.backend.test
+#1 transferring dockerfile: 763B 0.0s done
+#1 DONE 0.0s
+
+#2 [internal] load metadata for docker.io/library/python:3.12.3-slim
+#2 DONE 0.1s
+
+#3 [internal] load .dockerignore
+#3 transferring context: 2B done
+#3 DONE 0.0s
+
+#4 [internal] load build context
+#4 transferring context: 2.19MB 0.2s done
+#4 DONE 0.2s
+
+#5 [1/9] FROM docker.io/library/python:3.12.3-slim@sha256:afc139a0a640942491ec481ad8dda10f2c5b753f5c969393b12480155fe15a63
+#5 resolve docker.io/library/python:3.12.3-slim@sha256:afc139a0a640942491ec481ad8dda10f2c5b753f5c969393b12480155fe15a63 0.1s done
+#5 DONE 0.1s
+
+#6 [2/9] RUN apt-get update && apt-get install -y     libpq-dev gcc     tesseract-ocr     ghostscript     && rm -rf /var/lib/apt/lists/*
+#6 CACHED
+
+#7 [3/9] WORKDIR /app
+#7 CACHED
+
+#8 [4/9] COPY backend/requirements.validation.lock ./requirements.txt
+#8 CACHED
+
+#9 [5/9] COPY backend/requirements-test.txt ./requirements-test.txt
+#9 CACHED
+
+#10 [6/9] RUN pip install --no-cache-dir -r requirements.txt
+#10 CACHED
+
+#11 [7/9] RUN pip install --no-cache-dir -r requirements-test.txt
+#11 CACHED
+
+#12 [8/9] RUN pip check
+#12 CACHED
+
+#13 [9/9] COPY backend/ ./
+#13 DONE 0.2s
+
+#14 exporting to image
+#14 exporting layers
+#14 exporting layers 0.3s done
+#14 exporting manifest sha256:b065369beefe5e8309d3cf98220598785be93acabdb4e6f4c73bf8735b9fe1a6 0.0s done
+#14 exporting config sha256:927419c4cf36bb824872bafbca6f9c9c33cab5c4b4fefc46b7db585275c79cd5 0.1s done
+#14 exporting attestation manifest sha256:89eec0613440cf4b397ad4de2e40394e3bae6d3aa28fde3876b1167734215195
+#14 exporting attestation manifest sha256:89eec0613440cf4b397ad4de2e40394e3bae6d3aa28fde3876b1167734215195 0.1s done
+#14 exporting manifest list sha256:3f35ef51799ecb96237dea83700ed1ece4252a3fc2423bfb4e91e3e314446240
+#14 exporting manifest list sha256:3f35ef51799ecb96237dea83700ed1ece4252a3fc2423bfb4e91e3e314446240 0.0s done
+#14 naming to docker.io/library/abst_gp_backend_test:latest done
+#14 unpacking to docker.io/library/abst_gp_backend_test:latest 0.1s done
+#14 DONE 0.8s

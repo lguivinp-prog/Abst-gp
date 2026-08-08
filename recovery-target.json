@@ -1,0 +1,15 @@
+{
+  "t0_baseline_timestamp": "2026-08-07 21:23:10.420113+00",
+  "t1_basebackup_start_lsn": "0/46000028",
+  "t1_basebackup_end_lsn": "0/46000100",
+  "t2_target_transaction_commit_time": "2026-08-07 21:23:20.500259+00",
+  "t2_target_transaction_xid": 1941,
+  "recovery_target_time_configured": "2026-08-07 21:23:20.513057+00",
+  "recovery_target_action": "promote",
+  "recovery_target_inclusive": true,
+  "t3_disaster_transaction_commit_time": "2026-08-07 21:23:22.520072+00",
+  "t3_disaster_transaction_xid": 1943,
+  "recovery_stopping_log": "recovery stopping before commit of transaction 1943, time 2026-08-07 21:23:22.520072+00",
+  "last_completed_transaction_time": "2026-08-07 21:23:20.500413+00",
+  "target_boundary_precision": "EXACT"
+}

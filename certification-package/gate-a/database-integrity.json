@@ -1,0 +1,44 @@
+{
+  "timestamp_utc": "2026-08-07T23:30:18.272752+00:00",
+  "status": "PASS",
+  "database_version": "PostgreSQL 16.14 on x86_64-pc-linux-musl, compiled by gcc (Alpine 15.2.0) 15.2.0, 64-bit",
+  "alembic_version": "c4d5e6f7a8b9",
+  "tables_inventory": {
+    "tenants": 8,
+    "users": 2,
+    "case_files": 3,
+    "uploaded_documents": 3,
+    "processing_jobs": 0,
+    "processing_metrics": 0,
+    "worker_heartbeats": 0,
+    "audit_logs": 4,
+    "parsed_sections": 0,
+    "quotation_extractions": 0,
+    "comparison_runs": 0,
+    "comparison_results": 0,
+    "generated_outputs": 0
+  },
+  "integrity_checks": [
+    {
+      "check": "orphan_jobs_without_tenant",
+      "passed": true,
+      "count": 0
+    },
+    {
+      "check": "orphan_docs_without_case_file",
+      "passed": true,
+      "count": 0
+    },
+    {
+      "check": "orphan_metrics_without_job",
+      "passed": true,
+      "count": 0
+    },
+    {
+      "check": "cross_tenant_job_leak",
+      "passed": true,
+      "count": 0
+    }
+  ],
+  "violations": []
+}

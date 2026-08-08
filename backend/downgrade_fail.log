@@ -1,0 +1,75 @@
+﻿python : INFO  [alembic.runtime.migration] Context impl PostgresqlImpl.
+En línea: 1 Carácter: 273
++ ... e_remediation.py setup_2; python -m alembic downgrade -1 2>&1 | Out-F ...
++                               ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (INFO  [alembic....PostgresqlImpl.:String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+ 
+INFO  [alembic.runtime.migration] Will assume transactional DDL.
+INFO  [alembic.runtime.migration] Running downgrade 8527a001a1bc -> c3c1858c1db2, add bootstrap ledger
+Traceback (most recent call last):
+  File "<frozen runpy>", line 203, in _run_module_as_main
+  File "<frozen runpy>", line 88, in _run_code
+  File "C:\Users\PC\AppData\Local\Packages\PythonSoftwareFoundation.Python.3.13_qbz5n2kfra8p0\LocalCache\local-packages
+\Python313\site-packages\alembic\__main__.py", line 4, in <module>
+    main(prog="alembic")
+    ~~~~^^^^^^^^^^^^^^^^
+  File "C:\Users\PC\AppData\Local\Packages\PythonSoftwareFoundation.Python.3.13_qbz5n2kfra8p0\LocalCache\local-packages
+\Python313\site-packages\alembic\config.py", line 1047, in main
+    CommandLine(prog=prog).main(argv=argv)
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^
+  File "C:\Users\PC\AppData\Local\Packages\PythonSoftwareFoundation.Python.3.13_qbz5n2kfra8p0\LocalCache\local-packages
+\Python313\site-packages\alembic\config.py", line 1037, in main
+    self.run_cmd(cfg, options)
+    ~~~~~~~~~~~~^^^^^^^^^^^^^^
+  File "C:\Users\PC\AppData\Local\Packages\PythonSoftwareFoundation.Python.3.13_qbz5n2kfra8p0\LocalCache\local-packages
+\Python313\site-packages\alembic\config.py", line 971, in run_cmd
+    fn(
+    ~~^
+        config,
+        ^^^^^^^
+        *[getattr(options, k, None) for k in positional],
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        **{k: getattr(options, k, None) for k in kwarg},
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "C:\Users\PC\AppData\Local\Packages\PythonSoftwareFoundation.Python.3.13_qbz5n2kfra8p0\LocalCache\local-packages
+\Python313\site-packages\alembic\command.py", line 537, in downgrade
+    script.run_env()
+    ~~~~~~~~~~~~~~^^
+  File "C:\Users\PC\AppData\Local\Packages\PythonSoftwareFoundation.Python.3.13_qbz5n2kfra8p0\LocalCache\local-packages
+\Python313\site-packages\alembic\script\base.py", line 556, in run_env
+    util.load_python_file(self.dir, "env.py")
+    ~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\PC\AppData\Local\Packages\PythonSoftwareFoundation.Python.3.13_qbz5n2kfra8p0\LocalCache\local-packages
+\Python313\site-packages\alembic\util\pyfiles.py", line 116, in load_python_file
+    module = load_module_py(module_id, path)
+  File "C:\Users\PC\AppData\Local\Packages\PythonSoftwareFoundation.Python.3.13_qbz5n2kfra8p0\LocalCache\local-packages
+\Python313\site-packages\alembic\util\pyfiles.py", line 136, in load_module_py
+    spec.loader.exec_module(module)  # type: ignore
+    ~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^
+  File "<frozen importlib._bootstrap_external>", line 1023, in exec_module
+  File "<frozen importlib._bootstrap>", line 488, in _call_with_frames_removed
+  File "C:\Users\PC\Documents\AbastLG\abst-v4_9-remediation-clean\backend\alembic\env.py", line 99, in <module>
+    run_migrations_online()
+    ~~~~~~~~~~~~~~~~~~~~~^^
+  File "C:\Users\PC\Documents\AbastLG\abst-v4_9-remediation-clean\backend\alembic\env.py", line 93, in 
+run_migrations_online
+    context.run_migrations()
+    ~~~~~~~~~~~~~~~~~~~~~~^^
+  File "<string>", line 8, in run_migrations
+  File "C:\Users\PC\AppData\Local\Packages\PythonSoftwareFoundation.Python.3.13_qbz5n2kfra8p0\LocalCache\local-packages
+\Python313\site-packages\alembic\runtime\environment.py", line 969, in run_migrations
+    self.get_context().run_migrations(**kw)
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^
+  File "C:\Users\PC\AppData\Local\Packages\PythonSoftwareFoundation.Python.3.13_qbz5n2kfra8p0\LocalCache\local-packages
+\Python313\site-packages\alembic\runtime\migration.py", line 626, in run_migrations
+    step.migration_fn(**kw)
+    ~~~~~~~~~~~~~~~~~^^^^^^
+  File "C:\Users\PC\Documents\AbastLG\abst-v4_9-remediation-clean\backend\alembic\versions\8527a001a1bc_add_bootstrap_l
+edger.py", line 38, in downgrade
+    raise Exception(f"Cannot downgrade: There are {result} ADMIN users. The target schema requires a singleton ADMIN. 
+You must manually resolve this before downgrading.")
+Exception: Cannot downgrade: There are 2 ADMIN users. The target schema requires a singleton ADMIN. You must manually 
+resolve this before downgrading.

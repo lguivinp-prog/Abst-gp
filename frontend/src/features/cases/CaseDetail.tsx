@@ -1,8 +1,7 @@
-import React, { useEffect, useState } from 'react';
+import React, { useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { ArrowLeft } from 'lucide-react';
-import apiClient from '../../api/client';
-import type { Case, Section, ComparisonResult } from '../../types';
+import type { Section, CaseStatus } from '../../types';
 import { Button } from '../../components/ui/Button';
 import { Badge } from '../../components/ui/Badge';
 import { Card, CardHeader, CardTitle, CardContent } from '../../components/ui/Card';
@@ -10,23 +9,24 @@ import './CaseDetail.css';
 
 import { RequirementUpload } from './components/RequirementUpload';
 import { ProcessingStatus } from './components/ProcessingStatus';
-import { SectionSelector } from './components/SectionSelector';
-import { SectionEditor } from './components/SectionEditor';
 import { QuotationUpload } from './components/QuotationUpload';
 import { OutputGenerator } from './components/OutputGenerator';
 import { ComparisonTable } from './components/ComparisonTable';
+import { DoublePaneReview } from './components/DoublePaneReview';
+import { useComparisonFlow } from './hooks/useComparisonFlow';
+import { useCaseDetails } from './hooks/useCaseDetails';
+import { casesService } from '../../api/cases.service';
+import { AppError } from '../../api/apiError';
 
 const CaseDetail: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  // Current active job id (if any)
-  const [activeJobId, setActiveJobId] = useState<string | null>(null);
   
-  const [caseData, setCaseData] = useState<Case | null>(null);
-  const [sections, setSections] = useState<Section[]>([]);
-  const [comparisons, setComparisons] = useState<ComparisonResult[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [activeJobId, setActiveJobId] = useState<string | null>(null);
   const [editingSection, setEditingSection] = useState<Section | null>(null);
+  const [actionError, setActionError] = useState<string | null>(null);
+
+  const { caseData, setCaseData, sections, setSections, loading, error, refresh } = useCaseDetails(id);
 
   const getStatusLabel = (status: string) => {
     switch (status) {
@@ -57,30 +57,6 @@ const CaseDetail: React.FC = () => {
     }
   };
 
-  useEffect(() => {
-    if (id) {
-      fetchCaseDetails(id);
-    }
-  }, [id]);
-
-  const fetchCaseDetails = async (caseId: string) => {
-    setLoading(true);
-    try {
-      const [caseRes, sectionsRes, comparisonsRes] = await Promise.all([
-        apiClient.get(`/cases/${caseId}`),
-        apiClient.get(`/cases/${caseId}/sections`).catch(() => ({ data: [] })),
-        apiClient.get(`/cases/${caseId}/comparison`).catch(() => ({ data: [] }))
-      ]);
-      setCaseData(caseRes.data);
-      setSections(sectionsRes.data);
-      setComparisons(comparisonsRes.data);
-    } catch (error) {
-      console.error('Error fetching case details:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
-
   const handleUploadSuccess = (jobId: string) => {
     setActiveJobId(jobId);
     if (caseData) {
@@ -90,8 +66,24 @@ const CaseDetail: React.FC = () => {
 
   const handleProcessComplete = () => {
     setActiveJobId(null);
-    fetchCaseDetails(id!);
+    refresh();
   };
+
+  const handleProcessRetry = () => {
+    setActiveJobId(null);
+    if (caseData && caseData.status === 'PROCESSING_REQUIREMENT') {
+      // Si falló el worker, lo devolvemos a CREATED localmente para permitir re-subida
+      setCaseData({ ...caseData, status: 'CREATED' });
+    }
+  };
+
+  const handleComparisonStatusChange = (newStatus: string) => {
+    if (caseData) {
+      setCaseData({ ...caseData, status: newStatus as CaseStatus });
+    }
+  };
+
+  const comparisonFlow = useComparisonFlow(id || '', caseData?.status || '', handleComparisonStatusChange);
 
   const handleEditSection = (section: Section) => {
     setEditingSection(section);
@@ -103,30 +95,46 @@ const CaseDetail: React.FC = () => {
   };
 
   const handleConfirmSections = async () => {
+    setActionError(null);
     try {
-      const res = await apiClient.post(`/cases/${id}/sections/confirm`);
-      setCaseData(res.data);
-    } catch (error) {
-      console.error('Error confirming sections:', error);
-      alert('Error al confirmar secciones');
+      if (id) {
+        const updatedCase = await casesService.confirmSections(id);
+        setCaseData(updatedCase);
+      }
+    } catch (err) {
+      if (err instanceof AppError) {
+        setActionError(err.message);
+      } else {
+        setActionError('Error inesperado al confirmar secciones');
+      }
     }
   };
 
-  if (loading) {
+  if (loading && !caseData) {
     return (
-      <div className="loading-state">
+      <div className="loading-state h-screen flex flex-col justify-center items-center">
         <div className="spinner"></div>
-        <p>Cargando detalles del expediente...</p>
+        <p className="mt-4 text-gray-600">Cargando detalles del expediente...</p>
       </div>
     );
   }
 
-  if (!caseData) {
-    return <div>Expediente no encontrado.</div>;
+  if (error || !caseData) {
+    return (
+      <div className="p-6">
+        <div className="bg-red-50 text-red-800 p-4 rounded-md border border-red-200">
+          <h2 className="font-bold mb-2">Error al cargar el caso</h2>
+          <p>{error || 'Expediente no encontrado.'}</p>
+          <Button variant="outline" className="mt-4" onClick={() => navigate('/cases')}>
+            Volver a Expedientes
+          </Button>
+        </div>
+      </div>
+    );
   }
 
   return (
-    <div className="case-detail-container p-6">
+    <div className="case-detail-container p-6 max-w-7xl mx-auto">
       <div className="detail-header mb-6 flex items-center justify-between">
         <div className="flex items-center gap-4">
           <Button 
@@ -145,6 +153,12 @@ const CaseDetail: React.FC = () => {
           </div>
         </div>
       </div>
+
+      {actionError && (
+        <div className="bg-red-50 text-red-800 p-3 rounded-md mb-6 border border-red-200">
+          {actionError}
+        </div>
+      )}
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
         {(caseData.status === 'CREATED' || caseData.status === 'draft' || caseData.status === 'ERROR') && !activeJobId ? (
@@ -172,7 +186,11 @@ const CaseDetail: React.FC = () => {
 
         {caseData.status === 'PROCESSING_REQUIREMENT' || activeJobId ? (
           <div className="col-span-1 md:col-span-2">
-            <ProcessingStatus jobId={activeJobId || ''} onComplete={handleProcessComplete} />
+            <ProcessingStatus 
+              jobId={activeJobId || ''} 
+              onComplete={handleProcessComplete} 
+              onRetry={handleProcessRetry}
+            />
           </div>
         ) : null}
 
@@ -184,7 +202,7 @@ const CaseDetail: React.FC = () => {
         ) : (caseData.status !== 'CREATED' && caseData.status !== 'draft' && caseData.status !== 'PROCESSING_REQUIREMENT' && !activeJobId && (
           <QuotationUpload 
             caseId={caseData.id.toString()} 
-            onUploadSuccess={() => fetchCaseDetails(id!)} 
+            onUploadSuccess={refresh} 
             disabled={caseData.status !== 'WAITING_QUOTATION'} 
           />
         ))}
@@ -193,29 +211,76 @@ const CaseDetail: React.FC = () => {
           <OutputGenerator 
             caseId={caseData.id.toString()}
             caseStatus={caseData.status}
-            disabled={caseData.status !== 'COMPARING' && caseData.status !== 'READY_GENERATE' && caseData.status !== 'COMPLETED'}
-            onGenerateSuccess={() => fetchCaseDetails(id!)}
+            disabled={caseData.status !== 'READY_GENERATE' && caseData.status !== 'COMPLETED' || comparisonFlow.status !== 'completed' || comparisonFlow.comparisons.length === 0}
+            onGenerateSuccess={refresh}
           />
         )}
       </div>
 
-      {(caseData.status === 'READY_GENERATE' || caseData.status === 'COMPLETED') && comparisons.length > 0 && (
-        <ComparisonTable comparisons={comparisons} />
+      {(caseData.status === 'COMPARING' || caseData.status === 'READY_GENERATE' || caseData.status === 'COMPLETED') && (
+        <Card className="mt-6">
+          <CardHeader>
+            <CardTitle className="text-lg">Inteligencia Documental: Comparación</CardTitle>
+          </CardHeader>
+          <CardContent>
+            {comparisonFlow.status === 'idle' && (
+              <div className="text-center p-6 bg-gray-50 rounded-lg">
+                <p className="text-gray-600 mb-4">La cotización ha sido procesada. Listo para comparar condiciones.</p>
+                <Button 
+                  onClick={comparisonFlow.executeComparison} 
+                  disabled={comparisonFlow.isExecuting}
+                >
+                  Ejecutar Comparación
+                </Button>
+              </div>
+            )}
+
+            {comparisonFlow.status === 'running' && (
+              <div className="flex flex-col justify-center items-center p-8 bg-blue-50 text-blue-800 rounded-lg">
+                <div className="spinner mb-4 border-blue-500"></div>
+                <p className="font-semibold">Comparando condiciones...</p>
+                <p className="text-sm mt-2 opacity-80">Por favor espere, esto puede tomar unos segundos.</p>
+              </div>
+            )}
+
+            {comparisonFlow.status === 'uncertain' && (
+              <div className="bg-yellow-50 text-yellow-800 p-4 rounded-md border border-yellow-200">
+                <p className="font-medium mb-2">Se perdió la comunicación durante la comparación.</p>
+                <p className="text-sm">El servidor podría haber completado la operación. Verificaremos el estado del expediente antes de permitir otro intento.</p>
+                <Button variant="outline" size="sm" className="mt-4" onClick={() => { refresh(); comparisonFlow.refreshResults(); }}>
+                  Verificar Estado
+                </Button>
+              </div>
+            )}
+
+            {comparisonFlow.error && comparisonFlow.status !== 'uncertain' && (
+              <div className="bg-red-50 text-red-800 p-4 rounded-md border border-red-200 mt-4">
+                <h3 className="font-bold mb-2">Error en la comparación</h3>
+                <p>{comparisonFlow.error.message}</p>
+                <Button variant="outline" size="sm" className="mt-4" onClick={comparisonFlow.executeComparison}>
+                  Reintentar
+                </Button>
+              </div>
+            )}
+          </CardContent>
+        </Card>
       )}
 
-      {sections.length > 0 && !activeJobId && caseData.status === 'REVIEW_SECTIONS' && (
-        <SectionSelector 
-          sections={sections} 
-          onEditSection={handleEditSection} 
-          onContinue={handleConfirmSections} 
-        />
+      {comparisonFlow.status === 'completed' && comparisonFlow.comparisons.length > 0 && (
+        <div className="mt-6">
+          <ComparisonTable comparisons={comparisonFlow.comparisons} />
+        </div>
       )}
 
-      {editingSection && (
-        <SectionEditor 
-          section={editingSection} 
-          onSave={handleSaveSection} 
-          onCancel={() => setEditingSection(null)} 
+      {caseData.status === 'REVIEW_SECTIONS' && !activeJobId && (
+        <DoublePaneReview
+          caseId={caseData.id.toString()}
+          sections={sections}
+          onEditSection={handleEditSection}
+          onSaveSection={handleSaveSection}
+          onConfirmSections={handleConfirmSections}
+          editingSection={editingSection}
+          onCancelEdit={() => setEditingSection(null)}
         />
       )}
     </div>

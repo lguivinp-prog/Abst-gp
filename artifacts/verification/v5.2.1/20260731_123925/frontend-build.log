@@ -1,0 +1,50 @@
+#0 building with "desktop-linux" instance using docker driver
+
+#1 [internal] load build definition from Dockerfile.frontend.test
+#1 transferring dockerfile: 455B done
+#1 DONE 0.0s
+
+#2 [internal] load metadata for docker.io/library/node:20.19.0-alpine@sha256:8bda036ddd59ea51a23bc1a1035d3b5c614e72c01366d989f4120e8adca196d4
+#2 DONE 0.0s
+
+#3 [internal] load .dockerignore
+#3 transferring context: 2B done
+#3 DONE 0.0s
+
+#4 [1/6] FROM docker.io/library/node:20.19.0-alpine@sha256:8bda036ddd59ea51a23bc1a1035d3b5c614e72c01366d989f4120e8adca196d4
+#4 resolve docker.io/library/node:20.19.0-alpine@sha256:8bda036ddd59ea51a23bc1a1035d3b5c614e72c01366d989f4120e8adca196d4 0.1s done
+#4 DONE 0.1s
+
+#5 [internal] load build context
+#5 transferring context: 96.97MB 5.0s
+#5 transferring context: 127.68MB 10.0s
+#5 transferring context: 136.32MB 15.1s
+#5 transferring context: 182.83MB 23.4s
+#5 transferring context: 184.46MB 23.5s done
+#5 DONE 23.5s
+
+#6 [4/6] RUN npm ci --legacy-peer-deps
+#6 CACHED
+
+#7 [5/6] COPY frontend/ ./
+#7 CACHED
+
+#8 [2/6] WORKDIR /app
+#8 CACHED
+
+#9 [3/6] COPY frontend/package.json frontend/package-lock.json ./
+#9 CACHED
+
+#10 [6/6] RUN npx tsc -b && npm run build
+#10 CACHED
+
+#11 exporting to image
+#11 exporting layers done
+#11 exporting manifest sha256:75a581c3295b8e3d4c3ac8b79ca8708904a608b37626d5ef4059a4872110fec4 done
+#11 exporting config sha256:806056f7ed6d33a3bf83b6cc8d60972852fe8e125955a7514248cc4c46d4779f done
+#11 exporting attestation manifest sha256:c0de6ca5c0f504ddcbe69082dc0d9912483b6b133020eccb01c34e3a657a99f3 0.1s done
+#11 exporting manifest list sha256:53f17ec95dad59bc9c370c6828b5a791e8b6707983906d231ac31ec72350433f
+#11 exporting manifest list sha256:53f17ec95dad59bc9c370c6828b5a791e8b6707983906d231ac31ec72350433f 0.0s done
+#11 naming to docker.io/library/abst_gp_frontend_test:latest done
+#11 unpacking to docker.io/library/abst_gp_frontend_test:latest 0.0s done
+#11 DONE 0.2s

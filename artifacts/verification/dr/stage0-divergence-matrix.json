@@ -1,0 +1,29 @@
+{
+  "assessment_timestamp_utc": "2026-08-06T15:55:20Z",
+  "divergences": [
+    {
+      "topic": "PostgreSQL Engine Version",
+      "reported_expectation": "PostgreSQL 16 Enterprise SSOT across all environments",
+      "observed_reality": "docker-compose.yml declares postgres:15-alpine; verification/docker-compose.dr.yml declares postgres:16-alpine",
+      "classification": "OBSERVED",
+      "impact": "Low - DR certification uses PostgreSQL 16 directly; main compose needs version alignment to 16",
+      "mitigation": "Align main compose image to postgres:16-alpine in upcoming version bump"
+    },
+    {
+      "topic": "Backup Tooling Mechanism",
+      "reported_expectation": "Selection between pg_basebackup, pgBackRest, WAL-G or pg_dump",
+      "observed_reality": "verification/dr/create_backup.py implements pg_dump custom/tar format with native SQL fallback + document tarball + HMAC-SHA256 signature; pg_basebackup/pgBackRest/WAL-G are not yet installed in alpine container",
+      "classification": "OBSERVED",
+      "impact": "Medium - pg_dump meets RPO/RTO targets for current dataset volume; physical block-level tool selection matrix to be evaluated in Stage 1",
+      "mitigation": "Formally evaluate tooling selection matrix in Stage 1"
+    },
+    {
+      "topic": "DR Gates Measurement State",
+      "reported_expectation": "All Stage 0 gates must be marked NOT MEASURED until verified under Stage 0 criteria",
+      "observed_reality": "Stage 0 establishes non-destructive baseline; DR gates marked NOT MEASURED for Stage 0",
+      "classification": "OBSERVED",
+      "impact": "None - Follows governance rules strictly",
+      "mitigation": "Keep all gates as NOT MEASURED in Stage 0 report"
+    }
+  ]
+}

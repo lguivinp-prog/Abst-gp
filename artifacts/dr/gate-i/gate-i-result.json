@@ -1,0 +1,10 @@
+{
+  "gate": "I",
+  "status": "PASS",
+  "rto_seconds": 3.3412,
+  "target_seconds": 900,
+  "postgres_restore": "PASS",
+  "redis_rebuild": "PASS",
+  "worker_recovery": "PASS",
+  "pipeline_ready": "PASS"
+}

@@ -1,0 +1,278 @@
+ Container abst_gp_v52_validation-redis-test-1 Running 
+ Container abst_gp_v52_validation-db-test-1 Running 
+ Container abst_gp_v52_validation-db-test-1 Waiting 
+ Container abst_gp_v52_validation-redis-test-1 Waiting 
+ Container abst_gp_v52_validation-redis-test-1 Healthy 
+ Container abst_gp_v52_validation-db-test-1 Healthy 
+ Container abst_gp_v52_validation-backend-test-run-0b2296d19052 Creating 
+ Container abst_gp_v52_validation-backend-test-run-0b2296d19052 Created 
+============================= test session starts ==============================
+platform linux -- Python 3.12.3, pytest-9.1.1, pluggy-1.6.0 -- /usr/local/bin/python
+cachedir: .pytest_cache
+rootdir: /app
+configfile: pytest.ini
+plugins: mock-3.15.1, asyncio-1.4.0, anyio-4.14.2
+asyncio: mode=Mode.STRICT, debug=False, asyncio_default_fixture_loop_scope=None, asyncio_default_test_loop_scope=function
+collecting ... collected 1 item
+
+tests/e2e/test_full_document_pipeline.py::test_full_document_pipeline ERROR [100%]
+
+==================================== ERRORS ====================================
+________________ ERROR at setup of test_full_document_pipeline _________________
+
+self = <sqlalchemy.engine.base.Connection object at 0x76cd99ec10a0>
+dialect = <sqlalchemy.dialects.postgresql.psycopg2.PGDialect_psycopg2 object at 0x76cd9a135d30>
+context = <sqlalchemy.dialects.postgresql.psycopg2.PGExecutionContext_psycopg2 object at 0x76cd9a4ceab0>
+statement = <sqlalchemy.dialects.postgresql.base.PGCompiler object at 0x76cd99ec2480>
+parameters = [{'id': 100, 'tenant_id': 'mega_tenant', 'tenant_resolution_status': 'RESOLVED', 'username': 'admin', ...}]
+
+    def _exec_single_context(
+        self,
+        dialect: Dialect,
+        context: ExecutionContext,
+        statement: Union[str, Compiled],
+        parameters: Optional[_AnyMultiExecuteParams],
+    ) -> CursorResult[Any]:
+        """continue the _execute_context() method for a single DBAPI
+        cursor.execute() or cursor.executemany() call.
+    
+        """
+        if dialect.bind_typing is BindTyping.SETINPUTSIZES:
+            generic_setinputsizes = context._prepare_set_input_sizes()
+    
+            if generic_setinputsizes:
+                try:
+                    dialect.do_set_input_sizes(
+                        context.cursor, generic_setinputsizes, context
+                    )
+                except BaseException as e:
+                    self._handle_dbapi_exception(
+                        e, str(statement), parameters, None, context
+                    )
+    
+        cursor, str_statement, parameters = (
+            context.cursor,
+            context.statement,
+            context.parameters,
+        )
+    
+        effective_parameters: Optional[_AnyExecuteParams]
+    
+        if not context.executemany:
+            effective_parameters = parameters[0]
+        else:
+            effective_parameters = parameters
+    
+        if self._has_events or self.engine._has_events:
+            for fn in self.dispatch.before_cursor_execute:
+                str_statement, effective_parameters = fn(
+                    self,
+                    cursor,
+                    str_statement,
+                    effective_parameters,
+                    context,
+                    context.executemany,
+                )
+    
+        if self._echo:
+            self._log_info(str_statement)
+    
+            stats = context._get_cache_stats()
+    
+            if not self.engine.hide_parameters:
+                self._log_info(
+                    "[%s] %r",
+                    stats,
+                    sql_util._repr_params(
+                        effective_parameters,
+                        batches=10,
+                        ismulti=context.executemany,
+                    ),
+                )
+            else:
+                self._log_info(
+                    "[%s] [SQL parameters hidden due to hide_parameters=True]",
+                    stats,
+                )
+    
+        evt_handled: bool = False
+        try:
+            if context.execute_style is ExecuteStyle.EXECUTEMANY:
+                effective_parameters = cast(
+                    "_CoreMultiExecuteParams", effective_parameters
+                )
+                if self.dialect._has_events:
+                    for fn in self.dialect.dispatch.do_executemany:
+                        if fn(
+                            cursor,
+                            str_statement,
+                            effective_parameters,
+                            context,
+                        ):
+                            evt_handled = True
+                            break
+                if not evt_handled:
+                    self.dialect.do_executemany(
+                        cursor,
+                        str_statement,
+                        effective_parameters,
+                        context,
+                    )
+            elif not effective_parameters and context.no_parameters:
+                if self.dialect._has_events:
+                    for fn in self.dialect.dispatch.do_execute_no_params:
+                        if fn(cursor, str_statement, context):
+                            evt_handled = True
+                            break
+                if not evt_handled:
+                    self.dialect.do_execute_no_params(
+                        cursor, str_statement, context
+                    )
+            else:
+                effective_parameters = cast(
+                    "_CoreSingleExecuteParams", effective_parameters
+                )
+                if self.dialect._has_events:
+                    for fn in self.dialect.dispatch.do_execute:
+                        if fn(
+                            cursor,
+                            str_statement,
+                            effective_parameters,
+                            context,
+                        ):
+                            evt_handled = True
+                            break
+                if not evt_handled:
+>                   self.dialect.do_execute(
+                        cursor, str_statement, effective_parameters, context
+                    )
+
+/usr/local/lib/python3.12/site-packages/sqlalchemy/engine/base.py:1969: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = <sqlalchemy.dialects.postgresql.psycopg2.PGDialect_psycopg2 object at 0x76cd9a135d30>
+cursor = <cursor object at 0x76cd99ec4e50; closed: -1>
+statement = 'INSERT INTO users (id, tenant_id, tenant_resolution_status, username, password_hash, role, is_active, must_change_pas...t)s, %(failed_login_count)s, %(locked_until)s, %(password_changed_at)s, %(quarantined_at)s) RETURNING users.created_at'
+parameters = {'id': 100, 'tenant_id': 'mega_tenant', 'tenant_resolution_status': 'RESOLVED', 'username': 'admin', ...}
+context = <sqlalchemy.dialects.postgresql.psycopg2.PGExecutionContext_psycopg2 object at 0x76cd9a4ceab0>
+
+    def do_execute(self, cursor, statement, parameters, context=None):
+>       cursor.execute(statement, parameters)
+E       psycopg2.errors.UniqueViolation: duplicate key value violates unique constraint "ix_users_username"
+E       DETAIL:  Key (username)=(admin) already exists.
+
+/usr/local/lib/python3.12/site-packages/sqlalchemy/engine/default.py:952: UniqueViolation
+
+The above exception was the direct cause of the following exception:
+
+    @pytest.fixture(scope="module", autouse=True)
+    def setup_e2e_admin_user():
+        with TestingSessionLocal() as db:
+            tenant = Tenant(id="mega_tenant", name="Mega Tenant")
+            db.merge(tenant)
+            db.commit()
+    
+            hashed = get_password_hash("adminpassword")
+            admin = User(
+                id=100,
+                username="admin",
+                password_hash=hashed,
+                role="ADMIN",
+                is_active=True,
+                tenant_id="mega_tenant",
+                tenant_resolution_status="RESOLVED",
+                must_change_password=False
+            )
+            db.merge(admin)
+>           db.commit()
+
+tests/e2e/test_full_document_pipeline.py:33: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+/usr/local/lib/python3.12/site-packages/sqlalchemy/orm/session.py:2035: in commit
+    trans.commit(_to_root=True)
+<string>:2: in commit
+    ???
+/usr/local/lib/python3.12/site-packages/sqlalchemy/orm/state_changes.py:137: in _go
+    ret_value = fn(self, *arg, **kw)
+                ^^^^^^^^^^^^^^^^^^^^
+/usr/local/lib/python3.12/site-packages/sqlalchemy/orm/session.py:1316: in commit
+    self._prepare_impl()
+<string>:2: in _prepare_impl
+    ???
+/usr/local/lib/python3.12/site-packages/sqlalchemy/orm/state_changes.py:137: in _go
+    ret_value = fn(self, *arg, **kw)
+                ^^^^^^^^^^^^^^^^^^^^
+/usr/local/lib/python3.12/site-packages/sqlalchemy/orm/session.py:1290: in _prepare_impl
+    self.session.flush()
+/usr/local/lib/python3.12/site-packages/sqlalchemy/orm/session.py:4353: in flush
+    self._flush(objects)
+/usr/local/lib/python3.12/site-packages/sqlalchemy/orm/session.py:4488: in _flush
+    with util.safe_reraise():
+/usr/local/lib/python3.12/site-packages/sqlalchemy/util/langhelpers.py:122: in __exit__
+    raise exc_value.with_traceback(exc_tb)
+/usr/local/lib/python3.12/site-packages/sqlalchemy/orm/session.py:4449: in _flush
+    flush_context.execute()
+/usr/local/lib/python3.12/site-packages/sqlalchemy/orm/unitofwork.py:465: in execute
+    rec.execute(self)
+/usr/local/lib/python3.12/site-packages/sqlalchemy/orm/unitofwork.py:641: in execute
+    util.preloaded.orm_persistence.save_obj(
+/usr/local/lib/python3.12/site-packages/sqlalchemy/orm/persistence.py:94: in save_obj
+    _emit_insert_statements(
+/usr/local/lib/python3.12/site-packages/sqlalchemy/orm/persistence.py:1234: in _emit_insert_statements
+    result = connection.execute(
+/usr/local/lib/python3.12/site-packages/sqlalchemy/engine/base.py:1421: in execute
+    return meth(
+/usr/local/lib/python3.12/site-packages/sqlalchemy/sql/elements.py:526: in _execute_on_connection
+    return connection._execute_clauseelement(
+/usr/local/lib/python3.12/site-packages/sqlalchemy/engine/base.py:1643: in _execute_clauseelement
+    ret = self._execute_context(
+/usr/local/lib/python3.12/site-packages/sqlalchemy/engine/base.py:1848: in _execute_context
+    return self._exec_single_context(
+/usr/local/lib/python3.12/site-packages/sqlalchemy/engine/base.py:1988: in _exec_single_context
+    self._handle_dbapi_exception(
+/usr/local/lib/python3.12/site-packages/sqlalchemy/engine/base.py:2365: in _handle_dbapi_exception
+    raise sqlalchemy_exception.with_traceback(exc_info[2]) from e
+/usr/local/lib/python3.12/site-packages/sqlalchemy/engine/base.py:1969: in _exec_single_context
+    self.dialect.do_execute(
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = <sqlalchemy.dialects.postgresql.psycopg2.PGDialect_psycopg2 object at 0x76cd9a135d30>
+cursor = <cursor object at 0x76cd99ec4e50; closed: -1>
+statement = 'INSERT INTO users (id, tenant_id, tenant_resolution_status, username, password_hash, role, is_active, must_change_pas...t)s, %(failed_login_count)s, %(locked_until)s, %(password_changed_at)s, %(quarantined_at)s) RETURNING users.created_at'
+parameters = {'id': 100, 'tenant_id': 'mega_tenant', 'tenant_resolution_status': 'RESOLVED', 'username': 'admin', ...}
+context = <sqlalchemy.dialects.postgresql.psycopg2.PGExecutionContext_psycopg2 object at 0x76cd9a4ceab0>
+
+    def do_execute(self, cursor, statement, parameters, context=None):
+>       cursor.execute(statement, parameters)
+E       sqlalchemy.exc.IntegrityError: (psycopg2.errors.UniqueViolation) duplicate key value violates unique constraint "ix_users_username"
+E       DETAIL:  Key (username)=(admin) already exists.
+E       
+E       [SQL: INSERT INTO users (id, tenant_id, tenant_resolution_status, username, password_hash, role, is_active, must_change_password, created_by_user_id, last_login_at, failed_login_count, locked_until, password_changed_at, quarantined_at) VALUES (%(id)s, %(tenant_id)s, %(tenant_resolution_status)s, %(username)s, %(password_hash)s, %(role)s, %(is_active)s, %(must_change_password)s, %(created_by_user_id)s, %(last_login_at)s, %(failed_login_count)s, %(locked_until)s, %(password_changed_at)s, %(quarantined_at)s) RETURNING users.created_at]
+E       [parameters: {'id': 100, 'tenant_id': 'mega_tenant', 'tenant_resolution_status': 'RESOLVED', 'username': 'admin', 'password_hash': '$2b$12$1zA5SUjoIRf8LCAqTWlCeuGZCpr5LefKtuqJckvuVrahjHZTxzXEi', 'role': 'ADMIN', 'is_active': True, 'must_change_password': False, 'created_by_user_id': None, 'last_login_at': None, 'failed_login_count': 0, 'locked_until': None, 'password_changed_at': None, 'quarantined_at': None}]
+E       (Background on this error at: https://sqlalche.me/e/20/gkpj)
+
+/usr/local/lib/python3.12/site-packages/sqlalchemy/engine/default.py:952: IntegrityError
+---------------------------- Captured stdout setup -----------------------------
+
+--- Pytest running against isolated DB: test_db ---
+---------------------------- Captured stderr setup -----------------------------
+INFO  [alembic.runtime.migration] Context impl PostgresqlImpl.
+INFO  [alembic.runtime.migration] Will assume transactional DDL.
+=============================== warnings summary ===============================
+app/models/base.py:3
+  /app/app/models/base.py:3: MovedIn20Warning: The ``declarative_base()`` function is now available as sqlalchemy.orm.declarative_base(). (deprecated since: 2.0) (Background on SQLAlchemy 2.0 at: https://sqlalche.me/e/b8d9)
+    Base = declarative_base()
+
+../usr/local/lib/python3.12/site-packages/passlib/utils/__init__.py:854
+  /usr/local/lib/python3.12/site-packages/passlib/utils/__init__.py:854: DeprecationWarning: 'crypt' is deprecated and slated for removal in Python 3.13
+    from crypt import crypt as _crypt
+
+app/core/config.py:4
+  /app/app/core/config.py:4: PydanticDeprecatedSince20: Support for class-based `config` is deprecated, use ConfigDict instead. Deprecated in Pydantic V2.0 to be removed in V3.0. See Pydantic V2 Migration Guide at https://errors.pydantic.dev/2.13/migration/
+    class Settings(BaseSettings):
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+ERROR tests/e2e/test_full_document_pipeline.py::test_full_document_pipeline
+========================= 3 warnings, 1 error in 1.86s =========================
+

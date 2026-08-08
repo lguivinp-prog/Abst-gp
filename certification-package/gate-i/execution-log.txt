@@ -1,0 +1,23 @@
+[2026-08-08T13:15:47.684378+00:00] ================================================================================
+[2026-08-08T13:15:47.684601+00:00] GATE I: RTO QUANTITATIVE CERTIFICATION DRILL
+[2026-08-08T13:15:47.684767+00:00] ================================================================================
+[2026-08-08T13:15:47.695536+00:00] --- [T0] Sistema Operativo Normal: 2026-08-08T13:15:47.695246+00:00 ---
+[2026-08-08T13:15:48.007859+00:00] Estado T0 creado: Case ID 66, Doc ID 45, Job ID document_extraction_66_fb0d0b0d
+[2026-08-08T13:15:48.007989+00:00] Generando Physical Base Backup previo al simulacro...
+[2026-08-08T13:16:25.355435+00:00] Backup base verificado exitosamente en 0.00s
+[2026-08-08T13:16:26.357156+00:00] --- [T1] Declaración Formal de Desastre: 2026-08-08T13:16:26.356846+00:00 ---
+[2026-08-08T13:16:26.420027+00:00] Desastre inyectado: DB dañada, storage borrado, Redis ensuciado con estado fantasma.
+[2026-08-08T13:16:26.420132+00:00] --- [T2] Inicio Recuperación PostgreSQL: 2026-08-08T13:16:26.420055+00:00 ---
+[2026-08-08T13:16:29.338254+00:00] --- [T3] Restore Físico PostgreSQL Completado en 0.00s: 2026-08-08T13:16:29.338078+00:00 ---
+[2026-08-08T13:16:29.375131+00:00] Validación PostgreSQL SSOT tras Restore: PASS
+[2026-08-08T13:16:29.375289+00:00] --- [T4] Iniciando Reconstrucción y Limpieza de Redis ---
+[2026-08-08T13:16:29.406262+00:00] --- [T4] Redis Reconstruido e Inicializado Limpio (0 keys): 2026-08-08T13:16:29.406082+00:00 ---
+[2026-08-08T13:16:29.406416+00:00] --- [T5] Iniciando Reconciliación de Workers y Jobs Huérfanos ---
+[2026-08-08T13:16:29.506106+00:00] --- [T5] Workers Reconciliados (Job document_extraction_66_fb0d0b0d -> QUEUED): 2026-08-08T13:16:29.505816+00:00 ---
+[2026-08-08T13:16:29.506210+00:00] --- [T6] Ejecutando Procesamiento Funcional de Documento en Pipeline ---
+[2026-08-08T13:16:29.587127+00:00] --- [T6] Documento Procesado Correctamente (Doc ID 46, Job ID ocr_processing_66_b3ae3a69, Status READY): 2026-08-08T13:16:29.586855+00:00 ---
+[2026-08-08T13:16:29.587382+00:00] --- [T7] Verificando Disponibilidad y Salud Integral del Pipeline ---
+[2026-08-08T13:16:29.698296+00:00] --- [T7] Pipeline Documental 100% Operativo y Disponible: 2026-08-08T13:16:29.698025+00:00 ---
+[2026-08-08T13:16:29.698483+00:00] RTO TOTAL REAL MEDIDO: 3.3412s (Objetivo: <= 900.0s) -> PASS
+[2026-08-08T13:16:29.698643+00:00] --- Generando Artefactos de Certificación Gate I en artifacts/dr/gate-i/ ---
+[2026-08-08T13:16:29.732950+00:00] === GATE I: RTO QUANTITATIVE DRILL COMPLETADO SATISFACTORIAMENTE ===

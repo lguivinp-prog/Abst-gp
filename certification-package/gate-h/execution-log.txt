@@ -1,0 +1,22 @@
+[2026-08-08T13:05:35.395185+00:00] ================================================================================
+[2026-08-08T13:05:35.395261+00:00] GATE H: RPO QUANTITATIVE CERTIFICATION DRILL
+[2026-08-08T13:05:35.395286+00:00] ================================================================================
+[2026-08-08T13:05:35.415046+00:00] --- [T0] Punto de partida confirmado antes del desastre: 2026-08-08T13:05:35.414794+00:00 ---
+[2026-08-08T13:05:35.486151+00:00] Transacción T0 registrada en PostgreSQL (Case ID 58, Doc ID 40, SHA256 0bdec4ca976d9e940ac1411ae3a713930e630d0b4e69ac6e61cb69c13014e119)
+[2026-08-08T13:05:35.487251+00:00] PostgreSQL WAL LSN en T0: 0/BB1FD4D8, Server Clock: 2026-08-08T13:05:35.487025+00:00
+[2026-08-08T13:05:35.487276+00:00] --- [T1 & T2] Archivando Transacciones (WAL/Basebackup) y Sincronizando Storage ---
+[2026-08-08T13:06:06.492836+00:00] T1: Última transacción PostgreSQL archivada en LSN 0/BB1FD4D8 (Checkpoint ) - Time: 2026-08-08T13:06:06.492581+00:00
+[2026-08-08T13:06:06.492937+00:00] T2: Último documento físico sincronizado en catálogo (0 docs) - Time: 2026-08-08T13:06:06.492581+00:00
+[2026-08-08T13:06:08.493589+00:00] --- [T3] Declaración Formal de Desastre: 2026-08-08T13:06:08.493255+00:00 ---
+[2026-08-08T13:06:08.528540+00:00] Inyección de desastre ejecutada: Registros en DB eliminados y archivo físico borrado.
+[2026-08-08T13:06:08.547269+00:00] Pérdida confirmada. Iniciando protocolo de recuperación DR.
+[2026-08-08T13:06:08.548760+00:00] --- [T4] Ejecutando Restauración y Recuperación Integral DR: 2026-08-08T13:06:08.548496+00:00 ---
+[2026-08-08T13:06:11.605465+00:00] Recuperación DR completada en 0.00s: 2026-08-08T13:06:11.605257+00:00
+[2026-08-08T13:06:11.639488+00:00] PostgreSQL SSOT Recuperado: Expediente 'Expediente Medición RPO Cuantitativo' y Documento ID 40
+[2026-08-08T13:06:11.651181+00:00] Validación documental exitosa: Archivo restaurado intacto con SHA-256 coincidente: 0bdec4ca976d9e940ac1411ae3a713930e630d0b4e69ac6e61cb69c13014e119
+[2026-08-08T13:06:11.708623+00:00] Validación de consistencia documental del Tenant: PASS
+[2026-08-08T13:06:11.709052+00:00] RPO PostgreSQL Real: 2.0007s
+[2026-08-08T13:06:11.709179+00:00] RPO Documentos Real: 2.0007s
+[2026-08-08T13:06:11.709310+00:00] RPO Efectivo Medido: 2.0007s (Objetivo: <= 300.0s) -> PASS
+[2026-08-08T13:06:11.709435+00:00] --- Generando Artefactos de Certificación Gate H en artifacts/dr/gate-h/ ---
+[2026-08-08T13:06:11.736534+00:00] === GATE H: RPO QUANTITATIVE DRILL COMPLETADO SATISFACTORIAMENTE ===

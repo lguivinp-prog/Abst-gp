@@ -1,0 +1,19 @@
+{
+  "timestamp_utc": "2026-08-05T04:26:07.985200+00:00",
+  "status": "FAIL",
+  "uploads_dir": "/app/dr_uploads",
+  "db_documents_count": 2,
+  "fs_files_count": 1,
+  "matched_documents": 1,
+  "missing_files_in_fs": [
+    {
+      "stored_path": "doc_scenario_a_dr-tenant-a-1785903948.pdf",
+      "document_id": "1",
+      "tenant_id": "dr-tenant-a-1785903948"
+    }
+  ],
+  "orphan_files_in_fs": [],
+  "checksum_mismatches": [],
+  "path_violations": [],
+  "tenant_isolation_violations": []
+}

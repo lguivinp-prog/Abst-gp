@@ -81,9 +81,7 @@ class AtomicPersistence:
         
         try:
             # 3. Create exclusively (O_CREAT | O_EXCL)
-            flags = os.O_WRONLY | os.O_CREAT | os.O_EXCL
-            if hasattr(os, 'O_BINARY'):
-                flags |= getattr(os, 'O_BINARY')
+            flags = os.O_WRONLY | os.O_CREAT | os.O_EXCL | getattr(os, "O_BINARY", 0)
             fd = os.open(tmp_path, flags, 0o644)
             try:
                 os.write(fd, canonical_bytes)

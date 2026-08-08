@@ -1,10 +1,26 @@
 import React from 'react';
 import { Outlet, Link, useLocation } from 'react-router-dom';
-import { FileText, Settings, LayoutDashboard } from 'lucide-react';
+import { FileText, Settings, LayoutDashboard, Activity } from 'lucide-react';
+import { useAuth } from '../../features/auth/AuthContext';
 import './Layout.css';
 
 const Layout: React.FC = () => {
   const location = useLocation();
+  const { user } = useAuth();
+  const isAdmin = user?.role === 'ADMIN' || !user?.role; // default permissive if not loaded
+
+  const getBreadcrumb = () => {
+    if (location.pathname.includes('/monitoring')) {
+      return 'Administración / Monitoreo & SRE';
+    }
+    if (location.pathname.includes('/settings')) {
+      return 'Configuración / Sistema';
+    }
+    if (location.pathname.includes('/cases/')) {
+      return 'Gestión Documental / Detalle de Expediente';
+    }
+    return 'Gestión Documental / Expedientes';
+  };
 
   return (
     <div className="layout-container">
@@ -25,6 +41,15 @@ const Layout: React.FC = () => {
             <LayoutDashboard size={20} />
             <span>Expedientes</span>
           </Link>
+          {isAdmin && (
+            <Link 
+              to="/monitoring" 
+              className={`nav-item ${location.pathname.includes('/monitoring') ? 'active' : ''}`}
+            >
+              <Activity size={20} />
+              <span>Monitoreo SRE</span>
+            </Link>
+          )}
           <Link 
             to="/settings" 
             className={`nav-item ${location.pathname.includes('/settings') ? 'active' : ''}`}
@@ -36,10 +61,10 @@ const Layout: React.FC = () => {
         
         <div className="sidebar-footer">
           <div className="user-profile">
-            <div className="avatar">A</div>
+            <div className="avatar">{user?.username ? user.username.charAt(0).toUpperCase() : 'A'}</div>
             <div className="user-info">
-              <span className="user-name">Admin Usuario</span>
-              <span className="user-role">Administrador</span>
+              <span className="user-name">{user?.username || 'Admin Usuario'}</span>
+              <span className="user-role">{user?.role || 'Administrador'}</span>
             </div>
           </div>
         </div>
@@ -49,7 +74,7 @@ const Layout: React.FC = () => {
       <main className="main-area">
         <header className="topbar">
           <div className="breadcrumb">
-            Gestión Documental / Expedientes
+            {getBreadcrumb()}
           </div>
         </header>
         <div className="content-scroll">
@@ -63,3 +88,4 @@ const Layout: React.FC = () => {
 };
 
 export default Layout;
+

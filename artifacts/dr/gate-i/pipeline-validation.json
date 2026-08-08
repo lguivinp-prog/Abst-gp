@@ -1,0 +1,17 @@
+{
+  "timestamp_utc": "2026-08-08T13:16:29.714136+00:00",
+  "status": "PASS",
+  "validation_details": {
+    "tenant_id": "tenant-rto-gate-i-1786194947",
+    "case_id": 66,
+    "document_id": 46,
+    "original_filename": "documento_post_recovery_1786194947.pdf",
+    "sha256": "772964bbbdf0b9f036939dff3dd43659c1991d79afa312dfe9b30c8d4b8064d1",
+    "job_id": "ocr_processing_66_b3ae3a69",
+    "job_status": "READY",
+    "processed_output_verified": true,
+    "pipeline_end_to_end_operational": true,
+    "reconciled_orphan_job_id": "document_extraction_66_fb0d0b0d",
+    "reconciled_orphan_job_status": "QUEUED"
+  }
+}

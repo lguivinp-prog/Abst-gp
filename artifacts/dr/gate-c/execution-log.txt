@@ -1,0 +1,25 @@
+[2026-08-07T23:37:47.969870+00:00] ================================================================================
+[2026-08-07T23:37:47.969950+00:00] GATE C: REDIS LOSS & REBUILD CERTIFICATION DRILL
+[2026-08-07T23:37:47.969990+00:00] ================================================================================
+[2026-08-07T23:37:47.970757+00:00] --- [T0] Creando Entidades y Estados de Jobs en PostgreSQL SSOT ---
+[2026-08-07T23:37:48.511149+00:00] Job QUEUED creado: ocr_processing_28_e2c19bec (ID: 17)
+[2026-08-07T23:37:48.566360+00:00] Job PROCESSING creado: document_parsing_28_23612a07 (Worker: worker_dr_lost_instance_01, Heartbeat: Stale)
+[2026-08-07T23:37:48.605230+00:00] Job COMPLETED creado: section_split_28_43962e4c (Status: READY)
+[2026-08-07T23:37:48.633357+00:00] Job FAILED FINAL creado: table_extraction_28_02d61e00 (Status: FAILED, Class: FINAL)
+[2026-08-07T23:37:48.633451+00:00] --- [T1] Inyectando Estado Efímero en Redis (Colas RQ, Locks, Cache) ---
+[2026-08-07T23:37:48.647961+00:00] Redis poblado exitosamente con 6 keys efímeras.
+[2026-08-07T23:37:48.648010+00:00] --- [T2] Inyectando Desastre: Destrucción Total de Redis (FLUSHALL) ---
+[2026-08-07T23:37:48.685227+00:00] Redis tras FLUSHALL: 0 keys.
+[2026-08-07T23:37:48.685269+00:00] --- [T3] Verificando que PostgreSQL mantiene el 100% de los datos y estados ---
+[2026-08-07T23:37:48.687197+00:00] Total jobs encontrados en PostgreSQL SSOT tras desastre Redis: 4
+[2026-08-07T23:37:48.687237+00:00] --- [T4] Reconstruyendo Redis Limpio (rebuild_redis_instance) ---
+[2026-08-07T23:37:48.697072+00:00] Resultado rebuild_redis_instance: PASS
+[2026-08-07T23:37:48.697111+00:00] --- [T5] Ejecutando Reconciliación Canónica desde SSOT PostgreSQL ---
+[2026-08-07T23:37:48.767399+00:00] Resultado reconcile_platform_jobs: PASS
+[2026-08-07T23:37:48.767444+00:00] Scanned: 4, Retried/Requeued: 4, Final Failed: 0
+[2026-08-07T23:37:48.767461+00:00] --- [T6] Validando Estados Finales en PostgreSQL SSOT ---
+[2026-08-07T23:37:48.773871+00:00] Job QUEUED post-reconciliation: status=QUEUED, attempts=2
+[2026-08-07T23:37:48.773916+00:00] Job PROCESSING post-reconciliation: status=QUEUED, attempts=2
+[2026-08-07T23:37:48.773933+00:00] Job COMPLETED post-reconciliation: status=READY, attempts=1
+[2026-08-07T23:37:48.773948+00:00] Job FAILED post-reconciliation: status=FAILED, attempts=1, class=FINAL
+[2026-08-07T23:37:48.775861+00:00] Total eventos de auditoría registrados: 2

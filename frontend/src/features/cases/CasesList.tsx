@@ -1,190 +1,166 @@
 import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Plus, FileText, Search, Clock } from 'lucide-react';
-import apiClient from '../../api/client';
-import type { Case } from '../../types';
+import { PlusCircle, Search, Clock, FileText, CheckCircle, AlertCircle } from 'lucide-react';
 import { Button } from '../../components/ui/Button';
-import { Card, CardHeader, CardTitle, CardContent } from '../../components/ui/Card';
 import { Badge } from '../../components/ui/Badge';
+import { Card, CardHeader, CardTitle, CardContent } from '../../components/ui/Card';
+import type { Case, CaseCreate } from '../../types';
+import { CreateCaseModal } from './components/CreateCaseModal';
+import { casesService } from '../../api/cases.service';
+import { AppError } from '../../api/apiError';
+import { RoleGuard } from '../../components/Auth/RoleGuard';
 import './CasesList.css';
 
 const CasesList: React.FC = () => {
   const [cases, setCases] = useState<Case[]>([]);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [statusFilter, setStatusFilter] = useState('ALL');
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [newCase, setNewCase] = useState({ title: '', contract_type: 'bienes', siga_number: '', office_unit: '' });
-  const [isCreating, setIsCreating] = useState(false);
-  const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
   useEffect(() => {
     fetchCases();
   }, []);
 
   const fetchCases = async () => {
+    setLoading(true);
+    setError(null);
     try {
-      const response = await apiClient.get('/cases/');
-      setCases(response.data);
-    } catch (error) {
-      console.error('Error fetching cases:', error);
+      const data = await casesService.getCases();
+      setCases(data);
+    } catch (err) {
+      if (err instanceof AppError) {
+        setError(err.message);
+      } else {
+        setError('Error inesperado al cargar expedientes.');
+      }
     } finally {
       setLoading(false);
     }
   };
 
-  const getStatusLabel = (status: string) => {
+  const handleCreateCase = async (payload: CaseCreate) => {
+    await casesService.createCase(payload);
+    await fetchCases();
+  };
+
+  const getStatusConfig = (status: string) => {
     switch (status) {
-      case 'CREATED': return 'Borrador';
-      case 'PROCESSING_REQUIREMENT': return 'Procesando requerimiento';
-      case 'REVIEW_SECTIONS': return 'Revisar secciones';
-      case 'WAITING_QUOTATION': return 'Esperando cotización';
-      case 'COMPARING': return 'Comparando';
-      case 'READY_GENERATE': return 'Listo para generar';
-      case 'COMPLETED': return 'Completado';
-      case 'ERROR': return 'Error';
-      default: return status;
+      case 'CREATED': return { icon: <Clock size={16} />, color: 'secondary', text: 'Borrador' };
+      case 'PROCESSING_REQUIREMENT': return { icon: <FileText size={16} />, color: 'warning', text: 'Procesando req.' };
+      case 'REVIEW_SECTIONS': return { icon: <AlertCircle size={16} />, color: 'warning', text: 'Revisión req.' };
+      case 'WAITING_QUOTATION': return { icon: <Clock size={16} />, color: 'primary', text: 'Espera Cotización' };
+      case 'COMPARING': return { icon: <FileText size={16} />, color: 'primary', text: 'Comparando' };
+      case 'READY_GENERATE': return { icon: <CheckCircle size={16} />, color: 'primary', text: 'Listo generar' };
+      case 'COMPLETED': return { icon: <CheckCircle size={16} />, color: 'success', text: 'Completado' };
+      case 'ERROR': return { icon: <AlertCircle size={16} />, color: 'danger', text: 'Error' };
+      default: return { icon: <Clock size={16} />, color: 'secondary', text: status };
     }
   };
 
-  const getStatusBadge = (status: string) => {
-    const label = getStatusLabel(status);
-    switch (status) {
-      case 'CREATED': return <Badge variant="secondary">{label}</Badge>;
-      case 'PROCESSING_REQUIREMENT': return <Badge variant="warning">{label}</Badge>;
-      case 'REVIEW_SECTIONS': return <Badge variant="warning">{label}</Badge>;
-      case 'WAITING_QUOTATION': return <Badge variant="primary">{label}</Badge>;
-      case 'COMPARING': return <Badge variant="primary">{label}</Badge>;
-      case 'READY_GENERATE': return <Badge variant="primary">{label}</Badge>;
-      case 'COMPLETED': return <Badge variant="success">{label}</Badge>;
-      case 'ERROR': return <Badge variant="danger">{label}</Badge>;
-      default: return <Badge variant="secondary">{label}</Badge>;
-    }
-  };
-
-  const handleCreateCase = async () => {
-    if (!newCase.title.trim()) {
-        setErrorMsg('El título es requerido');
-        return;
-    }
-    setIsCreating(true);
-    setErrorMsg(null);
-    try {
-      await apiClient.post('/cases/', newCase);
-      setIsModalOpen(false);
-      setNewCase({ title: '', contract_type: 'bienes', siga_number: '', office_unit: '' });
-      fetchCases();
-    } catch (err: any) {
-      console.error('Error creating case:', err);
-      setErrorMsg(err.response?.data?.detail || 'Error al crear expediente');
-    } finally {
-      setIsCreating(false);
-    }
-  };
-
-  const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString('es-PE', {
-      year: 'numeric', month: 'short', day: 'numeric',
-      hour: '2-digit', minute: '2-digit'
-    });
-  };
+  const filteredCases = cases.filter(c => {
+    const matchesSearch = c.title.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesStatus = statusFilter === 'ALL' || c.status === statusFilter;
+    return matchesSearch && matchesStatus;
+  });
 
   return (
-    <div className="cases-list-container">
-      <div className="page-header">
+    <div className="cases-list-container p-6">
+      <div className="flex justify-between items-center mb-6">
         <div>
-          <h1 className="page-title">Expedientes de Contratación</h1>
-          <p className="page-subtitle">Gestione los requerimientos y cotizaciones</p>
+          <h1 className="text-2xl font-bold mb-1">Expedientes de Contratación</h1>
+          <p className="text-gray-500 text-sm">Gestione los requerimientos y cotizaciones</p>
         </div>
-        <Button leftIcon={<Plus size={18} />} onClick={() => setIsModalOpen(true)}>
-          Nuevo Expediente
-        </Button>
+        <RoleGuard roles={['ADMIN', 'operator']}>
+          <Button leftIcon={<PlusCircle size={18} />} onClick={() => setIsModalOpen(true)}>
+            Nuevo Expediente
+          </Button>
+        </RoleGuard>
       </div>
 
-      <div className="filters-bar">
-        <div className="search-input-wrapper">
-          <Search size={18} className="search-icon" />
-          <input type="text" className="search-input" placeholder="Buscar expedientes..." />
+      {error && (
+        <div style={{ backgroundColor: '#fee2e2', color: '#b91c1c', padding: '0.75rem', borderRadius: '4px', marginBottom: '1rem' }}>
+          {error}
         </div>
+      )}
+
+      <div className="filters-section bg-white p-4 rounded-lg shadow-sm border border-gray-100 mb-6 flex gap-4">
+        <div className="search-box flex-1 flex items-center bg-gray-50 border border-gray-200 rounded-md px-3 py-2">
+          <Search size={18} className="text-gray-400 mr-2" />
+          <input 
+            type="text" 
+            placeholder="Buscar por título..." 
+            className="bg-transparent border-none outline-none w-full text-sm"
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+          />
+        </div>
+        
+        <select 
+          className="border border-gray-200 rounded-md px-3 py-2 text-sm bg-white outline-none"
+          value={statusFilter}
+          onChange={(e) => setStatusFilter(e.target.value)}
+        >
+          <option value="ALL">Todos los estados</option>
+          <option value="CREATED">Borrador</option>
+          <option value="PROCESSING_REQUIREMENT">Procesando req.</option>
+          <option value="REVIEW_SECTIONS">Revisión req.</option>
+          <option value="WAITING_QUOTATION">Espera Cotización</option>
+          <option value="COMPLETED">Completado</option>
+          <option value="ERROR">Error</option>
+        </select>
       </div>
 
       {loading ? (
-        <div className="loading-state">
+        <div className="py-12 flex justify-center">
           <div className="spinner"></div>
-          <p>Cargando expedientes...</p>
         </div>
-      ) : cases.length === 0 ? (
-        <div className="empty-state card">
-          <div className="empty-icon-wrapper">
-            <FileText size={48} className="empty-icon" />
+      ) : filteredCases.length === 0 ? (
+        <div className="empty-state text-center py-12 bg-gray-50 rounded-lg border border-dashed border-gray-300">
+          <div className="w-16 h-16 bg-white rounded-full flex items-center justify-center mx-auto mb-4 shadow-sm">
+            <FileText size={24} className="text-gray-400" />
           </div>
-          <h3>No hay expedientes</h3>
-          <p>Comience creando un nuevo expediente de contratación.</p>
-          <Button leftIcon={<Plus size={18} />} className="mt-4" onClick={() => setIsModalOpen(true)}>
-            Crear Expediente
-          </Button>
+          <h3 className="text-lg font-medium text-gray-900 mb-1">No hay expedientes</h3>
+          <p className="text-gray-500 text-sm mb-4">No se encontraron expedientes con los filtros actuales.</p>
+          <Button variant="outline" onClick={() => setIsModalOpen(true)}>Crear el primero</Button>
         </div>
       ) : (
-        <div className="cases-grid">
-          {cases.map((c) => (
-            <Link to={`/cases/${c.id}`} key={c.id} className="case-card-link">
-              <Card className="case-card hover-effect">
-                <CardHeader>
-                  <div className="case-card-header-top">
-                    {getStatusBadge(c.status)}
-                    <span className="case-type">{c.contract_type.toUpperCase()}</span>
-                  </div>
-                  <CardTitle className="case-title">{c.title}</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="case-meta">
-                    <div className="meta-item">
-                      <Clock size={16} />
-                      <span>{formatDate(c.created_at)}</span>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          {filteredCases.map(c => {
+            const statusConfig = getStatusConfig(c.status);
+            return (
+              <Link to={`/cases/${c.id}`} key={c.id} className="block no-underline">
+                <Card className="h-full hover:shadow-md transition-shadow cursor-pointer">
+                  <CardHeader className="pb-2">
+                    <div className="flex justify-between items-start">
+                      <Badge variant={statusConfig.color as any} className="mb-2 flex items-center gap-1">
+                        {statusConfig.icon}
+                        <span>{statusConfig.text}</span>
+                      </Badge>
+                      <span className="text-xs text-gray-400">
+                        {new Date(c.created_at).toLocaleDateString()}
+                      </span>
                     </div>
-                  </div>
-                </CardContent>
-              </Card>
-            </Link>
-          ))}
+                    <CardTitle className="text-base line-clamp-2"><span title={c.title}>{c.title}</span></CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="text-sm text-gray-600 mb-3 flex flex-col gap-1">
+                      <span className="flex items-center gap-1"><Badge variant="secondary" className="text-xs">{c.contract_type.toUpperCase()}</Badge></span>
+                    </div>
+                  </CardContent>
+                </Card>
+              </Link>
+            );
+          })}
         </div>
       )}
 
-      {isModalOpen && (
-        <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-50">
-          <Card className="w-[500px] shadow-2xl">
-            <CardHeader>
-              <CardTitle>Nuevo Expediente</CardTitle>
-            </CardHeader>
-            <CardContent>
-              {errorMsg && <div className="text-red-600 mb-4 text-sm">{errorMsg}</div>}
-              <div className="flex flex-col gap-4">
-                <div>
-                  <label className="block text-sm font-medium mb-1">Título *</label>
-                  <input type="text" className="w-full p-2 border rounded" value={newCase.title} onChange={e => setNewCase({...newCase, title: e.target.value})} placeholder="Ej: Adquisición de Laptops" />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium mb-1">Tipo de Contratación *</label>
-                  <select className="w-full p-2 border rounded" value={newCase.contract_type} onChange={e => setNewCase({...newCase, contract_type: e.target.value})}>
-                    <option value="bienes">Bienes</option>
-                    <option value="servicios">Servicios</option>
-                  </select>
-                </div>
-                <div>
-                  <label className="block text-sm font-medium mb-1">N° SIGA (Opcional)</label>
-                  <input type="text" className="w-full p-2 border rounded" value={newCase.siga_number} onChange={e => setNewCase({...newCase, siga_number: e.target.value})} placeholder="0001-2026" />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium mb-1">Unidad Orgánica (Opcional)</label>
-                  <input type="text" className="w-full p-2 border rounded" value={newCase.office_unit} onChange={e => setNewCase({...newCase, office_unit: e.target.value})} placeholder="Oficina de TI" />
-                </div>
-              </div>
-              <div className="flex justify-end gap-2 mt-6">
-                <Button variant="outline" onClick={() => setIsModalOpen(false)}>Cancelar</Button>
-                <Button onClick={handleCreateCase} disabled={isCreating}>{isCreating ? 'Creando...' : 'Crear'}</Button>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-      )}
+      <CreateCaseModal 
+        isOpen={isModalOpen} 
+        onClose={() => setIsModalOpen(false)} 
+        onSubmit={handleCreateCase} 
+      />
     </div>
   );
 };

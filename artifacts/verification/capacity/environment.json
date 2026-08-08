@@ -1,0 +1,9 @@
+﻿{
+    "docker_version":  "Docker version 29.6.2, build dfc4efb",
+    "timestamp":  "2026-08-04T22:55:30.2621723-05:00",
+    "system_max_concurrent_jobs":  30,
+    "compose_version":  "Docker Compose version v5.3.1",
+    "db_max_overflow":  10,
+    "tenant_max_concurrent_jobs":  5,
+    "db_pool_size":  20
+}

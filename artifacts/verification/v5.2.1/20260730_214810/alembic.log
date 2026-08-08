@@ -1,0 +1,66 @@
+time="2026-07-30T21:48:54-05:00" level=warning msg="C:\\Users\\PC\\Documents\\AbastLG\\abst-v4_9-remediation-clean\\verification\\docker-compose.test.yml: the attribute `version` is obsolete, it will be ignored, please remove it to avoid potential confusion"
+ Volume abst_gp_v52_validation_test-uploads Creating 
+ Volume abst_gp_v52_validation_test-uploads Created 
+ Container abst_gp_v52_validation-db-test-1 Running 
+ Image abst_gp_v52_validation-backend-test Building 
+#1 [internal] load local bake definitions
+#1 reading from stdin 644B 0.0s done
+#1 DONE 0.0s
+
+#2 [internal] load build definition from Dockerfile.backend.test
+#2 transferring dockerfile: 648B done
+#2 DONE 0.0s
+
+#3 [internal] load metadata for docker.io/library/python:3.12.3-slim
+#3 DONE 0.0s
+
+#4 [internal] load .dockerignore
+#4 transferring context: 2B done
+#4 DONE 0.0s
+
+#5 [internal] load build context
+#5 transferring context: 22.02kB 0.0s done
+#5 DONE 0.1s
+
+#6 [1/7] FROM docker.io/library/python:3.12.3-slim@sha256:afc139a0a640942491ec481ad8dda10f2c5b753f5c969393b12480155fe15a63
+#6 resolve docker.io/library/python:3.12.3-slim@sha256:afc139a0a640942491ec481ad8dda10f2c5b753f5c969393b12480155fe15a63 0.1s done
+#6 DONE 0.1s
+
+#7 [5/7] RUN pip install --no-cache-dir -r requirements.txt
+#7 CACHED
+
+#8 [3/7] WORKDIR /app
+#8 CACHED
+
+#9 [4/7] COPY backend/requirements.validation.lock ./requirements.txt
+#9 CACHED
+
+#10 [6/7] RUN pip check
+#10 CACHED
+
+#11 [2/7] RUN apt-get update && apt-get install -y     libpq-dev gcc     tesseract-ocr     ghostscript     && rm -rf /var/lib/apt/lists/*
+#11 CACHED
+
+#12 [7/7] COPY backend/ ./
+#12 CACHED
+
+#13 exporting to image
+#13 exporting layers done
+#13 exporting manifest sha256:c7c868a0a062a335a8b8ba71e6f15451f42bf6594ed33bedfb0837f94990cd15 0.1s done
+#13 exporting config sha256:42fe8110295b0f855f2a6df3fa13fabf293083bb0c675786e9cfb570be124b61 0.1s done
+#13 exporting attestation manifest sha256:e986986706b9710cd4dc701fa410fdc7e5237f836b4171e319fa6375828ed01d 0.1s done
+#13 exporting manifest list sha256:1d5059febe3029f3640d5b1633c15c7ee4ab0b47c33e6aab2ac0926829b3ce14
+#13 exporting manifest list sha256:1d5059febe3029f3640d5b1633c15c7ee4ab0b47c33e6aab2ac0926829b3ce14 0.1s done
+#13 naming to docker.io/library/abst_gp_v52_validation-backend-test:latest done
+#13 unpacking to docker.io/library/abst_gp_v52_validation-backend-test:latest 0.0s done
+#13 DONE 0.5s
+
+#14 resolving provenance for metadata file
+#14 DONE 0.0s
+ Image abst_gp_v52_validation-backend-test Built 
+ Container abst_gp_v52_validation-db-test-1 Waiting 
+ Container abst_gp_v52_validation-db-test-1 Healthy 
+ Container abst_gp_v52_validation-backend-test-run-52cac7bda7ff Creating 
+ Container abst_gp_v52_validation-backend-test-run-52cac7bda7ff Created 
+FATAL: Migration guard rejected execution: Unknown or unauthorized environment: local
+

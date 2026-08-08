@@ -1,0 +1,28 @@
+{
+  "diagnostic_timestamp_utc": "2026-08-07T02:53:04Z",
+  "status_classification": "HUNG",
+  "primary_hung_process": {
+    "container_name": "verification-backend-dr-run-bd42c6791841",
+    "image": "verification-backend-dr",
+    "command": "pytest -v tests/dr/test_disaster_recovery.py",
+    "started_at": "2026-08-06T23:07:47Z",
+    "last_output_timestamp": "2026-08-06T23:08:09Z",
+    "last_executed_test": "tests/dr/test_disaster_recovery.py::test_scenario_b_logical_deletion_pitr",
+    "state": "HUNG (Deadlock detected in pg_stat_activity)"
+  },
+  "secondary_process": {
+    "container_name": "verification-backend-dr-run-99eb15dd0f2d",
+    "started_at": "2026-08-07T02:30:16Z",
+    "state": "BLOCKED_ON_LOCK"
+  },
+  "root_cause_analysis": {
+    "failure_mode": "POSTGRESQL_ACCESS_EXCLUSIVE_LOCK_DEADLOCK",
+    "holding_pid": 19684,
+    "holding_query": "SELECT case_files... WHERE case_files.id = 12 LIMIT 1",
+    "holding_state": "idle in transaction",
+    "waiting_pid": 19711,
+    "waiting_query": "ALTER TABLE IF EXISTS ONLY public.uploaded_documents DROP CONSTRAINT IF EXISTS uploaded_documents_case_id_fkey;",
+    "waiting_event": "Lock:relation",
+    "explanation": "In test_scenario_b_logical_deletion_pitr, SQLAlchemy session executed a SELECT query leaving the connection in 'idle in transaction' holding SharedLock on case_files. restore_backup_package then called pg_restore via subprocess.run, which requested ACCESS EXCLUSIVE lock on case_files. Because Python was blocked synchronously waiting for subprocess.run, neither could advance, causing a permanent deadlock."
+  }
+}

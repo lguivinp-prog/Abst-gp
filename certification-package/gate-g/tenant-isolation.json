@@ -1,0 +1,44 @@
+{
+  "timestamp_utc": "2026-08-08T12:56:06.458259+00:00",
+  "status": "PASS",
+  "tenants_tested": {
+    "tenant_a": {
+      "id": "tenant-alpha-1786193741",
+      "name": "Corporativo Alpha Seguros",
+      "case_id": 48,
+      "job_id": "ocr_processing_48_3fa3adb2"
+    },
+    "tenant_b": {
+      "id": "tenant-bravo-1786193741",
+      "name": "Corporativo Bravo Finanzas",
+      "case_id": 49,
+      "job_id": "table_extraction_49_bbd0dbfb"
+    }
+  },
+  "negative_tests": [
+    {
+      "test": "1. CROSS_TENANT_DOCUMENT_READ",
+      "actor_tenant": "tenant-alpha-1786193741",
+      "target_entity": "CaseFile 49 & UploadedDocument 35",
+      "expected": "DENIED/NONE",
+      "result": "PASS",
+      "leaked_records": 0
+    },
+    {
+      "test": "2. CROSS_TENANT_JOB_READ_AND_MUTATION",
+      "actor_tenant": "tenant-alpha-1786193741",
+      "target_entity": "ProcessingJob table_extraction_49_bbd0dbfb",
+      "expected": "DENIED/UNMODIFIED",
+      "result": "PASS",
+      "leaked_records": 0
+    },
+    {
+      "test": "3. CROSS_TENANT_METRICS_QUERY",
+      "actor_tenant": "tenant-alpha-1786193741",
+      "target_entity": "ProcessingMetrics for Case 49",
+      "expected": "DENIED/EMPTY",
+      "result": "PASS",
+      "leaked_records": 0
+    }
+  ]
+}

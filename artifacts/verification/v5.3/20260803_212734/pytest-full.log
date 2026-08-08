@@ -1,0 +1,173 @@
+﻿============================= test session starts ==============================
+platform linux -- Python 3.12.3, pytest-9.1.1, pluggy-1.6.0
+rootdir: /app
+configfile: pytest.ini
+plugins: mock-3.15.1, asyncio-1.4.0, anyio-4.14.2
+asyncio: mode=Mode.STRICT, debug=False, asyncio_default_fixture_loop_scope=None, asyncio_default_test_loop_scope=function
+collected 150 items
+
+tests/alembic/test_migration_environment_guard.py ..........             [  6%]
+tests/alembic/test_quarantine_migration.py ..                            [  8%]
+tests/api/integration/test_alembic_guard.py .                            [  8%]
+tests/api/integration/test_async_api_v53.py .......                      [ 13%]
+tests/api/integration/test_comparison_concurrency.py .                   [ 14%]
+tests/api/integration/test_comparison_rollback.py .                      [ 14%]
+tests/api/integration/test_e2e_v1.py ..                                  [ 16%]
+tests/api/integration/test_e2e_v2.py ...                                 [ 18%]
+tests/api/test_comparison_integrity.py .....                             [ 21%]
+tests/api/test_document_retrieval.py .....                               [ 24%]
+tests/authz/test_audit_log_system.py ..                                  [ 26%]
+tests/authz/test_authz_alembic_contract.py ....                          [ 28%]
+tests/authz/test_authz_models_contract.py ...                            [ 30%]
+tests/authz/test_authz_security_contract.py ....                         [ 33%]
+tests/authz/test_bootstrap_e2e.py .                                      [ 34%]
+tests/authz/test_cli_auth.py ..                                          [ 35%]
+tests/authz/test_concurrency.py ...                                      [ 37%]
+tests/authz/test_password_policy.py .....                                [ 40%]
+tests/cli/test_scanner_reprocessing.py ....                              [ 43%]
+tests/db/test_db_migration.py .                                          [ 44%]
+tests/db/test_persistence_race.py .                                      [ 44%]
+tests/db/test_run_repository.py .....                                    [ 48%]
+tests/db/test_worker_empty_extraction.py ..                              [ 49%]
+tests/ocr/test_compatibility_snapshot.py ..                              [ 50%]
+tests/ocr/test_document_id_integration.py ..                             [ 52%]
+tests/ocr/test_missing_doc_id.py .                                       [ 52%]
+tests/ocr/test_phase2.py ....                                            [ 55%]
+tests/test_quarantine_v4.py ...                                          [ 57%]
+tests/test_tenant_logic.py ...                                           [ 59%]
+tests/test_transactional_isolation.py .                                  [ 60%]
+tests/unit/test_cleaner.py .                                             [ 60%]
+tests/unit/test_comparison_engine.py ......                              [ 64%]
+tests/unit/test_comparison_tasks.py ...                                  [ 66%]
+tests/unit/test_document_extraction_agent.py ..........                  [ 73%]
+tests/unit/test_html_generator.py .                                      [ 74%]
+tests/unit/test_job_repository.py ...                                    [ 76%]
+tests/unit/test_ocr_pipeline.py ..........                               [ 82%]
+tests/unit/test_quarantine_auth_cli.py ......                            [ 86%]
+tests/unit/test_quotation_pipeline.py ....                               [ 89%]
+tests/unit/test_quotation_tasks.py ..                                    [ 90%]
+tests/unit/test_service_engine.py ..............                         [100%]
+
+=============================== warnings summary ===============================
+app/models/base.py:3
+  /app/app/models/base.py:3: MovedIn20Warning: The ``declarative_base()`` function is now available as sqlalchemy.orm.declarative_base(). (deprecated since: 2.0) (Background on SQLAlchemy 2.0 at: https://sqlalche.me/e/b8d9)
+    Base = declarative_base()
+
+app/core/config.py:4
+  /app/app/core/config.py:4: PydanticDeprecatedSince20: Support for class-based `config` is deprecated, use ConfigDict instead. Deprecated in Pydantic V2.0 to be removed in V3.0. See Pydantic V2 Migration Guide at https://errors.pydantic.dev/2.13/migration/
+    class Settings(BaseSettings):
+
+../usr/local/lib/python3.12/site-packages/passlib/utils/__init__.py:854
+  /usr/local/lib/python3.12/site-packages/passlib/utils/__init__.py:854: DeprecationWarning: 'crypt' is deprecated and slated for removal in Python 3.13
+    from crypt import crypt as _crypt
+
+../usr/local/lib/python3.12/site-packages/fastapi/testclient.py:1
+  /usr/local/lib/python3.12/site-packages/fastapi/testclient.py:1: StarletteDeprecationWarning: Using `httpx` with `starlette.testclient` is deprecated; install `httpx2` instead.
+    from starlette.testclient import TestClient as TestClient  # noqa
+
+tests/api/integration/test_async_api_v53.py: 4 warnings
+tests/unit/test_comparison_tasks.py: 3 warnings
+tests/unit/test_job_repository.py: 3 warnings
+tests/unit/test_quotation_tasks.py: 2 warnings
+  /app/app/services/job_repository.py:49: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+    created_at=datetime.utcnow()
+
+tests/api/integration/test_async_api_v53.py::test_comparison_run_sync_fallback
+  /app/app/api/routing.py:52: DeprecationWarning: Call to deprecated setex. (Use 'set' instead.) -- Deprecated since version 2.6.12.
+    redis_conn.setex(cache_key, ttl, json.dumps(assignment_data))
+
+tests/api/integration/test_async_api_v53.py::test_get_job_status_postgres_ssot
+tests/unit/test_comparison_tasks.py::test_process_comparison_task_success
+tests/unit/test_comparison_tasks.py::test_process_comparison_task_idempotency
+tests/unit/test_comparison_tasks.py::test_process_comparison_task_invalid_status_failure
+tests/unit/test_job_repository.py::test_job_repository_crud_lifecycle
+tests/unit/test_quotation_tasks.py::test_process_quotation_task_success
+tests/unit/test_quotation_tasks.py::test_process_quotation_task_missing_file_failure
+  /app/app/services/job_repository.py:128: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+    job.started_at = datetime.utcnow()
+
+tests/api/integration/test_async_api_v53.py: 1 warning
+tests/unit/test_comparison_tasks.py: 5 warnings
+tests/unit/test_job_repository.py: 1 warning
+tests/unit/test_quotation_tasks.py: 4 warnings
+  /app/app/services/job_repository.py:129: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+    job.updated_at = datetime.utcnow()
+
+tests/api/integration/test_e2e_v2.py::test_empty_extraction_v2_fallback
+tests/ocr/test_document_id_integration.py::test_ocr_v2_integration_document_id
+  /app/app/worker/ocr_worker_tasks.py:31: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+    "started_at": datetime.utcnow(),
+
+tests/api/integration/test_e2e_v2.py::test_empty_extraction_v2_fallback
+tests/ocr/test_document_id_integration.py::test_ocr_v2_integration_document_id
+  /app/app/worker/ocr_worker_tasks.py:32: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+    "heartbeat_at": datetime.utcnow()
+
+tests/api/integration/test_e2e_v2.py::test_empty_extraction_v2_fallback
+tests/ocr/test_document_id_integration.py::test_ocr_v2_integration_document_id
+  /app/app/worker/ocr_worker_tasks.py:59: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+    r.heartbeat_at = datetime.utcnow()
+
+tests/api/integration/test_e2e_v2.py::test_empty_extraction_v2_fallback
+tests/ocr/test_document_id_integration.py::test_ocr_v2_integration_document_id
+  /app/app/worker/ocr_worker_tasks.py:132: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+    doc.ocr_processed_at = datetime.utcnow()
+
+tests/api/integration/test_e2e_v2.py::test_empty_extraction_v2_fallback
+tests/ocr/test_document_id_integration.py::test_ocr_v2_integration_document_id
+  /app/app/worker/ocr_worker_tasks.py:148: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+    run.finished_at = datetime.utcnow()
+
+tests/cli/test_scanner_reprocessing.py::test_missing_stored_path
+  /app/tests/cli/test_scanner_reprocessing.py:47: LegacyAPIWarning: The Query.get() method is considered legacy as of the 1.x series of SQLAlchemy and becomes a legacy construct in 2.0. The method is now available as Session.get() (deprecated since: 2.0) (Background on SQLAlchemy 2.0 at: https://sqlalche.me/e/b8d9)
+    case = db.query(CaseFile).get(case_id)
+
+tests/cli/test_scanner_reprocessing.py::test_fallo_publicar_segundo_documento
+tests/cli/test_scanner_reprocessing.py::test_fallo_publicar_segundo_documento
+tests/cli/test_scanner_reprocessing.py::test_repeticion_sin_duplicados
+tests/cli/test_scanner_reprocessing.py::test_repeticion_sin_duplicados
+tests/cli/test_scanner_reprocessing.py::test_dos_scanners_concurrentes
+tests/cli/test_scanner_reprocessing.py::test_dos_scanners_concurrentes
+  /app/app/cli/scanner_reprocessing.py:80: LegacyAPIWarning: The Query.get() method is considered legacy as of the 1.x series of SQLAlchemy and becomes a legacy construct in 2.0. The method is now available as Session.get() (deprecated since: 2.0) (Background on SQLAlchemy 2.0 at: https://sqlalche.me/e/b8d9)
+    doc = db.query(UploadedDocument).get(pj.document_id)
+
+tests/cli/test_scanner_reprocessing.py::test_fallo_publicar_segundo_documento
+  /app/tests/cli/test_scanner_reprocessing.py:72: LegacyAPIWarning: The Query.get() method is considered legacy as of the 1.x series of SQLAlchemy and becomes a legacy construct in 2.0. The method is now available as Session.get() (deprecated since: 2.0) (Background on SQLAlchemy 2.0 at: https://sqlalche.me/e/b8d9)
+    case = db.query(CaseFile).get(case_id)
+
+tests/cli/test_scanner_reprocessing.py::test_repeticion_sin_duplicados
+  /app/tests/cli/test_scanner_reprocessing.py:89: LegacyAPIWarning: The Query.get() method is considered legacy as of the 1.x series of SQLAlchemy and becomes a legacy construct in 2.0. The method is now available as Session.get() (deprecated since: 2.0) (Background on SQLAlchemy 2.0 at: https://sqlalche.me/e/b8d9)
+    case = db.query(CaseFile).get(case_id)
+
+tests/unit/test_comparison_tasks.py::test_process_comparison_task_success
+tests/unit/test_comparison_tasks.py::test_process_comparison_task_idempotency
+tests/unit/test_job_repository.py::test_job_repository_crud_lifecycle
+tests/unit/test_quotation_tasks.py::test_process_quotation_task_success
+  /app/app/services/job_repository.py:159: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+    job.finished_at = datetime.utcnow()
+
+tests/unit/test_comparison_tasks.py::test_process_comparison_task_success
+tests/unit/test_comparison_tasks.py::test_process_comparison_task_idempotency
+tests/unit/test_job_repository.py::test_job_repository_crud_lifecycle
+tests/unit/test_quotation_tasks.py::test_process_quotation_task_success
+  /app/app/services/job_repository.py:160: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+    job.updated_at = datetime.utcnow()
+
+tests/unit/test_comparison_tasks.py::test_process_comparison_task_invalid_status_failure
+tests/unit/test_job_repository.py::test_job_repository_failure_handling
+tests/unit/test_quotation_tasks.py::test_process_quotation_task_missing_file_failure
+  /app/app/services/job_repository.py:189: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+    job.finished_at = datetime.utcnow()
+
+tests/unit/test_comparison_tasks.py::test_process_comparison_task_invalid_status_failure
+tests/unit/test_job_repository.py::test_job_repository_failure_handling
+tests/unit/test_quotation_tasks.py::test_process_quotation_task_missing_file_failure
+  /app/app/services/job_repository.py:190: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+    job.updated_at = datetime.utcnow()
+
+tests/unit/test_service_engine.py::test_concurrencia_y_pausa
+  /app/tests/unit/test_service_engine.py:137: LegacyAPIWarning: The Query.get() method is considered legacy as of the 1.x series of SQLAlchemy and becomes a legacy construct in 2.0. The method is now available as Session.get() (deprecated since: 2.0) (Background on SQLAlchemy 2.0 at: https://sqlalche.me/e/b8d9)
+    run1 = db1.query(ComparisonRun).get(run_id)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+================= 150 passed, 69 warnings in 69.24s (0:01:09) ==================

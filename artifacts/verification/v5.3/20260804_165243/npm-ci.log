@@ -1,0 +1,26 @@
+﻿
+added 72 packages, and audited 73 packages in 34s
+
+17 packages are looking for funding
+  run `npm fund` for details
+
+2 moderate severity vulnerabilities
+
+To address all issues, run:
+  npm audit fix
+
+Run `npm audit` for details.
+
+> frontend@0.0.0 build
+> tsc -b && vite build
+
+vite v8.2.0 building client environment for production...
+[2K
+transforming...Ô£ô 1575 modules transformed.
+rendering chunks...
+computing gzip size...
+dist/index.html                   0.45 kB Ôöé gzip:   0.29 kB
+dist/assets/index-D0pI_WtQ.css   20.94 kB Ôöé gzip:   4.84 kB
+dist/assets/index-YXvY86MP.js   344.77 kB Ôöé gzip: 107.06 kB
+
+Ô£ô built in 4.37s

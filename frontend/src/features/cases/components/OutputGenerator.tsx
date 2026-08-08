@@ -1,8 +1,9 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Code, Download } from 'lucide-react';
 import { Card, CardHeader, CardTitle, CardContent } from '../../../components/ui/Card';
 import { Button } from '../../../components/ui/Button';
-import apiClient from '../../../api/client';
+import { casesService } from '../../../api/cases.service';
+import { AppError } from '../../../api/apiError';
 
 interface OutputGeneratorProps {
   caseId: string;
@@ -16,15 +17,34 @@ export const OutputGenerator: React.FC<OutputGeneratorProps> = ({ caseId, caseSt
   const [output, setOutput] = useState<{html: string, plain_text: string, version: number} | null>(null);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
+  useEffect(() => {
+    let mounted = true;
+    if (caseStatus === 'READY_GENERATE' || caseStatus === 'COMPLETED') {
+      casesService.getOutput(caseId)
+        .then(res => {
+          if (mounted && res) {
+            setOutput(res);
+          }
+        })
+        .catch(() => {});
+    }
+    return () => {
+      mounted = false;
+    };
+  }, [caseId, caseStatus]);
+
   const handleCompare = async () => {
     setLoading(true);
     setErrorMsg(null);
     try {
-      await apiClient.post(`/cases/${caseId}/comparison/run`);
+      await casesService.runComparison(caseId);
       onGenerateSuccess();
     } catch (err: any) {
-      console.error('Error in comparison:', err);
-      setErrorMsg(err.response?.data?.detail || 'Error al comparar');
+      if (err instanceof AppError) {
+        setErrorMsg(err.message);
+      } else {
+        setErrorMsg('Error inesperado al comparar');
+      }
     } finally {
       setLoading(false);
     }
@@ -34,13 +54,16 @@ export const OutputGenerator: React.FC<OutputGeneratorProps> = ({ caseId, caseSt
     setLoading(true);
     setErrorMsg(null);
     try {
-      await apiClient.post(`/cases/${caseId}/generate/html`);
-      const outRes = await apiClient.get(`/cases/${caseId}/output`);
-      setOutput(outRes.data);
+      await casesService.generateHtml(caseId);
+      const outRes = await casesService.getOutput(caseId);
+      setOutput(outRes);
       onGenerateSuccess();
     } catch (err: any) {
-      console.error('Error generating output:', err);
-      setErrorMsg(err.response?.data?.detail || 'Error al generar salida');
+      if (err instanceof AppError) {
+        setErrorMsg(err.message);
+      } else {
+        setErrorMsg('Error inesperado al generar salida');
+      }
     } finally {
       setLoading(false);
     }
@@ -50,6 +73,20 @@ export const OutputGenerator: React.FC<OutputGeneratorProps> = ({ caseId, caseSt
     if (output) {
       navigator.clipboard.writeText(output.html);
       alert('HTML Copiado al portapapeles');
+    }
+  };
+
+  const handleDownloadHtml = () => {
+    if (output) {
+      const blob = new Blob([output.html], { type: 'text/html;charset=utf-8' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `anexo-comparativo-caso-${caseId}.html`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      setTimeout(() => URL.revokeObjectURL(url), 2000);
     }
   };
 
@@ -80,9 +117,16 @@ export const OutputGenerator: React.FC<OutputGeneratorProps> = ({ caseId, caseSt
             </Button>
           )
         ) : (
-          <div className="mt-4">
-            <h4 className="font-semibold mb-2">Versión {output.version} Generada</h4>
-            <Button leftIcon={<Download size={18} />} onClick={handleCopyHtml}>Copiar HTML</Button>
+          <div className="mt-4 flex flex-col gap-2">
+            <h4 className="font-semibold mb-1">Versión {output.version} Generada</h4>
+            <div className="flex gap-2">
+              <Button leftIcon={<Download size={18} />} onClick={handleDownloadHtml}>
+                Descargar Anexo HTML
+              </Button>
+              <Button variant="outline" leftIcon={<Download size={18} />} onClick={handleCopyHtml}>
+                Copiar HTML
+              </Button>
+            </div>
           </div>
         )}
       </CardContent>

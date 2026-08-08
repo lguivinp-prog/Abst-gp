@@ -1,0 +1,19 @@
+{
+  "timestamp_utc": "2026-08-08T12:47:12.395499+00:00",
+  "status": "PASS",
+  "pristine_verification": {
+    "tool": "pg_verifybackup",
+    "target_directory": "/app/data/vault_dr_gate_f/backup-pristine-gate-f-1786193155/physical_basebackup",
+    "exit_code": 0,
+    "output": "backup successfully verified",
+    "hmac_signature_verified": true,
+    "result": "PASS"
+  },
+  "corrupted_verification": {
+    "tool": "pg_verifybackup",
+    "target_directory": "/app/data/vault_dr_gate_f/backup-corrupted-gate-f-1786193155/physical_basebackup",
+    "exit_code": 1,
+    "output": "pg_verifybackup: error: could not parse backup manifest: parsing failed",
+    "result": "EXPECTED_FAIL_REJECTED"
+  }
+}

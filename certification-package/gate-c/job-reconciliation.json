@@ -1,0 +1,52 @@
+{
+  "timestamp_utc": "2026-08-07T23:37:48.697475+00:00",
+  "status": "PASS",
+  "scanned_jobs_count": 4,
+  "stale_processing_count": 1,
+  "stale_queued_count": 3,
+  "recovered_retried_count": 4,
+  "marked_failed_final_count": 0,
+  "skipped_terminal_count": 0,
+  "reconciled_details": [
+    {
+      "job_id": "document_parsing_28_23612a07",
+      "outcome": "RETRY_QUEUED",
+      "reason": "WORKER_HEARTBEAT_TIMEOUT: Worker sin respuesta durante PROCESSING",
+      "is_retried": true,
+      "status": "QUEUED",
+      "attempt_count": 2,
+      "max_retries": 3,
+      "failure_classification": "RETRYABLE"
+    },
+    {
+      "job_id": "ocr_processing_26_5147ee7a",
+      "outcome": "RETRY_QUEUED",
+      "reason": "QUEUE_TIMEOUT: Job excedi\u00f3 tiempo m\u00e1ximo en cola QUEUED",
+      "is_retried": true,
+      "status": "QUEUED",
+      "attempt_count": 3,
+      "max_retries": 3,
+      "failure_classification": "RETRYABLE"
+    },
+    {
+      "job_id": "document_parsing_26_4989db69",
+      "outcome": "RETRY_QUEUED",
+      "reason": "QUEUE_TIMEOUT: Job excedi\u00f3 tiempo m\u00e1ximo en cola QUEUED",
+      "is_retried": true,
+      "status": "QUEUED",
+      "attempt_count": 3,
+      "max_retries": 3,
+      "failure_classification": "RETRYABLE"
+    },
+    {
+      "job_id": "ocr_processing_28_e2c19bec",
+      "outcome": "RETRY_QUEUED",
+      "reason": "QUEUE_TIMEOUT: Job excedi\u00f3 tiempo m\u00e1ximo en cola QUEUED",
+      "is_retried": true,
+      "status": "QUEUED",
+      "attempt_count": 2,
+      "max_retries": 3,
+      "failure_classification": "RETRYABLE"
+    }
+  ]
+}

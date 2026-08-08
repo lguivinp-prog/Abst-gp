@@ -1,0 +1,9 @@
+﻿{
+    "retained_job_retries":  3,
+    "updated_at_mutations":  0,
+    "redundant_audit_logs":  0,
+    "scenario":  "G - WAL Churn Suppression",
+    "rollback_on_noop":  true,
+    "status":  "PASS",
+    "redundant_updates":  0
+}

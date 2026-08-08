@@ -1,0 +1,10 @@
+﻿{
+    "atomic_lock_hierarchy":  "GLOBAL (1001) -\u003e TENANT (1002) -\u003e ROW",
+    "deadlocks":  0,
+    "iterations":  5,
+    "system_limit":  20,
+    "status":  "PASS",
+    "max_system_active_observed":  20,
+    "scenario":  "B - Global Capacity Race",
+    "concurrency_per_iteration":  10
+}

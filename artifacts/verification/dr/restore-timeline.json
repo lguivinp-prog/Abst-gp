@@ -1,0 +1,22 @@
+{
+  "checkpoint_redo_lsn": "0/46000028",
+  "checkpoint_lsn": "0/46000060",
+  "backup_end_lsn": "0/46000100",
+  "replay_start_timeline": 1,
+  "replay_end_lsn": "0/47004198",
+  "promoted_timeline_id": 2,
+  "latest_checkpoint_timeline": 2,
+  "database_cluster_state": "in production",
+  "timeline_history": [
+    {
+      "timeline": 1,
+      "status": "archived_source_timeline",
+      "parent_lsn": "0/47004198"
+    },
+    {
+      "timeline": 2,
+      "status": "active_promoted_branch",
+      "switch_reason": "archive_recovery_target_reached_promotion"
+    }
+  ]
+}

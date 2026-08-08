@@ -1,0 +1,12 @@
+{
+  "status": "PASS",
+  "timestamp_utc": "2026-08-06T15:50:03.934911+00:00",
+  "roles_restored": [
+    "dr_user"
+  ],
+  "extensions_verified": [
+    "uuid-ossp",
+    "pgcrypto"
+  ],
+  "permissions_verified": true
+}

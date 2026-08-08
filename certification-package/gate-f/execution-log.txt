@@ -1,0 +1,23 @@
+[2026-08-08T12:45:55.226962+00:00] ================================================================================
+[2026-08-08T12:45:55.227018+00:00] GATE F: BACKUP CORRUPTION REJECTION CERTIFICATION DRILL
+[2026-08-08T12:45:55.227053+00:00] ================================================================================
+[2026-08-08T12:45:55.245086+00:00] --- [T0] Creando Datos Base y Generando Backup Físico Prístino ---
+[2026-08-08T12:45:55.291604+00:00] Creando paquete de backup físico prístino: backup-pristine-gate-f-1786193155...
+[2026-08-08T12:46:17.033672+00:00] Backup prístino publicado en: /app/data/vault_dr_gate_f/backup-pristine-gate-f-1786193155
+[2026-08-08T12:46:17.033711+00:00] Ejecutando verificación criptográfica y pg_verifybackup sobre backup prístino...
+[2026-08-08T12:46:17.040244+00:00] Firma HMAC-SHA256 del manifiesto prístino: VALID (PASS)
+[2026-08-08T12:46:24.781783+00:00] pg_verifybackup sobre backup prístino: PASS (backup successfully verified)
+[2026-08-08T12:46:24.781815+00:00] --- [T1] Clonando Backup e Inyectando Corrupción Intencional ---
+[2026-08-08T12:47:12.311366+00:00] Copia creada para inyección de corrupción: /app/data/vault_dr_gate_f/backup-corrupted-gate-f-1786193155
+[2026-08-08T12:47:12.320069+00:00] Inyectando corrupción de bytes en /app/data/vault_dr_gate_f/backup-corrupted-gate-f-1786193155/physical_basebackup/backup_manifest...
+[2026-08-08T12:47:12.342196+00:00] Modificación completada: SHA-256 cambió de 525f51f00630aeefd643b0c076fef0ef9a0da550f1511d1d911d44a8f78219bb a 02c8f2a09348d03fd0daf163eb8db63b1dbadc7c445a40d20e2c1dc7bf267b73
+[2026-08-08T12:47:12.342242+00:00] Ejecutando pg_verifybackup sobre cluster corrupto (se espera RECHAZO)...
+[2026-08-08T12:47:12.353157+00:00] Resultado pg_verifybackup sobre backup corrupto: ExitCode=1, Detección de Corrupción=PASS
+[2026-08-08T12:47:12.353198+00:00] Salida de error capturada: pg_verifybackup: error: could not parse backup manifest: parsing failed...
+[2026-08-08T12:47:12.353216+00:00] --- [T2] Intentando Restauración desde el Backup Corrupto ---
+[2026-08-08T12:47:12.377190+00:00] Restauración RECHAZADA exitosamente antes de ejecución: CHECKSUM_MISMATCH: backup_manifest SHA-256 inválido (02c8f2a09348d03fd0daf163eb8db63b1dbadc7c445a40d20e2c1dc7bf267b73 != 525f51f00630aeefd643b0c076fef0ef9a0da550f1511d1d911d44a8f78219bb)
+[2026-08-08T12:47:12.382125+00:00] Base de datos PostgreSQL preservada intacta sin corrupción: PASS
+[2026-08-08T12:47:12.382182+00:00] --- [T3] Registrando Evento de Rechazo y Alerta en AuditLog ---
+[2026-08-08T12:47:12.391584+00:00] Auditoría registrada en AuditLog (audit_recorded): PASS
+[2026-08-08T12:47:12.391624+00:00] --- [T4] Escribiendo Artefactos Formales en artifacts/dr/gate-f/ ---
+[2026-08-08T12:47:12.406012+00:00] === Gate F Drill Finalizado con Éxito ===

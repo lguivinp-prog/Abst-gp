@@ -1,0 +1,13 @@
+{
+  "timestamp_utc": "2026-08-08T12:56:06.465805+00:00",
+  "status": "PASS",
+  "backup_id": "backup-dr-gate-g-1786193741",
+  "vault_path": "/app/data/vault_dr_gate_g/backup-dr-gate-g-1786193741",
+  "storage_isolation": {
+    "tenant_a_directory": "/app/data/uploads_dr_gate_g/tenant-alpha-1786193741",
+    "tenant_b_directory": "/app/data/uploads_dr_gate_g/tenant-bravo-1786193741",
+    "storage_overlap": false,
+    "unauthorized_file_leak": false,
+    "result": "PASS"
+  }
+}

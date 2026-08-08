@@ -1,0 +1,22 @@
+[2026-08-08T12:55:41.887358+00:00] ================================================================================
+[2026-08-08T12:55:41.887420+00:00] GATE G: MULTI-TENANT ISOLATION DR CERTIFICATION DRILL
+[2026-08-08T12:55:41.887447+00:00] ================================================================================
+[2026-08-08T12:55:41.903067+00:00] --- [T0] Inicializando Tenants Aislados Tenant A (Alpha) y Tenant B (Bravo) ---
+[2026-08-08T12:55:42.028823+00:00] Datos creados exitosamente. Tenant A (Case 48, Doc 34, Job ocr_processing_48_3fa3adb2), Tenant B (Case 49, Doc 35, Job table_extraction_49_bbd0dbfb)
+[2026-08-08T12:55:42.028865+00:00] --- [T1] Escenario Negativo 1: Tenant A intenta leer documentos y expedientes de Tenant B ---
+[2026-08-08T12:55:42.031548+00:00] Consulta cruzada Case B con scope Tenant A: DENIED/NONE (PASS)
+[2026-08-08T12:55:42.031584+00:00] Consulta cruzada Document B con scope Tenant A: DENIED/NONE (PASS)
+[2026-08-08T12:55:42.037347+00:00] --- [T2] Escenario Negativo 2: Tenant A intenta consultar/mutar jobs de Tenant B ---
+[2026-08-08T12:55:42.040859+00:00] Lectura de Job B desde scope Tenant A: DENIED/NONE (PASS)
+[2026-08-08T12:55:42.040897+00:00] Mutación de Job B desde scope Tenant A: DENIED/REJECTED (PASS)
+[2026-08-08T12:55:42.040926+00:00] Integridad de Job B preservada en Tenant B: INTACT (PASS)
+[2026-08-08T12:55:42.045193+00:00] --- [T3] Escenario Negativo 3: Tenant A intenta consultar métricas de Tenant B ---
+[2026-08-08T12:55:42.050684+00:00] Consulta de métricas Case B con scope Tenant A: 0 registros devueltos (PASS)
+[2026-08-08T12:55:42.050757+00:00] Aislamiento total de métricas Tenant A: PASS
+[2026-08-08T12:55:42.055994+00:00] --- [T4] Escenario Negativo 4: Validación de Aislamiento Tenant durante Restore DR ---
+[2026-08-08T12:56:06.441893+00:00] Backup global DR creado: /app/data/vault_dr_gate_g/backup-dr-gate-g-1786193741
+[2026-08-08T12:56:06.455132+00:00] Aislamiento físico en storage/uploads: PASS
+[2026-08-08T12:56:06.455175+00:00] --- [T5] Validando Pistas de Auditoría en AuditLog ---
+[2026-08-08T12:56:06.458217+00:00] Auditorías de rechazo registradas en PostgreSQL: 3/3 (PASS)
+[2026-08-08T12:56:06.458256+00:00] --- [T6] Generando Artefactos Formales en artifacts/dr/gate-g/ ---
+[2026-08-08T12:56:06.478408+00:00] === Gate G Multi-Tenant Drill Finalizado con Éxito ===

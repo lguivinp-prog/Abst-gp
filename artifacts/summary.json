@@ -1,0 +1,26 @@
+{
+  "certification_phase": "FASE 7.4 \u2014 Disaster Recovery, Business Continuity & RPO/RTO",
+  "platform_version": "V5.5 Enterprise Operations",
+  "certified_at_utc": "2026-08-05T04:26:08.058522+00:00",
+  "overall_status": "FAIL",
+  "gates": {
+    "physical_base_backup": "PASS",
+    "wal_archive": "PASS",
+    "pitr_recovery": "PASS",
+    "manifest_signature": "PASS",
+    "corrupt_backup_rejection": "PASS",
+    "database_integrity": "PASS",
+    "document_consistency": "FAIL",
+    "document_checksums": "PASS",
+    "globals_and_permissions": "PASS",
+    "redis_clean_rebuild": "PASS",
+    "job_reconciliation": "PASS",
+    "multi_tenant_isolation": "PASS",
+    "rpo_postgres": "60.0s (PASS)",
+    "rpo_documental": "90.0s (PASS)",
+    "rpo_effective": "90.0s (PASS)",
+    "rto_total": "185.0s (PASS)",
+    "functional_e2e_pass": "PASS",
+    "telemetry_and_alerts": "PASS"
+  }
+}

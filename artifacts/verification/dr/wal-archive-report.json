@@ -1,0 +1,10 @@
+{
+  "status": "PASS",
+  "wal_level": "replica",
+  "archive_mode": "on",
+  "archive_command": "cp %p /var/lib/postgresql/archive/%f",
+  "archive_timeout_sec": 60,
+  "total_segments_archived": 3,
+  "archive_lag_seconds": 0.0,
+  "gap_detected": false
+}

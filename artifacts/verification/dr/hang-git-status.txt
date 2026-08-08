@@ -1,0 +1,37 @@
+BRANCH: feature/phase5-ring1 (ahead 1)
+HEAD: 38ea7f715fad6ab5a9b700d316e0b15052507c8a
+
+TRACKED MODIFIED FILES (28 PRE-EXISTING):
+ M backend/alembic/versions/8527a001a1bc_add_bootstrap_ledger.py
+ M backend/app/api/routers/admin.py
+ M backend/app/api/routers/cases.py
+ M backend/app/cli/admin_bootstrap.py
+ M backend/app/core/config.py
+ M backend/app/core/database.py
+ M backend/app/main.py
+ M backend/app/models/__init__.py
+ M backend/app/models/domain.py
+ M backend/app/services/extraction_engine/utils/persistence.py
+ M backend/app/worker/ocr_worker_tasks.py
+ D backend/scripts/bootstrap_tenant.py
+ D backend/scripts/insert_users.py
+ M backend/tests/conftest.py
+ M frontend/package.json
+ M frontend/src/App.tsx
+ M frontend/src/api/client.ts
+ M frontend/src/components/Layout/Layout.tsx
+ M frontend/src/features/cases/CaseDetail.tsx
+ M frontend/src/features/cases/CasesList.tsx
+ M frontend/src/features/cases/components/ComparisonTable.tsx
+ M frontend/src/features/cases/components/OutputGenerator.tsx
+ M frontend/src/features/cases/components/ProcessingStatus.tsx
+ M frontend/src/features/cases/components/QuotationUpload.tsx
+ M frontend/src/features/cases/components/RequirementUpload.tsx
+ M frontend/src/types/index.ts
+ M frontend/tsconfig.app.json
+ M frontend/vite.config.ts
+
+UNTRACKED VERIFICATION WORK:
+?? Dockerfile.backend.test
+?? verification/
+?? backend/tests/dr/

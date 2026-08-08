@@ -1,0 +1,92 @@
+# Checkpoint 1 Logs
+
+## Versiones Originales
+Node: v20.19.0
+npm: 10.8.2
+Python: 3.12.3
+
+## Generación de package-lock.json y ERESOLVE
+```
+npm notice 
+npm notice New major version of npm available! 10.5.0 -> 12.0.2
+npm notice Changelog: <https://github.com/npm/cli/releases/tag/v12.0.2>
+npm notice Run `npm install -g npm@12.0.2` to update!
+npm notice 
+npm ERR! code ERESOLVE
+npm ERR! ERESOLVE unable to resolve dependency tree
+npm ERR! 
+npm ERR! While resolving: frontend@0.0.0
+npm ERR! Found: react@19.2.8
+npm ERR! node_modules/react
+npm ERR!   react@"^19.2.7" from the root project
+npm ERR! 
+npm ERR! Could not resolve dependency:
+npm ERR! peer react@"^16.5.1 || ^17.0.0 || ^18.0.0" from lucide-react@0.368.0
+npm ERR! node_modules/lucide-react
+npm ERR!   lucide-react@"^0.368.0" from the root project
+npm ERR! 
+npm ERR! Fix the upstream dependency conflict, or retry
+npm ERR! this command with --force or --legacy-peer-deps
+npm ERR! to accept an incorrect (and potentially broken) dependency resolution.
+```
+
+## npm ci
+```
+added 69 packages, and audited 70 packages in 22s
+
+17 packages are looking for funding
+  run `npm fund` for details
+
+2 moderate severity vulnerabilities
+```
+
+## npm run build (Fallido)
+```
+> frontend@0.0.0 build
+> tsc -b && vite build
+
+src/api/cases.service.ts(2,10): error TS1484: 'CaseCreate' is a type and must be imported using a type-only import when 'verbatimModuleSyntax' is enabled.
+src/api/cases.service.ts(5,16): error TS6133: 'CaseStatus' is declared but its value is never read.
+src/api/cases.service.ts(5,28): error TS6133: 'Section' is declared but its value is never read.
+src/api/cases.service.ts(5,37): error TS6133: 'QuotationStatus' is declared but its value is never read.
+src/api/cases.service.ts(5,60): error TS2307: Cannot find module '../features/cases/types' or its corresponding type declarations.
+src/api/cases.service.ts(6,10): error TS1484: 'DocumentSection' is a type and must be imported using a type-only import when 'verbatimModuleSyntax' is enabled.
+src/api/cases.service.ts(6,27): error TS1484: 'ConditionComparison' is a type and must be imported using a type-only import when 'verbatimModuleSyntax' is enabled.
+src/api/cases.service.ts(7,10): error TS1484: 'V1ParsedSectionDto' is a type and must be imported using a type-only import when 'verbatimModuleSyntax' is enabled.
+src/api/cases.service.ts(7,30): error TS1484: 'V1FinalConditionComparisonDto' is a type and must be imported using a type-only import when 'verbatimModuleSyntax' is enabled.
+src/api/cases.service.ts(166,3): error TS1117: An object literal cannot have multiple properties with the same name.
+src/components/Auth/RoleGuard.tsx(3,10): error TS2305: Module '"../../features/auth/types"' has no exported member 'Role'.
+src/components/Layout/ProtectedRoute.tsx(1,1): error TS6133: 'React' is declared but its value is never read.
+src/features/auth/AuthContext.tsx(1,8): error TS6133: 'React' is declared but its value is never read.
+src/features/auth/AuthContext.tsx(1,65): error TS1484: 'ReactNode' is a type and must be imported using a type-only import when 'verbatimModuleSyntax' is enabled.
+src/features/auth/AuthContext.tsx(3,10): error TS1484: 'AuthState' is a type and must be imported using a type-only import when 'verbatimModuleSyntax' is enabled.
+src/features/auth/AuthContext.tsx(3,21): error TS1484: 'DecodedToken' is a type and must be imported using a type-only import when 'verbatimModuleSyntax' is enabled.
+src/features/auth/AuthContext.tsx(3,35): error TS1484: 'User' is a type and must be imported using a type-only import when 'verbatimModuleSyntax' is enabled.
+src/features/auth/AuthContext.tsx(3,35): error TS6133: 'User' is declared but its value is never read.
+src/features/auth/LoginPage.tsx(5,10): error TS1484: 'DomainErrorResponse' is a type and must be imported using a type-only import when 'verbatimModuleSyntax' is enabled.
+src/features/cases/CaseDetail.tsx(12,1): error TS6133: 'SectionSelector' is declared but its value is never read.
+src/features/cases/CaseDetail.tsx(13,1): error TS6133: 'SectionEditor' is declared but its value is never read.
+src/features/cases/CaseDetail.tsx(18,1): error TS6133: 'useRequirementDocument' is declared but its value is never read.
+src/features/cases/CaseDetail.tsx(85,55): error TS2304: Cannot find name 'CaseStatus'.
+src/features/cases/CasesList.tsx(145,67): error TS2322: Type '{ children: string; className: string; title: string; }' is not assignable to type 'IntrinsicAttributes & CardProps'.
+src/features/cases/adapters/v1Adapters.ts(1,10): error TS1484: 'DocumentSection' is a type and must be imported using a type-only import when 'verbatimModuleSyntax' is enabled.
+src/features/cases/adapters/v1Adapters.ts(1,27): error TS1484: 'ConditionComparison' is a type and must be imported using a type-only import when 'verbatimModuleSyntax' is enabled.
+src/features/cases/adapters/v1Adapters.ts(1,48): error TS1484: 'ReviewStatus' is a type and must be imported using a type-only import when 'verbatimModuleSyntax' is enabled.
+src/features/cases/adapters/v1Adapters.ts(1,62): error TS1484: 'MatchStatus' is a type and must be imported using a type-only import when 'verbatimModuleSyntax' is enabled.
+src/features/cases/adapters/v1Adapters.ts(2,10): error TS1484: 'V1ParsedSectionDto' is a type and must be imported using a type-only import when 'verbatimModuleSyntax' is enabled.
+src/features/cases/adapters/v1Adapters.ts(2,30): error TS1484: 'V1FinalConditionComparisonDto' is a type and must be imported using a type-only import when 'verbatimModuleSyntax' is enabled.
+src/features/cases/components/ComparisonTable.tsx(4,10): error TS1484: 'ConditionComparison' is a type and must be imported using a type-only import when 'verbatimModuleSyntax' is enabled.
+src/features/cases/components/ComparisonTable.tsx(4,31): error TS1484: 'MatchStatus' is a type and must be imported using a type-only import when 'verbatimModuleSyntax' is enabled.
+src/features/cases/components/ComparisonTable.tsx(39,23): error TS2322: Type '"destructive"' is not assignable to type '"primary" | "secondary" | "danger" | "success" | "warning" | undefined'.
+src/features/cases/components/ComparisonTable.tsx(45,23): error TS2322: Type '"outline"' is not assignable to type '"primary" | "secondary" | "danger" | "success" | "warning" | undefined'.
+src/features/cases/components/CreateCaseModal.tsx(4,10): error TS1484: 'CaseCreate' is a type and must be imported using a type-only import when 'verbatimModuleSyntax' is enabled.
+src/features/cases/components/DoublePaneReview.tsx(1,17): error TS6133: 'useState' is declared but its value is never read.
+src/features/cases/components/QuotationUpload.tsx(2,18): error TS6133: 'AlertCircle' is declared but its value is never read.
+src/features/cases/hooks/useCaseDetails.ts(2,10): error TS1484: 'Case' is a type and must be imported using a type-only import when 'verbatimModuleSyntax' is enabled.
+src/features/cases/hooks/useCaseDetails.ts(2,16): error TS1484: 'Section' is a type and must be imported using a type-only import when 'verbatimModuleSyntax' is enabled.
+src/features/cases/hooks/useCaseDetails.ts(2,25): error TS1484: 'ComparisonResult' is a type and must be imported using a type-only import when 'verbatimModuleSyntax' is enabled.
+src/features/cases/hooks/useCaseDetails.ts(9,23): error TS6133: 'setComparisons' is declared but its value is never read.
+src/features/cases/hooks/useCaseDetails.ts(24,21): error TS2345: Argument of type 'DocumentSection[]' is not assignable to parameter of type 'SetStateAction<Section[]>'.
+src/features/cases/hooks/useComparisonFlow.ts(3,10): error TS1484: 'ConditionComparison' is a type and must be imported using a type-only import when 'verbatimModuleSyntax' is enabled.
+src/features/cases/hooks/useComparisonFlow.ts(75,13): error TS6133: 'response' is declared but its value is never read.
+```

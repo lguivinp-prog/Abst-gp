@@ -1,0 +1,18 @@
+=== WAL CONTINUOUS ARCHIVING VALIDATION ===
+Command: SELECT pg_switch_wal();
+Result: 0/3F48AD08
+
+=== ARCHIVED WAL SEGMENTS (Latest) ===
+-rw------- 1 postgres postgres 16777216 Aug  7 19:43 00000001000000000000003E
+-rw------- 1 postgres postgres 16777216 Aug  7 19:43 00000001000000000000003F
+-rw------- 1 postgres postgres 16777216 Aug  7 19:44 000000010000000000000040
+-rw------- 1 postgres postgres 16777216 Aug  7 19:45 000000010000000000000041
+
+=== PG_STAT_ARCHIVER ===
+archived_count: 83
+last_archived_wal: 000000010000000000000041
+last_archived_time: 2026-08-07 19:45:03.115804+00
+failed_count: 0
+last_failed_wal: (none)
+last_failed_time: (none)
+stats_reset: 2026-08-07 14:07:29.364128+00

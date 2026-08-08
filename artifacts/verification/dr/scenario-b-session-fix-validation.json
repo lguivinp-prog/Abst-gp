@@ -1,0 +1,13 @@
+{
+  "phase": "7.4",
+  "change_id": "7.4-A.1",
+  "change_title": "Restore Session Isolation Fix",
+  "target_test": "backend/tests/dr/test_disaster_recovery.py::test_scenario_b_logical_deletion_pitr",
+  "pattern_implemented": "session.flush() -> session.commit() -> session.close() -> engine.dispose() -> restore_backup_package() -> reconnect",
+  "execution_timestamp_utc": "2026-08-07T13:18:34Z",
+  "exit_code": 0,
+  "duration_seconds": 9.95,
+  "status": "PASS",
+  "deadlock_present": false,
+  "pending_locks_count": 0
+}

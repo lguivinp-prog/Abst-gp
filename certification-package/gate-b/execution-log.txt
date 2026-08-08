@@ -1,0 +1,73 @@
+================================================================================
+GATE B: PITR FORMAL CERTIFICATION DRILL
+Start UTC: 2026-08-07T23:33:47Z
+================================================================================
+--- [T0] Creating Baseline Entities (Tenant, CaseFile, Document, AuditLog) ---
+Created Case ID: 22 for Tenant: dr-tenant-gate-b-1786145627
+Created Document T0 ID: 8
+Timeline before backup/restore: 1
+--- [T1] Executing Physical Base Backup via pg_basebackup ---
+pg_basebackup: initiating base backup, waiting for checkpoint to complete
+pg_basebackup: checkpoint completed
+pg_basebackup: write-ahead log start point: 0/6C000028 on timeline 1
+pg_basebackup: starting background WAL receiver
+pg_basebackup: created temporary replication slot "pg_basebackup_131776"
+   64/33430 kB (0%), 0/1 tablespace (...mal_drill/basebackup/global/2672)
+33440/33440 kB (100%), 0/1 tablespace (...ill/basebackup/global/pg_control)
+33440/33440 kB (100%), 1/1 tablespace                                         
+pg_basebackup: write-ahead log end point: 0/6C000138
+pg_basebackup: waiting for background process to finish streaming ...
+pg_basebackup: syncing data to disk ...
+pg_basebackup: renaming backup_manifest.tmp to backup_manifest
+pg_basebackup: base backup completed
+--- [T1.1] Verifying Physical Base Backup with pg_verifybackup ---
+backup successfully verified
+--- [T2] Inserting Subsequent Critical Transactions (Document Mod & Audit Event) ---
+Created Document T2 ID: 9
+TARGET_TIME: 2026-08-07 23:34:21.173962+00
+TARGET_LSN: 0/6D001230
+--- [T3] Simulating Logical Corruption & Unwanted Actions post-target ---
+Created Corrupt Document T3 ID: 10
+ pg_switch_wal 
+---------------
+ 0/6D0015B0
+(1 row)
+
+--- [T4] Provisioning Isolated Cluster on Port 5433 from Basebackup ---
+Starting recovery instance on port 5433...
+waiting for server to start.......... done
+server started
+Instance successfully recovered and promoted (pg_is_in_recovery=false) in 2s!
+--- [T5] Validating Data Inclusion and Exclusion on Restored Cluster ---
+TIMELINE_AFTER: 2
+RECOVERED_LSN: 0/6D0013D0
+RECOVERED_TIME: 2026-08-07 23:34:33.478143+00
+Entities Check: TENANT=1, CASE=1, DOC_T0=1, DOC_T2=1, DOC_T3_CORRUPT=0
+Audit Check: AUDIT_T0=1, AUDIT_T2=1, AUDIT_T3_CORRUPT=0
+DATA_INCLUSION: PASS
+DATA_EXCLUSION: PASS
+TIMELINE_CHECK: PASS (Before=1, After=2)
+2026-08-07 23:34:25.394 UTC [131859] LOG:  starting PostgreSQL 16.14 on x86_64-pc-linux-musl, compiled by gcc (Alpine 15.2.0) 15.2.0, 64-bit
+2026-08-07 23:34:25.394 UTC [131859] LOG:  listening on IPv4 address "0.0.0.0", port 5433
+2026-08-07 23:34:25.394 UTC [131859] LOG:  listening on IPv6 address "::", port 5433
+2026-08-07 23:34:25.405 UTC [131859] LOG:  listening on Unix socket "/var/run/postgresql/.s.PGSQL.5433"
+2026-08-07 23:34:25.418 UTC [131862] LOG:  database system was interrupted; last known up at 2026-08-07 23:34:13 UTC
+2026-08-07 23:34:32.248 UTC [131862] LOG:  starting point-in-time recovery to 2026-08-07 23:34:21.173962+00
+2026-08-07 23:34:32.248 UTC [131862] LOG:  starting backup recovery with redo LSN 0/6C000028, checkpoint LSN 0/6C000098, on timeline ID 1
+2026-08-07 23:34:32.266 UTC [131862] LOG:  restored log file "00000001000000000000006C" from archive
+2026-08-07 23:34:32.293 UTC [131862] LOG:  redo starts at 0/6C000028
+2026-08-07 23:34:32.307 UTC [131862] LOG:  restored log file "00000001000000000000006D" from archive
+2026-08-07 23:34:32.331 UTC [131862] LOG:  completed backup recovery with redo LSN 0/6C000028 and end LSN 0/6C000138
+2026-08-07 23:34:32.331 UTC [131862] LOG:  consistent recovery state reached at 0/6C000138
+2026-08-07 23:34:32.332 UTC [131859] LOG:  database system is ready to accept read-only connections
+2026-08-07 23:34:32.332 UTC [131862] LOG:  recovery stopping before commit of transaction 3452, time 2026-08-07 23:34:23.186928+00
+2026-08-07 23:34:32.332 UTC [131862] LOG:  redo done at 0/6D001358 system usage: CPU: user: 0.00 s, system: 0.00 s, elapsed: 0.03 s
+2026-08-07 23:34:32.332 UTC [131862] LOG:  last completed transaction was at log time 2026-08-07 23:34:21.162925+00
+2026-08-07 23:34:32.344 UTC [131862] LOG:  restored log file "00000001000000000000006D" from archive
+2026-08-07 23:34:32.365 UTC [131862] LOG:  selected new timeline ID: 2
+2026-08-07 23:34:32.427 UTC [131862] LOG:  archive recovery complete
+2026-08-07 23:34:32.433 UTC [131860] LOG:  checkpoint starting: end-of-recovery immediate wait
+2026-08-07 23:34:32.508 UTC [131860] LOG:  checkpoint complete: wrote 13 buffers (0.1%); 0 WAL file(s) added, 0 removed, 1 recycled; write=0.012 s, sync=0.033 s, total=0.082 s; sync files=12, longest=0.006 s, average=0.003 s; distance=16388 kB, estimate=16388 kB; lsn=0/6D001358, redo lsn=0/6D001358
+2026-08-07 23:34:32.517 UTC [131859] LOG:  database system is ready to accept connections
+waiting for server to shut down.... done
+server stopped

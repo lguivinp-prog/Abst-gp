@@ -1,0 +1,8 @@
+{
+  "timestamp_utc": "2026-08-07T23:37:48.687275+00:00",
+  "status": "PASS",
+  "redis_url_sanitized": "redis://redis-dr:6379/2",
+  "initial_keys_count": 0,
+  "final_keys_count": 0,
+  "ping_ok": true
+}

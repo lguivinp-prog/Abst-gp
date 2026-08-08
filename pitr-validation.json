@@ -1,0 +1,19 @@
+{
+  "drill_id": "pitr-e2e-drill-phase7-4-b",
+  "execution_timestamp_utc": "2026-08-07T21:23:29Z",
+  "postgresql_version": "16.14",
+  "base_backup_mechanism": "pg_basebackup -Fp -P -v --manifest-checksums=SHA256",
+  "base_backup_verification": "pg_verifybackup --exit-on-error (PASS)",
+  "recovery_mechanism": "recovery.signal + restore_command + recovery_target_time + recovery_target_action=promote",
+  "wal_archive_source": "/var/lib/postgresql/archive",
+  "t0_baseline_recovered": true,
+  "t2_target_data_recovered": true,
+  "t3_corruption_data_excluded": true,
+  "timeline_switch_verified": true,
+  "original_timeline": 1,
+  "restored_timeline": 2,
+  "cluster_state_after_promote": "in production",
+  "rto_drill_seconds": 4.32,
+  "rpo_data_loss_seconds": 0.0,
+  "status": "PASS"
+}

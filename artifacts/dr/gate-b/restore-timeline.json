@@ -1,0 +1,9 @@
+{
+  "timeline_before": 1,
+  "timeline_after": 2,
+  "timeline_transition": "1 -> 2",
+  "promotion_status": "SUCCESS",
+  "recovery_stop_lsn": "0/6D0013D0",
+  "recovery_stop_time": "2026-08-07 23:34:33.478143+00",
+  "timestamp_utc": "2026-08-07T23:34:33Z"
+}

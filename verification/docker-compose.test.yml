@@ -1,0 +1,111 @@
+services:
+  db-test:
+    image: postgres:15
+    environment:
+      POSTGRES_USER: test_user
+      POSTGRES_PASSWORD: test_password
+      POSTGRES_DB: test_db
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U test_user -d test_db"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+      start_period: 5s
+    volumes:
+      - test-db-data:/var/lib/postgresql/data
+
+  redis-test:
+    image: redis:7-alpine
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  backend-test:
+    build:
+      context: ..
+      dockerfile: Dockerfile.backend.test
+    depends_on:
+      db-test:
+        condition: service_healthy
+      redis-test:
+        condition: service_healthy
+    environment:
+      - DATABASE_URL=postgresql://test_user:test_password@db-test:5432/test_db
+      - REDIS_URL=redis://redis-test:6379/1
+      - TEST_REDIS_URL=redis://redis-test:6379/1
+      - SECRET_KEY=synthetic_secret_key_for_testing
+      - UPLOADS_DIR=/app/uploads
+      - PYTHONPATH=/app
+      - APP_ENV=test
+      - ENVIRONMENT=test
+    volumes:
+      - ../backend:/app
+      - test-uploads:/app/uploads
+    command: ["/bin/sh", "-c", "sleep infinity"]
+
+  backend-app:
+    build:
+      context: ..
+      dockerfile: Dockerfile.backend.test
+    depends_on:
+      db-test:
+        condition: service_healthy
+      redis-test:
+        condition: service_healthy
+    environment:
+      - DATABASE_URL=postgresql://test_user:test_password@db-test:5432/test_db
+      - REDIS_URL=redis://redis-test:6379/1
+      - SECRET_KEY=synthetic_secret_key_for_testing
+      - UPLOADS_DIR=/app/uploads
+      - PYTHONPATH=/app
+      - ENVIRONMENT=test
+    volumes:
+      - ../backend:/app
+      - test-uploads:/app/uploads
+    command: ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]
+
+  worker-test:
+    build:
+      context: ..
+      dockerfile: Dockerfile.backend.test
+    depends_on:
+      redis-test:
+        condition: service_healthy
+    environment:
+      - DATABASE_URL=postgresql://test_user:test_password@db-test:5432/test_db
+      - REDIS_URL=redis://redis-test:6379/1
+      - SECRET_KEY=synthetic_secret_key_for_testing
+      - UPLOADS_DIR=/app/uploads
+      - PYTHONPATH=/app
+      - ENVIRONMENT=test
+    volumes:
+      - ../backend:/app
+      - test-uploads:/app/uploads
+    command: ["rq", "worker", "-u", "redis://redis-test:6379/1", "default", "document_tasks", "ocr_tasks"]
+
+  frontend-test:
+    build:
+      context: ..
+      dockerfile: Dockerfile.frontend.test
+    command: ["npm", "run", "preview", "--", "--host", "0.0.0.0", "--port", "5173"]
+    volumes:
+      - ../frontend:/app
+
+  browser-test:
+    image: mcr.microsoft.com/playwright:v1.42.0-jammy
+    depends_on:
+      - frontend-test
+      - backend-app
+    environment:
+      - BASE_URL=http://frontend-test:5173
+      - API_URL=http://backend-app:8000
+    volumes:
+      - ../frontend/e2e:/e2e
+    working_dir: /e2e
+    command: ["/bin/sh", "-c", "sleep infinity"]
+
+volumes:
+  test-uploads:
+  test-db-data:

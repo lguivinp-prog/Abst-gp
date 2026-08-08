@@ -1,0 +1,19 @@
+{
+  "gate": "C",
+  "status": "PASS",
+  "redis_destroyed": "PASS",
+  "postgres_ssot_verified": "PASS",
+  "redis_rebuild": "PASS",
+  "duplicate_execution": "PASS",
+  "job_consistency": "PASS",
+  "metrics": {
+    "initial_redis_keys": 6,
+    "redis_keys_post_disaster": 0,
+    "rebuilt_redis_keys": 0,
+    "postgres_jobs_tracked": 4,
+    "recovered_jobs_count": 4,
+    "completed_jobs_intact": true,
+    "failed_jobs_intact": true
+  },
+  "timestamp_utc": "2026-08-07T23:37:48.775874+00:00"
+}

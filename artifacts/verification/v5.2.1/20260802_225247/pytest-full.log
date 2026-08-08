@@ -1,0 +1,228 @@
+ Container abst_gp_v52_validation-db-test-1 Running 
+ Container abst_gp_v52_validation-redis-test-1 Running 
+ Container abst_gp_v52_validation-db-test-1 Waiting 
+ Container abst_gp_v52_validation-redis-test-1 Waiting 
+ Container abst_gp_v52_validation-redis-test-1 Healthy 
+ Container abst_gp_v52_validation-db-test-1 Healthy 
+ Container abst_gp_v52_validation-backend-test-run-d4f3132cf7d6 Creating 
+ Container abst_gp_v52_validation-backend-test-run-d4f3132cf7d6 Created 
+============================= test session starts ==============================
+platform linux -- Python 3.12.3, pytest-9.1.1, pluggy-1.6.0 -- /usr/local/bin/python
+cachedir: .pytest_cache
+rootdir: /app
+configfile: pytest.ini
+plugins: mock-3.15.1, asyncio-1.4.0, anyio-4.14.2
+asyncio: mode=Mode.STRICT, debug=False, asyncio_default_fixture_loop_scope=None, asyncio_default_test_loop_scope=function
+collecting ... collected 135 items
+
+tests/alembic/test_migration_environment_guard.py::test_guard_test_env_allowed PASSED [  0%]
+tests/alembic/test_migration_environment_guard.py::test_guard_test_env_abst_gp_rejected PASSED [  1%]
+tests/alembic/test_migration_environment_guard.py::test_guard_prod_env_missing_change_id PASSED [  2%]
+tests/alembic/test_migration_environment_guard.py::test_guard_prod_env_wrong_db PASSED [  2%]
+tests/alembic/test_migration_environment_guard.py::test_guard_prod_env_wrong_host PASSED [  3%]
+tests/alembic/test_migration_environment_guard.py::test_guard_prod_env_wrong_port PASSED [  4%]
+tests/alembic/test_migration_environment_guard.py::test_guard_prod_env_missing_target PASSED [  5%]
+tests/alembic/test_migration_environment_guard.py::test_guard_prod_env_all_match PASSED [  5%]
+tests/alembic/test_migration_environment_guard.py::test_guard_unknown_env PASSED [  6%]
+tests/alembic/test_migration_environment_guard.py::test_guard_does_not_create_engine PASSED [  7%]
+tests/alembic/test_quarantine_migration.py::test_alembic_scenario_a PASSED [  8%]
+tests/alembic/test_quarantine_migration.py::test_alembic_scenario_b_and_c PASSED [  8%]
+tests/api/integration/test_alembic_guard.py::test_alembic_guard_validates_schema PASSED [  9%]
+tests/api/integration/test_comparison_concurrency.py::test_comparison_concurrency_real PASSED [ 10%]
+tests/api/integration/test_comparison_rollback.py::test_comparison_rollback_real PASSED [ 11%]
+tests/api/integration/test_e2e_v1.py::test_health PASSED                 [ 11%]
+tests/api/integration/test_e2e_v1.py::test_full_integration_flow PASSED  [ 12%]
+tests/api/integration/test_e2e_v2.py::test_health PASSED                 [ 13%]
+tests/api/integration/test_e2e_v2.py::test_full_integration_flow_v2 PASSED [ 14%]
+tests/api/integration/test_e2e_v2.py::test_empty_extraction_v2_fallback PASSED [ 14%]
+tests/api/test_comparison_integrity.py::test_comparison_run_idempotent_ready_generate PASSED [ 15%]
+tests/api/test_comparison_integrity.py::test_comparison_run_success PASSED [ 16%]
+tests/api/test_comparison_integrity.py::test_comparison_run_inconsistent_state PASSED [ 17%]
+tests/api/test_comparison_integrity.py::test_comparison_run_wrong_status PASSED [ 17%]
+tests/api/test_comparison_integrity.py::test_comparison_run_rollback_on_failure PASSED [ 18%]
+tests/api/test_document_retrieval.py::test_get_document_success_admin PASSED [ 19%]
+tests/api/test_document_retrieval.py::test_get_document_range_requests PASSED [ 20%]
+tests/api/test_document_retrieval.py::test_path_traversal_prevention PASSED [ 20%]
+tests/api/test_document_retrieval.py::test_multiple_requirement_documents_deterministic PASSED [ 21%]
+tests/api/test_document_retrieval.py::test_not_found_on_missing_file PASSED [ 22%]
+tests/authz/test_audit_log_system.py::test_audit_log_system_actor PASSED [ 22%]
+tests/authz/test_audit_log_system.py::test_audit_log_concurrent_resolution PASSED [ 23%]
+tests/authz/test_authz_alembic_contract.py::test_alembic_migration_adds_user_fields PASSED [ 24%]
+tests/authz/test_authz_alembic_contract.py::test_alembic_migration_adds_case_file_assignment PASSED [ 25%]
+tests/authz/test_authz_alembic_contract.py::test_alembic_migration_audit_log_expanded PASSED [ 25%]
+tests/authz/test_authz_alembic_contract.py::test_alembic_admin_unique_constraint PASSED [ 26%]
+tests/authz/test_authz_models_contract.py::test_user_model_has_required_fields PASSED [ 27%]
+tests/authz/test_authz_models_contract.py::test_case_file_model_has_assignment_fields PASSED [ 28%]
+tests/authz/test_authz_models_contract.py::test_audit_log_model_contract PASSED [ 28%]
+tests/authz/test_authz_security_contract.py::test_operator_cannot_administer_users PASSED [ 29%]
+tests/authz/test_authz_security_contract.py::test_operator_cannot_access_unassigned_case PASSED [ 30%]
+tests/authz/test_authz_security_contract.py::test_admin_can_see_all_cases PASSED [ 31%]
+tests/authz/test_authz_security_contract.py::test_unassigned_case_exclusive_to_admin PASSED [ 31%]
+tests/authz/test_bootstrap_e2e.py::test_bootstrap_e2e_flow PASSED        [ 32%]
+tests/authz/test_cli_auth.py::test_jwt_independence PASSED               [ 33%]
+tests/authz/test_cli_auth.py::test_cli_security_context PASSED           [ 34%]
+tests/authz/test_concurrency.py::test_concurrency_scenario_A PASSED      [ 34%]
+tests/authz/test_concurrency.py::test_concurrency_scenario_B PASSED      [ 35%]
+tests/authz/test_concurrency.py::test_concurrency_scenario_C PASSED      [ 36%]
+tests/authz/test_password_policy.py::test_password_policy_length_enforced PASSED [ 37%]
+tests/authz/test_password_policy.py::test_crypto_compatibility PASSED    [ 37%]
+tests/authz/test_password_policy.py::test_password_file_permissions PASSED [ 38%]
+tests/authz/test_password_policy.py::test_environment_guard_rejects_abst_gp PASSED [ 39%]
+tests/authz/test_password_policy.py::test_interactive_tty_requirement PASSED [ 40%]
+tests/cli/test_scanner_reprocessing.py::test_missing_stored_path PASSED  [ 40%]
+tests/cli/test_scanner_reprocessing.py::test_fallo_publicar_segundo_documento PASSED [ 41%]
+tests/cli/test_scanner_reprocessing.py::test_repeticion_sin_duplicados PASSED [ 42%]
+tests/cli/test_scanner_reprocessing.py::test_dos_scanners_concurrentes PASSED [ 42%]
+tests/db/test_db_migration.py::test_db_constraints PASSED                [ 43%]
+tests/db/test_persistence_race.py::test_race_conditions PASSED           [ 44%]
+tests/db/test_run_repository.py::test_create_primary_success PASSED      [ 45%]
+tests/db/test_run_repository.py::test_create_run_wrong_document PASSED   [ 45%]
+tests/db/test_run_repository.py::test_shadow_creates_fallback_blocked PASSED [ 46%]
+tests/db/test_run_repository.py::test_fallback_origin_must_be_v2_and_failed PASSED [ 47%]
+tests/db/test_run_repository.py::test_shadow_wrong_scope PASSED          [ 48%]
+tests/db/test_worker_empty_extraction.py::test_execute_v1_pipeline_empty_extraction_raises_error PASSED [ 48%]
+tests/db/test_worker_empty_extraction.py::test_execute_v1_pipeline_success PASSED [ 49%]
+tests/ocr/test_compatibility_snapshot.py::test_v2_to_parsed_sections_contract PASSED [ 50%]
+tests/ocr/test_compatibility_snapshot.py::test_snapshot_adapter_with_tables PASSED [ 51%]
+tests/ocr/test_document_id_integration.py::test_ocr_v1_integration_document_id PASSED [ 51%]
+tests/ocr/test_document_id_integration.py::test_ocr_v2_integration_document_id PASSED [ 52%]
+tests/ocr/test_missing_doc_id.py::test_missing_document_id PASSED        [ 53%]
+tests/ocr/test_phase2.py::TestPdfClassifier::test_classify_digital PASSED [ 54%]
+tests/ocr/test_phase2.py::TestPdfClassifier::test_classify_scanned PASSED [ 54%]
+tests/ocr/test_phase2.py::TestPdfClassifier::test_classify_hybrid PASSED [ 55%]
+tests/ocr/test_phase2.py::TestImagePreprocessor::test_preprocessor_generates_images PASSED [ 56%]
+tests/test_quarantine_v4.py::test_global_unique_username PASSED          [ 57%]
+tests/test_quarantine_v4.py::test_cli_sequential_resolution PASSED       [ 57%]
+tests/test_quarantine_v4.py::test_concurrent_quarantine_resolution PASSED [ 58%]
+tests/test_tenant_logic.py::test_tenant_router_auto_mode PASSED          [ 59%]
+tests/test_tenant_logic.py::test_tenant_router_auto_mode_exceeds_active PASSED [ 60%]
+tests/test_tenant_logic.py::test_tenant_router_force_v2_override PASSED  [ 60%]
+tests/test_transactional_isolation.py::test_assign_case_transactional_isolation PASSED [ 61%]
+tests/unit/test_cleaner.py::test_clean_ocr_text_regex PASSED             [ 62%]
+tests/unit/test_comparison_engine.py::test_compare_field_coincide PASSED [ 62%]
+tests/unit/test_comparison_engine.py::test_compare_field_reemplazo_plazo PASSED [ 63%]
+tests/unit/test_comparison_engine.py::test_compare_field_reemplazo_garantia PASSED [ 64%]
+tests/unit/test_comparison_engine.py::test_compare_field_no_detectado_req PASSED [ 65%]
+tests/unit/test_comparison_engine.py::test_compare_field_revision_manual PASSED [ 65%]
+tests/unit/test_comparison_engine.py::test_run_comparison_matrix PASSED  [ 66%]
+tests/unit/test_document_extraction_agent.py::test_protect_ruc PASSED    [ 67%]
+tests/unit/test_document_extraction_agent.py::test_protect_price PASSED  [ 68%]
+tests/unit/test_document_extraction_agent.py::test_protect_quantity PASSED [ 68%]
+tests/unit/test_document_extraction_agent.py::test_protect_date PASSED   [ 69%]
+tests/unit/test_document_extraction_agent.py::test_protect_brand PASSED  [ 70%]
+tests/unit/test_document_extraction_agent.py::test_remove_headers PASSED [ 71%]
+tests/unit/test_document_extraction_agent.py::test_remove_page_numbers PASSED [ 71%]
+tests/unit/test_document_extraction_agent.py::test_dictionary_replacement PASSED [ 72%]
+tests/unit/test_document_extraction_agent.py::test_hyphen_join PASSED    [ 73%]
+tests/unit/test_document_extraction_agent.py::test_structural_breaks PASSED [ 74%]
+tests/unit/test_html_generator.py::test_html_rendering_justified PASSED  [ 74%]
+tests/unit/test_ocr_pipeline.py::test_clean_ocr_text_hyphenated_words PASSED [ 75%]
+tests/unit/test_ocr_pipeline.py::test_clean_ocr_text_unnecessary_newlines PASSED [ 76%]
+tests/unit/test_ocr_pipeline.py::test_clean_ocr_text_preserves_structure PASSED [ 77%]
+tests/unit/test_ocr_pipeline.py::test_section_detector_basic PASSED      [ 77%]
+tests/unit/test_ocr_pipeline.py::test_section_detector_fuzzy_ocr_errors PASSED [ 78%]
+tests/unit/test_ocr_pipeline.py::test_section_detector_missed_sections PASSED [ 79%]
+tests/unit/test_ocr_pipeline.py::test_section_detector_review_status PASSED [ 80%]
+tests/unit/test_ocr_pipeline.py::test_build_structure_blocks PASSED      [ 80%]
+tests/unit/test_ocr_pipeline.py::test_build_structure_blocks_mandatory_test_case PASSED [ 81%]
+tests/unit/test_ocr_pipeline.py::test_build_structure_blocks_narrative_vs_kv PASSED [ 82%]
+tests/unit/test_quarantine_auth_cli.py::test_auth_rejects_null_tenant PASSED [ 82%]
+tests/unit/test_quarantine_auth_cli.py::test_auth_rejects_unresolved_quarantine PASSED [ 83%]
+tests/unit/test_quarantine_auth_cli.py::test_auth_rejects_inactive PASSED [ 84%]
+tests/unit/test_quarantine_auth_cli.py::test_cli_resolve_quarantine_real_db PASSED [ 85%]
+tests/unit/test_quarantine_auth_cli.py::test_cli_resolve_already_resolved PASSED [ 85%]
+tests/unit/test_quarantine_auth_cli.py::test_cli_resolve_invalid_actor PASSED [ 86%]
+tests/unit/test_quotation_pipeline.py::test_extract_ruc_and_email PASSED [ 87%]
+tests/unit/test_quotation_pipeline.py::test_extract_amounts PASSED       [ 88%]
+tests/unit/test_quotation_pipeline.py::test_extract_amounts_usd PASSED   [ 88%]
+tests/unit/test_quotation_pipeline.py::test_extract_conditions PASSED    [ 89%]
+tests/unit/test_service_engine.py::test_run_not_found PASSED             [ 90%]
+tests/unit/test_service_engine.py::test_run_processing PASSED            [ 91%]
+tests/unit/test_service_engine.py::test_run_completed PASSED             [ 91%]
+tests/unit/test_service_engine.py::test_run_failed PASSED                [ 92%]
+tests/unit/test_service_engine.py::test_concurrencia_y_pausa PASSED      [ 93%]
+tests/unit/test_service_engine.py::test_cero_requisitos PASSED           [ 94%]
+tests/unit/test_service_engine.py::test_fail_during_scoring PASSED       [ 94%]
+tests/unit/test_service_engine.py::test_fail_during_persistence PASSED   [ 95%]
+tests/unit/test_service_engine.py::test_docs_other_case PASSED           [ 96%]
+tests/unit/test_service_engine.py::test_docs_incorrect_types PASSED      [ 97%]
+tests/unit/test_service_engine.py::test_parsedsections_inconsistentes PASSED [ 97%]
+tests/unit/test_service_engine.py::test_no_match_and_return_object PASSED [ 98%]
+tests/unit/test_service_engine.py::test_unique_constraint PASSED         [ 99%]
+tests/unit/test_service_engine.py::test_failure_mark_failed_preserves_original_error PASSED [100%]
+
+=============================== warnings summary ===============================
+app/models/base.py:3
+  /app/app/models/base.py:3: MovedIn20Warning: The ``declarative_base()`` function is now available as sqlalchemy.orm.declarative_base(). (deprecated since: 2.0) (Background on SQLAlchemy 2.0 at: https://sqlalche.me/e/b8d9)
+    Base = declarative_base()
+
+app/core/config.py:4
+  /app/app/core/config.py:4: PydanticDeprecatedSince20: Support for class-based `config` is deprecated, use ConfigDict instead. Deprecated in Pydantic V2.0 to be removed in V3.0. See Pydantic V2 Migration Guide at https://errors.pydantic.dev/2.13/migration/
+    class Settings(BaseSettings):
+
+../usr/local/lib/python3.12/site-packages/passlib/utils/__init__.py:854
+  /usr/local/lib/python3.12/site-packages/passlib/utils/__init__.py:854: DeprecationWarning: 'crypt' is deprecated and slated for removal in Python 3.13
+    from crypt import crypt as _crypt
+
+../usr/local/lib/python3.12/site-packages/fastapi/testclient.py:1
+  /usr/local/lib/python3.12/site-packages/fastapi/testclient.py:1: StarletteDeprecationWarning: Using `httpx` with `starlette.testclient` is deprecated; install `httpx2` instead.
+    from starlette.testclient import TestClient as TestClient  # noqa
+
+tests/api/integration/test_comparison_concurrency.py::test_comparison_concurrency_real
+  /app/app/api/routing.py:52: DeprecationWarning: Call to deprecated setex. (Use 'set' instead.) -- Deprecated since version 2.6.12.
+    redis_conn.setex(cache_key, ttl, json.dumps(assignment_data))
+
+tests/api/integration/test_e2e_v2.py::test_empty_extraction_v2_fallback
+tests/ocr/test_document_id_integration.py::test_ocr_v2_integration_document_id
+  /app/app/worker/ocr_worker_tasks.py:31: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+    "started_at": datetime.utcnow(),
+
+tests/api/integration/test_e2e_v2.py::test_empty_extraction_v2_fallback
+tests/ocr/test_document_id_integration.py::test_ocr_v2_integration_document_id
+  /app/app/worker/ocr_worker_tasks.py:32: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+    "heartbeat_at": datetime.utcnow()
+
+tests/api/integration/test_e2e_v2.py::test_empty_extraction_v2_fallback
+tests/ocr/test_document_id_integration.py::test_ocr_v2_integration_document_id
+  /app/app/worker/ocr_worker_tasks.py:59: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+    r.heartbeat_at = datetime.utcnow()
+
+tests/api/integration/test_e2e_v2.py::test_empty_extraction_v2_fallback
+tests/ocr/test_document_id_integration.py::test_ocr_v2_integration_document_id
+  /app/app/worker/ocr_worker_tasks.py:132: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+    doc.ocr_processed_at = datetime.utcnow()
+
+tests/api/integration/test_e2e_v2.py::test_empty_extraction_v2_fallback
+tests/ocr/test_document_id_integration.py::test_ocr_v2_integration_document_id
+  /app/app/worker/ocr_worker_tasks.py:148: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+    run.finished_at = datetime.utcnow()
+
+tests/cli/test_scanner_reprocessing.py::test_missing_stored_path
+  /app/tests/cli/test_scanner_reprocessing.py:47: LegacyAPIWarning: The Query.get() method is considered legacy as of the 1.x series of SQLAlchemy and becomes a legacy construct in 2.0. The method is now available as Session.get() (deprecated since: 2.0) (Background on SQLAlchemy 2.0 at: https://sqlalche.me/e/b8d9)
+    case = db.query(CaseFile).get(case_id)
+
+tests/cli/test_scanner_reprocessing.py::test_fallo_publicar_segundo_documento
+tests/cli/test_scanner_reprocessing.py::test_fallo_publicar_segundo_documento
+tests/cli/test_scanner_reprocessing.py::test_repeticion_sin_duplicados
+tests/cli/test_scanner_reprocessing.py::test_repeticion_sin_duplicados
+tests/cli/test_scanner_reprocessing.py::test_dos_scanners_concurrentes
+tests/cli/test_scanner_reprocessing.py::test_dos_scanners_concurrentes
+tests/cli/test_scanner_reprocessing.py::test_dos_scanners_concurrentes
+tests/cli/test_scanner_reprocessing.py::test_dos_scanners_concurrentes
+  /app/app/cli/scanner_reprocessing.py:80: LegacyAPIWarning: The Query.get() method is considered legacy as of the 1.x series of SQLAlchemy and becomes a legacy construct in 2.0. The method is now available as Session.get() (deprecated since: 2.0) (Background on SQLAlchemy 2.0 at: https://sqlalche.me/e/b8d9)
+    doc = db.query(UploadedDocument).get(pj.document_id)
+
+tests/cli/test_scanner_reprocessing.py::test_fallo_publicar_segundo_documento
+  /app/tests/cli/test_scanner_reprocessing.py:72: LegacyAPIWarning: The Query.get() method is considered legacy as of the 1.x series of SQLAlchemy and becomes a legacy construct in 2.0. The method is now available as Session.get() (deprecated since: 2.0) (Background on SQLAlchemy 2.0 at: https://sqlalche.me/e/b8d9)
+    case = db.query(CaseFile).get(case_id)
+
+tests/cli/test_scanner_reprocessing.py::test_repeticion_sin_duplicados
+  /app/tests/cli/test_scanner_reprocessing.py:89: LegacyAPIWarning: The Query.get() method is considered legacy as of the 1.x series of SQLAlchemy and becomes a legacy construct in 2.0. The method is now available as Session.get() (deprecated since: 2.0) (Background on SQLAlchemy 2.0 at: https://sqlalche.me/e/b8d9)
+    case = db.query(CaseFile).get(case_id)
+
+tests/unit/test_service_engine.py::test_concurrencia_y_pausa
+  /app/tests/unit/test_service_engine.py:137: LegacyAPIWarning: The Query.get() method is considered legacy as of the 1.x series of SQLAlchemy and becomes a legacy construct in 2.0. The method is now available as Session.get() (deprecated since: 2.0) (Background on SQLAlchemy 2.0 at: https://sqlalche.me/e/b8d9)
+    run1 = db1.query(ComparisonRun).get(run_id)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+====================== 135 passed, 27 warnings in 39.31s =======================

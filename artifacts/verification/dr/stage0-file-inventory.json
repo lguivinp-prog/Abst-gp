@@ -1,0 +1,83 @@
+{
+  "assessment_timestamp_utc": "2026-08-06T15:55:00Z",
+  "root_path": "C:/Users/PC/Documents/AbastLG/abst-v4_9-remediation-clean",
+  "branch": "feature/phase5-ring1",
+  "head_commit": "38ea7f715fad6ab5a9b700d316e0b15052507c8a",
+  "categories": {
+    "compose_files": [
+      "docker-compose.yml",
+      "docker-compose.test.yml",
+      "verification/docker-compose.test.yml",
+      "verification/docker-compose.dr.yml"
+    ],
+    "alembic_migrations": [
+      "backend/alembic/versions/d886237e42f6_initial_models.py",
+      "backend/alembic/versions/d93b84d3a3ef_async_ocr_refactor_and_statuses.py",
+      "backend/alembic/versions/0465fbfe2d90_add_extraction_traceability_to_parsed_.py",
+      "backend/alembic/versions/0db69c6d13f0_add_normalized_text.py",
+      "backend/alembic/versions/2fd1a39a778c_add_structure_json_to_parsed_sections.py",
+      "backend/alembic/versions/3356ea46065f_add_lease_fields_and_dispatching_status.py",
+      "backend/alembic/versions/4801fd010fe8_add_ocr_v2_fields_to_uploadeddocument.py",
+      "backend/alembic/versions/9fb1ffcf55c5_add_ocrprocessingrun_v2.py",
+      "backend/alembic/versions/a49ffe56ae89_add_ocr_v2_fields_to_uploadeddocument.py",
+      "backend/alembic/versions/3c79a0473766_add_document_id_and_constraints.py",
+      "backend/alembic/versions/12fd022d7f66_fix_document_id_backfill_and_add_index.py",
+      "backend/alembic/versions/e74f1c1d81b9_add_comparison_engine_mvp.py",
+      "backend/alembic/versions/48cb7a717463_quarantine.py",
+      "backend/alembic/versions/476e2601363c_quarantine_mixed_v1_v2.py",
+      "backend/alembic/versions/531ab381efea_phase_5_ring1_authz_and_tenant.py",
+      "backend/alembic/versions/910786f497cb_phase_5_ring_1_tenant_expand.py",
+      "backend/alembic/versions/e03e62268655_phase_5_ring_1_tenant_expand_fix.py",
+      "backend/alembic/versions/e0bb13aab365_fix_system_settings_active_ring.py",
+      "backend/alembic/versions/c3c1858c1db2_validate_chk_users_tenant_resolution.py",
+      "backend/alembic/versions/8527a001a1bc_add_bootstrap_ledger.py",
+      "backend/alembic/versions/64e1917d58ad_add_processingjob.py",
+      "backend/alembic/versions/c23e67366d79_add_no_match_evaluation_method.py",
+      "backend/alembic/versions/f1a2b3c4d5e6_expand_processing_jobs_v53.py",
+      "backend/alembic/versions/b2c3d4e5f6a7_v5_4_observability_and_heartbeat.py",
+      "backend/alembic/versions/c4d5e6f7a8b9_phase_7_3_performance_and_governance_indices.py"
+    ],
+    "models": [
+      "backend/app/models/base.py",
+      "backend/app/models/domain.py",
+      "backend/app/models/__init__.py"
+    ],
+    "core_and_services": [
+      "backend/app/core/config.py",
+      "backend/app/core/database.py",
+      "backend/app/core/redis.py",
+      "backend/app/core/telemetry.py",
+      "backend/app/services/job_repository.py",
+      "backend/app/services/job_recovery_engine.py",
+      "backend/app/services/capacity_governor.py",
+      "backend/app/services/alert_engine.py",
+      "backend/app/services/monitoring_service.py"
+    ],
+    "workers_and_tasks": [
+      "backend/app/worker/ocr_worker_tasks.py",
+      "backend/app/worker/quotation_tasks.py",
+      "backend/app/worker/comparison_tasks.py",
+      "backend/app/worker/fallback_dispatcher.py",
+      "backend/app/worker/fallback_monitor.py"
+    ],
+    "dr_infrastructure_and_scripts": [
+      "verification/docker-compose.dr.yml",
+      "verification/run-dr-gates.ps1",
+      "verification/dr/create_backup.py",
+      "verification/dr/restore_backup.py",
+      "verification/dr/validate_database.py",
+      "verification/dr/validate_documents.py",
+      "verification/dr/rebuild_redis.py",
+      "verification/dr/reconcile_jobs.py",
+      "verification/dr/measure_rpo_rto.py",
+      "verification/dr/generate_report.py"
+    ],
+    "dr_test_suite": [
+      "backend/tests/dr/test_disaster_recovery.py"
+    ],
+    "docs_and_policies": [
+      "docs/runbooks/disaster-recovery.md",
+      "docs/policies/backup-retention.md"
+    ]
+  }
+}

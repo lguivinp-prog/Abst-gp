@@ -1,0 +1,36 @@
+{
+  "timestamp_utc": "2026-08-08T12:34:28.993581+00:00",
+  "disaster_state_validation": {
+    "missing_document_detected": true,
+    "missing_files": [
+      {
+        "stored_path": "doc_d_dr-tenant-alpha-gate-d-1786192451.pdf",
+        "document_id": "28",
+        "tenant_id": "dr-tenant-alpha-gate-d-1786192451"
+      }
+    ],
+    "checksum_tampering_detected": true,
+    "checksum_mismatches": [
+      {
+        "stored_path": "doc_c_dr-tenant-alpha-gate-d-1786192451.pdf",
+        "document_id": "27",
+        "expected_sha256": "9dbce128b70757a2d7ed92b901e60c865d6055cedbf62a8b7c0fc3b0e62f1f4c",
+        "actual_sha256": "21105f7b5cca40eac0a0fd389d2f3fcc8871e68d1ab2a1ed44e05ca068edc851"
+      }
+    ]
+  },
+  "post_restore_validation": {
+    "timestamp_utc": "2026-08-08T12:34:29.043359+00:00",
+    "status": "PASS",
+    "uploads_dir": "/app/data/uploads_dr_gate_d",
+    "db_documents_count": 5,
+    "fs_files_count": 5,
+    "matched_documents": 5,
+    "missing_files_in_fs": [],
+    "orphan_files_in_fs": [],
+    "checksum_mismatches": [],
+    "path_violations": [],
+    "tenant_isolation_violations": []
+  },
+  "status": "PASS"
+}

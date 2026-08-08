@@ -1,0 +1,34 @@
+ Volume abst_gp_v52_validation_test-uploads Creating 
+ Volume abst_gp_v52_validation_test-uploads Created 
+ Container abst_gp_v52_validation-db-test-1 Running 
+ Container abst_gp_v52_validation-redis-test-1 Running 
+ Container abst_gp_v52_validation-redis-test-1 Waiting 
+ Container abst_gp_v52_validation-db-test-1 Waiting 
+ Container abst_gp_v52_validation-redis-test-1 Healthy 
+ Container abst_gp_v52_validation-db-test-1 Healthy 
+ Container abst_gp_v52_validation-backend-test-run-0998f826f52b Creating 
+ Container abst_gp_v52_validation-backend-test-run-0998f826f52b Created 
+INFO  [alembic.runtime.migration] Context impl PostgresqlImpl.
+INFO  [alembic.runtime.migration] Will assume transactional DDL.
+INFO  [alembic.runtime.migration] Running upgrade  -> d886237e42f6, Initial models
+INFO  [alembic.runtime.migration] Running upgrade d886237e42f6 -> d93b84d3a3ef, Async OCR refactor and statuses
+INFO  [alembic.runtime.migration] Running upgrade d93b84d3a3ef -> 2fd1a39a778c, add_structure_json_to_parsed_sections
+INFO  [alembic.runtime.migration] Running upgrade 2fd1a39a778c -> 0465fbfe2d90, add_extraction_traceability_to_parsed_sections
+INFO  [alembic.runtime.migration] Running upgrade 0465fbfe2d90 -> 0db69c6d13f0, add_normalized_text
+INFO  [alembic.runtime.migration] Running upgrade 0db69c6d13f0 -> 64e1917d58ad, Add ProcessingJob
+INFO  [alembic.runtime.migration] Running upgrade 64e1917d58ad -> 4801fd010fe8, Add OCR V2 fields to UploadedDocument
+INFO  [alembic.runtime.migration] Running upgrade 4801fd010fe8 -> a49ffe56ae89, Add OCR V2 fields to UploadedDocument
+INFO  [alembic.runtime.migration] Running upgrade a49ffe56ae89 -> 9fb1ffcf55c5, Add OCRProcessingRun V2
+INFO  [alembic.runtime.migration] Running upgrade 9fb1ffcf55c5 -> 3356ea46065f, Add lease fields and DISPATCHING status
+INFO  [alembic.runtime.migration] Running upgrade 3356ea46065f -> e74f1c1d81b9, add comparison engine mvp
+INFO  [alembic.runtime.migration] Running upgrade e74f1c1d81b9 -> c23e67366d79, add_no_match_evaluation_method
+INFO  [alembic.runtime.migration] Running upgrade c23e67366d79 -> 3c79a0473766, add_document_id_and_constraints
+INFO  [alembic.runtime.migration] Running upgrade 3c79a0473766 -> 12fd022d7f66, fix_document_id_backfill_and_add_index
+INFO  [alembic.runtime.migration] Running upgrade 12fd022d7f66 -> 476e2601363c, quarantine_mixed_v1_v2
+INFO  [alembic.runtime.migration] Running upgrade 476e2601363c -> 531ab381efea, phase 5 ring1 authz and tenant
+INFO  [alembic.runtime.migration] Running upgrade 531ab381efea -> 910786f497cb, phase_5_ring_1_tenant_expand
+INFO  [alembic.runtime.migration] Running upgrade 910786f497cb -> e03e62268655, phase_5_ring_1_tenant_expand_fix
+INFO  [alembic.runtime.migration] Running upgrade e03e62268655 -> e0bb13aab365, fix_system_settings_active_ring
+INFO  [alembic.runtime.migration] Running upgrade e0bb13aab365 -> 48cb7a717463, quarantine
+INFO  [alembic.runtime.migration] Running upgrade 48cb7a717463 -> c3c1858c1db2, validate_chk_users_tenant_resolution
+INFO  [alembic.runtime.migration] Running upgrade c3c1858c1db2 -> 8527a001a1bc, add bootstrap ledger

@@ -1,0 +1,24 @@
+{
+  "timestamp_utc": "2026-08-08T13:06:11.709450+00:00",
+  "target_rpo_seconds": 300.0,
+  "measured_rpo": {
+    "postgres_rpo_seconds": 2.0007,
+    "document_rpo_seconds": 2.0007,
+    "effective_rpo_seconds": 2.0007,
+    "status": "PASS"
+  },
+  "timestamps": {
+    "t0_baseline_confirmed_utc": "2026-08-08T13:05:35.414794+00:00",
+    "t1_latest_pg_archived_utc": "2026-08-08T13:06:06.492581+00:00",
+    "t2_latest_doc_synced_utc": "2026-08-08T13:06:06.492581+00:00",
+    "t3_incident_declared_utc": "2026-08-08T13:06:08.493255+00:00",
+    "t4_recovered_and_validated_utc": "2026-08-08T13:06:11.605257+00:00"
+  },
+  "formula": "RPO_effective = MAX(RPO_PostgreSQL, RPO_Documents)",
+  "calculation_details": {
+    "delta_t3_t1_seconds": 2.0007,
+    "delta_t3_t2_seconds": 2.0007,
+    "rpo_effective_seconds": 2.0007,
+    "within_sla": true
+  }
+}

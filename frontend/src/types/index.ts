@@ -1,13 +1,29 @@
+export type CaseStatus = 
+  | 'CREATED'
+  | 'PROCESSING_REQUIREMENT'
+  | 'REVIEW_SECTIONS'
+  | 'WAITING_QUOTATION'
+  | 'COMPARING'
+  | 'READY_GENERATE'
+  | 'COMPLETED'
+  | 'ERROR'
+  | 'draft';
+
 export interface Case {
   id: number;
   title: string;
   contract_type: string;
-  siga_number?: string;
-  office_unit?: string;
-  status: string;
+  siga_number?: string; // Reservado para futuro (UX requiere, API V4.9 no)
+  office_unit?: string; // Reservado para futuro
+  status: CaseStatus;
   created_at: string;
   updated_at?: string;
   last_processing_error?: string;
+}
+
+export interface CaseCreate {
+  title: string;
+  contract_type: string;
 }
 
 export interface StructureBlock {
@@ -46,3 +62,7 @@ export interface ComparisonResult {
   final_value?: string;
   status: string;
 }
+
+export * from './jobs';
+export * from './monitoring';
+

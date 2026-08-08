@@ -1,0 +1,20 @@
+{
+  "status": "PASS",
+  "target_time": "2026-08-07 23:34:21.173962+00",
+  "target_lsn": "0/6D001230",
+  "recovered_lsn": "0/6D0013D0",
+  "recovered_time": "2026-08-07 23:34:33.478143+00",
+  "timeline_before": "1",
+  "timeline_after": "2",
+  "validations": {
+    "t0_baseline_present": true,
+    "t2_target_data_present": true,
+    "t3_corruption_excluded": true,
+    "audit_log_target_included": true,
+    "audit_log_corruption_excluded": true,
+    "timeline_incremented": true
+  },
+  "data_inclusion": "PASS",
+  "data_exclusion": "PASS",
+  "timestamp_utc": "2026-08-07T23:34:33Z"
+}

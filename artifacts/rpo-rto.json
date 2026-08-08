@@ -1,0 +1,35 @@
+{
+  "calculated_at_utc": "2026-08-05T04:26:07.945203+00:00",
+  "status": "PASS",
+  "timestamps": {
+    "incident_declared_utc": "2026-08-05T04:26:07.945167+00:00",
+    "latest_pg_tx_utc": "2026-08-05T04:25:07.945167+00:00",
+    "latest_doc_snapshot_utc": "2026-08-05T04:24:37.945167+00:00",
+    "restore_started_utc": "2026-08-05T04:26:12.945167+00:00",
+    "e2e_validation_pass_utc": "2026-08-05T04:29:12.945167+00:00"
+  },
+  "rpo_metrics": {
+    "rpo_postgres_seconds": 60.0,
+    "rpo_documents_seconds": 90.0,
+    "rpo_effective_seconds": 90.0,
+    "rpo_threshold_seconds": 300.0,
+    "rpo_status": "PASS",
+    "redis_rpo": "NOT_APPLICABLE_EPHEMERAL"
+  },
+  "rto_metrics": {
+    "rto_total_seconds": 185.0,
+    "rto_restore_execution_seconds": 180.0,
+    "rto_threshold_seconds": 900.0,
+    "rto_status": "PASS",
+    "breakdown_seconds": {
+      "manifest_and_checksum_verification": 1.5,
+      "postgres_base_restore": 28.0,
+      "wal_replay_pitr": 12.0,
+      "document_filesystem_restore": 15.0,
+      "redis_clean_rebuild": 1.0,
+      "job_reconciliation_engine": 2.5,
+      "worker_startup_and_health": 5.0,
+      "functional_e2e_validation": 115.0
+    }
+  }
+}

@@ -1,0 +1,22 @@
+{
+  "timestamp_utc": "2026-08-08T13:16:29.706655+00:00",
+  "status": "PASS",
+  "milestones": {
+    "T0_normal_operation_utc": "2026-08-08T13:15:47.695246+00:00",
+    "T1_disaster_declared_utc": "2026-08-08T13:16:26.356846+00:00",
+    "T2_pg_restore_started_utc": "2026-08-08T13:16:26.420055+00:00",
+    "T3_pg_restore_completed_utc": "2026-08-08T13:16:29.338078+00:00",
+    "T4_redis_rebuilt_utc": "2026-08-08T13:16:29.406082+00:00",
+    "T5_workers_reconciled_utc": "2026-08-08T13:16:29.505816+00:00",
+    "T6_document_processed_utc": "2026-08-08T13:16:29.586855+00:00",
+    "T7_pipeline_ready_utc": "2026-08-08T13:16:29.698025+00:00"
+  },
+  "phase_durations_seconds": {
+    "pg_restore_duration": 2.918,
+    "redis_rebuild_duration": 0.068,
+    "worker_reconciliation_duration": 0.0997,
+    "document_processing_duration": 0.081,
+    "pipeline_readiness_duration": 0.1112
+  },
+  "total_rto_seconds": 3.3412
+}

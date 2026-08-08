@@ -1,8 +1,11 @@
 import React, { useState } from 'react';
-import { Upload } from 'lucide-react';
+import { Upload, AlertCircle, RefreshCw } from 'lucide-react';
 import { Button } from '../../../components/ui/Button';
 import { Card, CardHeader, CardTitle, CardContent } from '../../../components/ui/Card';
-import apiClient from '../../../api/client';
+import { casesService } from '../../../api/cases.service';
+import { AppError } from '../../../api/apiError';
+import { MAX_QUOTATION_SIZE_MB } from '../../../config/documentLimits';
+import { useJobPolling } from '../hooks/useJobPolling';
 
 interface QuotationUploadProps {
   caseId: string;
@@ -12,37 +15,69 @@ interface QuotationUploadProps {
 
 export const QuotationUpload: React.FC<QuotationUploadProps> = ({ caseId, onUploadSuccess, disabled }) => {
   const [file, setFile] = useState<File | null>(null);
-  const [loading, setLoading] = useState(false);
-  const [errorMsg, setErrorMsg] = useState<string | null>(null);
+  const [isUploading, setIsUploading] = useState(false);
+  const [uploadError, setUploadError] = useState<string | null>(null);
+
+  const {
+    status: pollingStatus,
+    progress,
+    message,
+    error: pollingError,
+    isPolling,
+    startPolling,
+    reset: resetPolling,
+  } = useJobPolling({
+    onSuccess: () => {
+      onUploadSuccess();
+    },
+  });
 
   const handleUpload = async () => {
     if (!file) return;
-    setLoading(true);
-    setErrorMsg(null);
-    const formData = new FormData();
-    formData.append('file', file);
+
+    const fileSizeMB = file.size / (1024 * 1024);
+    if (fileSizeMB > MAX_QUOTATION_SIZE_MB) {
+      setUploadError(`El archivo excede el tamaño máximo permitido de ${MAX_QUOTATION_SIZE_MB}MB.`);
+      return;
+    }
+
+    setIsUploading(true);
+    setUploadError(null);
+    resetPolling();
+
     try {
-      await apiClient.postForm(`/cases/${caseId}/quotation/upload`, formData);
-      onUploadSuccess();
-    } catch (error: any) {
-      console.error('Error uploading quotation:', error);
-      let errorText = 'Error al subir cotización';
-      if (error.response?.data?.detail) {
-        if (typeof error.response.data.detail === 'string') {
-          errorText = error.response.data.detail;
-        } else if (Array.isArray(error.response.data.detail)) {
-          errorText = error.response.data.detail.map((e: any) => e.msg).join(', ');
-        } else {
-          errorText = JSON.stringify(error.response.data.detail);
-        }
-      } else if (error.message) {
-        errorText = error.message;
+      const response = await casesService.uploadQuotation(caseId, file);
+      
+      // If async mode with job_id returned
+      if (response && response.job_id) {
+        startPolling(response.job_id);
+      } else {
+        // Synchronous mode fallback (V5.2.1)
+        onUploadSuccess();
       }
-      setErrorMsg(errorText);
+    } catch (error: any) {
+      if (error instanceof AppError) {
+        if (error.isNetworkError) {
+          setUploadError('Se perdió la conexión durante la subida, pero el servidor podría seguir procesando. Verifique el estado en unos minutos.');
+        } else {
+          setUploadError(error.message);
+        }
+      } else {
+        setUploadError('Error inesperado al subir cotización.');
+      }
     } finally {
-      setLoading(false);
+      setIsUploading(false);
     }
   };
+
+  const handleRetry = () => {
+    resetPolling();
+    setUploadError(null);
+    setFile(null);
+  };
+
+  const isProcessing = isUploading || isPolling || (pollingStatus !== 'IDLE' && pollingStatus !== 'READY' && pollingStatus !== 'FAILED');
+  const activeError = uploadError || pollingError;
 
   return (
     <Card className={disabled ? 'opacity-50' : ''}>
@@ -51,21 +86,69 @@ export const QuotationUpload: React.FC<QuotationUploadProps> = ({ caseId, onUplo
       </CardHeader>
       <CardContent>
         <p className="text-sm mb-4">Suba la cotización del proveedor para extraer condiciones.</p>
-        {errorMsg && <div className="text-red-600 mb-4 text-sm bg-red-50 p-2 rounded">{errorMsg}</div>}
-        <input 
-          type="file" 
-          accept="application/pdf" 
-          onChange={(e) => setFile(e.target.files?.[0] || null)} 
-          className="mb-4 block" 
-          disabled={disabled || loading}
-        />
-        <Button 
-          leftIcon={<Upload size={18} />} 
-          onClick={handleUpload} 
-          disabled={!file || disabled || loading}
-        >
-          {loading ? 'Procesando...' : 'Subir Cotización'}
-        </Button>
+        
+        {activeError && (
+          <div className="flex flex-col gap-3 bg-red-50 p-3 rounded-md border border-red-100 mb-4">
+            <div className="flex items-start gap-2 text-red-700">
+              <AlertCircle size={18} className="mt-0.5 shrink-0" />
+              <span className="text-sm font-medium">{activeError}</span>
+            </div>
+            <div className="flex justify-end">
+              <Button variant="outline" size="sm" onClick={handleRetry} leftIcon={<RefreshCw size={14} />}>
+                Reintentar
+              </Button>
+            </div>
+          </div>
+        )}
+        
+        {isProcessing ? (
+          <div className="bg-blue-50 border border-blue-100 p-4 rounded-md flex flex-col mb-4">
+            <div className="flex items-center justify-between mb-2">
+              <span className="text-sm font-medium text-blue-800">
+                {isUploading ? 'Subiendo archivo...' : 'Extrayendo condiciones de la cotización...'}
+              </span>
+              <span className="text-xs font-semibold text-blue-700">{progress}%</span>
+            </div>
+            
+            <div className="w-full bg-blue-200 rounded-full h-2 mb-2 overflow-hidden">
+              <div 
+                className="bg-blue-600 h-2 rounded-full transition-all duration-300 ease-out" 
+                style={{ width: `${isUploading ? 10 : Math.max(progress, 15)}%` }}
+              />
+            </div>
+            
+            <p className="text-xs text-blue-600">
+              {message || 'La duración depende del tamaño y complejidad del documento. No recargue la página.'}
+            </p>
+          </div>
+        ) : (
+          <>
+            <input 
+              type="file" 
+              data-testid="upload-quotation"
+              accept="application/pdf" 
+              onChange={(e) => {
+                setFile(e.target.files?.[0] || null);
+                setUploadError(null);
+              }} 
+              className="mb-4 block w-full text-sm text-gray-500
+                file:mr-4 file:py-2 file:px-4
+                file:rounded-md file:border-0
+                file:text-sm file:font-semibold
+                file:bg-blue-50 file:text-blue-700
+                hover:file:bg-blue-100" 
+              disabled={disabled || isProcessing}
+            />
+            
+            <Button 
+              leftIcon={<Upload size={18} />} 
+              onClick={handleUpload} 
+              disabled={!file || disabled || isProcessing}
+            >
+              Subir Cotización
+            </Button>
+          </>
+        )}
       </CardContent>
     </Card>
   );

@@ -1,0 +1,190 @@
+name: abst_gp_v52_validation
+services:
+  backend-app:
+    build:
+      context: C:\Users\PC\Documents\AbastLG\abst-v4_9-remediation-clean
+      dockerfile: Dockerfile.backend.test
+    command:
+      - uvicorn
+      - app.main:app
+      - --host
+      - 0.0.0.0
+      - --port
+      - "8000"
+    depends_on:
+      db-test:
+        condition: service_healthy
+        required: true
+      redis-test:
+        condition: service_healthy
+        required: true
+    environment:
+      DATABASE_URL: postgresql://test_user:test_password@db-test:5432/test_db
+      ENVIRONMENT: test
+      PYTHONPATH: /app
+      REDIS_URL: redis://redis-test:6379/1
+      SECRET_KEY: synthetic_secret_key_for_testing
+      UPLOADS_DIR: /app/uploads
+    networks:
+      default: null
+    ports:
+      - mode: ingress
+        target: 8000
+        published: "8000"
+        protocol: tcp
+    volumes:
+      - type: bind
+        source: C:\Users\PC\Documents\AbastLG\abst-v4_9-remediation-clean\backend
+        target: /app
+        bind: {}
+      - type: volume
+        source: test-uploads
+        target: /app/uploads
+        volume: {}
+  backend-test:
+    build:
+      context: C:\Users\PC\Documents\AbastLG\abst-v4_9-remediation-clean
+      dockerfile: Dockerfile.backend.test
+    command:
+      - /bin/sh
+      - -c
+      - sleep infinity
+    depends_on:
+      db-test:
+        condition: service_healthy
+        required: true
+      redis-test:
+        condition: service_healthy
+        required: true
+    environment:
+      APP_ENV: test
+      DATABASE_URL: postgresql://test_user:test_password@db-test:5432/test_db
+      ENVIRONMENT: test
+      PYTHONPATH: /app
+      REDIS_URL: redis://redis-test:6379/1
+      SECRET_KEY: synthetic_secret_key_for_testing
+      TEST_REDIS_URL: redis://redis-test:6379/1
+      UPLOADS_DIR: /app/uploads
+    networks:
+      default: null
+    volumes:
+      - type: bind
+        source: C:\Users\PC\Documents\AbastLG\abst-v4_9-remediation-clean\backend
+        target: /app
+        bind: {}
+      - type: volume
+        source: test-uploads
+        target: /app/uploads
+        volume: {}
+  browser-test:
+    command:
+      - /bin/sh
+      - -c
+      - sleep infinity
+    depends_on:
+      backend-app:
+        condition: service_started
+        required: true
+      frontend-test:
+        condition: service_started
+        required: true
+    environment:
+      API_URL: http://backend-app:8000
+      BASE_URL: http://frontend-test:5173
+    image: mcr.microsoft.com/playwright:v1.42.0-jammy
+    networks:
+      default: null
+    volumes:
+      - type: bind
+        source: C:\Users\PC\Documents\AbastLG\abst-v4_9-remediation-clean\frontend\e2e
+        target: /e2e
+        bind: {}
+    working_dir: /e2e
+  db-test:
+    environment:
+      POSTGRES_DB: test_db
+      POSTGRES_PASSWORD: test_password
+      POSTGRES_USER: test_user
+    healthcheck:
+      test:
+        - CMD-SHELL
+        - pg_isready -U test_user -d test_db
+      timeout: 5s
+      interval: 5s
+      retries: 5
+      start_period: 5s
+    image: postgres:15
+    networks:
+      default: null
+    volumes:
+      - type: volume
+        source: test-db-data
+        target: /var/lib/postgresql/data
+        volume: {}
+  frontend-test:
+    build:
+      context: C:\Users\PC\Documents\AbastLG\abst-v4_9-remediation-clean
+      dockerfile: Dockerfile.frontend.test
+    command:
+      - /bin/sh
+      - -c
+      - sleep infinity
+    networks:
+      default: null
+    volumes:
+      - type: bind
+        source: C:\Users\PC\Documents\AbastLG\abst-v4_9-remediation-clean\frontend
+        target: /app
+        bind: {}
+  redis-test:
+    healthcheck:
+      test:
+        - CMD
+        - redis-cli
+        - ping
+      timeout: 5s
+      interval: 5s
+      retries: 5
+    image: redis:7-alpine
+    networks:
+      default: null
+  worker-test:
+    build:
+      context: C:\Users\PC\Documents\AbastLG\abst-v4_9-remediation-clean
+      dockerfile: Dockerfile.backend.test
+    command:
+      - rq
+      - worker
+      - -u
+      - redis://redis-test:6379/1
+      - document_tasks
+    depends_on:
+      redis-test:
+        condition: service_healthy
+        required: true
+    environment:
+      DATABASE_URL: postgresql://test_user:test_password@db-test:5432/test_db
+      ENVIRONMENT: test
+      PYTHONPATH: /app
+      REDIS_URL: redis://redis-test:6379/1
+      SECRET_KEY: synthetic_secret_key_for_testing
+      UPLOADS_DIR: /app/uploads
+    networks:
+      default: null
+    volumes:
+      - type: bind
+        source: C:\Users\PC\Documents\AbastLG\abst-v4_9-remediation-clean\backend
+        target: /app
+        bind: {}
+      - type: volume
+        source: test-uploads
+        target: /app/uploads
+        volume: {}
+networks:
+  default:
+    name: abst_gp_v52_validation_default
+volumes:
+  test-db-data:
+    name: abst_gp_v52_validation_test-db-data
+  test-uploads:
+    name: abst_gp_v52_validation_test-uploads

@@ -1,0 +1,11 @@
+{
+  "timestamp_utc": "2026-08-05T04:26:08.011054+00:00",
+  "status": "PASS",
+  "scanned_jobs_count": 0,
+  "stale_processing_count": 0,
+  "stale_queued_count": 0,
+  "recovered_retried_count": 0,
+  "marked_failed_final_count": 0,
+  "skipped_terminal_count": 0,
+  "reconciled_details": []
+}

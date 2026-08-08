@@ -1,0 +1,20 @@
+{
+  "timestamp_utc": "2026-08-08T13:06:11.715708+00:00",
+  "status": "PASS",
+  "postgresql_version": "PostgreSQL 16",
+  "wal_telemetry": {
+    "lsn_t0": "0/BB1FD4D8",
+    "start_wal_lsn": "0/BB1FD4D8",
+    "checkpoint_lsn": "",
+    "backup_manifest_sha256": "",
+    "pg_verifybackup_exit_code": 0,
+    "pg_verifybackup_status": "VERIFIED_VALID"
+  },
+  "temporal_measurement": {
+    "t1_archived_time_utc": "2026-08-08T13:06:06.492581+00:00",
+    "t3_disaster_time_utc": "2026-08-08T13:06:08.493255+00:00",
+    "rpo_postgres_seconds": 2.0007,
+    "sla_seconds": 300.0,
+    "compliance": "PASS"
+  }
+}

@@ -1,0 +1,13 @@
+{
+  "test_target": "backend/tests/dr/test_disaster_recovery.py::test_scenario_b_logical_deletion_pitr",
+  "execution_timestamp_utc": "2026-08-07T03:00:38Z",
+  "command": "docker compose -f verification/docker-compose.dr.yml run --rm backend-dr pytest tests/dr/test_disaster_recovery.py::test_scenario_b_logical_deletion_pitr -vv -s",
+  "duration_seconds": 10.49,
+  "exit_code": 0,
+  "result": "PASSED",
+  "deadlock_detected": false,
+  "session_isolation_applied": {
+    "pattern": "commit -> session.close() -> engine.dispose() -> restore_backup_package -> reconnect",
+    "verified": true
+  }
+}

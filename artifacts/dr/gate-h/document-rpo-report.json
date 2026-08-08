@@ -1,0 +1,20 @@
+{
+  "timestamp_utc": "2026-08-08T13:06:11.723227+00:00",
+  "status": "PASS",
+  "document_telemetry": {
+    "case_id": 58,
+    "document_id": 40,
+    "relative_path": "tenant-rpo-1786194335/poliza_riesgo_rpo_1786194335.pdf",
+    "sha256_registered": "0bdec4ca976d9e940ac1411ae3a713930e630d0b4e69ac6e61cb69c13014e119",
+    "sha256_recovered": "0bdec4ca976d9e940ac1411ae3a713930e630d0b4e69ac6e61cb69c13014e119",
+    "checksum_verified": true,
+    "catalog_count": 0
+  },
+  "temporal_measurement": {
+    "t2_synced_time_utc": "2026-08-08T13:06:06.492581+00:00",
+    "t3_disaster_time_utc": "2026-08-08T13:06:08.493255+00:00",
+    "rpo_documents_seconds": 2.0007,
+    "sla_seconds": 300.0,
+    "compliance": "PASS"
+  }
+}

@@ -1,0 +1,74 @@
+﻿============================= test session starts ==============================
+platform linux -- Python 3.12.3, pytest-9.1.1, pluggy-1.6.0
+rootdir: /app
+configfile: pytest.ini
+plugins: mock-3.15.1, asyncio-1.4.0, anyio-4.14.2
+asyncio: mode=Mode.STRICT, debug=False, asyncio_default_fixture_loop_scope=None, asyncio_default_test_loop_scope=function
+collected 1 item
+
+tests/e2e/test_full_document_pipeline.py F                               [100%]
+
+=================================== FAILURES ===================================
+_________________________ test_full_document_pipeline __________________________
+
+    def test_full_document_pipeline():
+        with httpx.Client(base_url=BASE_URL, timeout=60.0) as client:
+            # Wait for the service to be ready
+            for i in range(30):
+                try:
+                    # Basic health check
+                    client.get("/docs")
+                    break
+                except httpx.ConnectError:
+                    time.sleep(1)
+            else:
+>               pytest.fail("Backend app did not start in time.")
+E               Failed: Backend app did not start in time.
+
+tests/e2e/test_full_document_pipeline.py:56: Failed
+---------------------------- Captured stdout setup -----------------------------
+
+--- Pytest running against isolated DB: test_db ---
+---------------------------- Captured stderr setup -----------------------------
+INFO  [alembic.runtime.migration] Context impl PostgresqlImpl.
+INFO  [alembic.runtime.migration] Will assume transactional DDL.
+INFO  [alembic.runtime.migration] Running upgrade  -> d886237e42f6, Initial models
+INFO  [alembic.runtime.migration] Running upgrade d886237e42f6 -> d93b84d3a3ef, Async OCR refactor and statuses
+INFO  [alembic.runtime.migration] Running upgrade d93b84d3a3ef -> 2fd1a39a778c, add_structure_json_to_parsed_sections
+INFO  [alembic.runtime.migration] Running upgrade 2fd1a39a778c -> 0465fbfe2d90, add_extraction_traceability_to_parsed_sections
+INFO  [alembic.runtime.migration] Running upgrade 0465fbfe2d90 -> 0db69c6d13f0, add_normalized_text
+INFO  [alembic.runtime.migration] Running upgrade 0db69c6d13f0 -> 64e1917d58ad, Add ProcessingJob
+INFO  [alembic.runtime.migration] Running upgrade 64e1917d58ad -> 4801fd010fe8, Add OCR V2 fields to UploadedDocument
+INFO  [alembic.runtime.migration] Running upgrade 4801fd010fe8 -> a49ffe56ae89, Add OCR V2 fields to UploadedDocument
+INFO  [alembic.runtime.migration] Running upgrade a49ffe56ae89 -> 9fb1ffcf55c5, Add OCRProcessingRun V2
+INFO  [alembic.runtime.migration] Running upgrade 9fb1ffcf55c5 -> 3356ea46065f, Add lease fields and DISPATCHING status
+INFO  [alembic.runtime.migration] Running upgrade 3356ea46065f -> e74f1c1d81b9, add comparison engine mvp
+INFO  [alembic.runtime.migration] Running upgrade e74f1c1d81b9 -> c23e67366d79, add_no_match_evaluation_method
+INFO  [alembic.runtime.migration] Running upgrade c23e67366d79 -> 3c79a0473766, add_document_id_and_constraints
+INFO  [alembic.runtime.migration] Running upgrade 3c79a0473766 -> 12fd022d7f66, fix_document_id_backfill_and_add_index
+INFO  [alembic.runtime.migration] Running upgrade 12fd022d7f66 -> 476e2601363c, quarantine_mixed_v1_v2
+INFO  [alembic.runtime.migration] Running upgrade 476e2601363c -> 531ab381efea, phase 5 ring1 authz and tenant
+INFO  [alembic.runtime.migration] Running upgrade 531ab381efea -> 910786f497cb, phase_5_ring_1_tenant_expand
+INFO  [alembic.runtime.migration] Running upgrade 910786f497cb -> e03e62268655, phase_5_ring_1_tenant_expand_fix
+INFO  [alembic.runtime.migration] Running upgrade e03e62268655 -> e0bb13aab365, fix_system_settings_active_ring
+INFO  [alembic.runtime.migration] Running upgrade e0bb13aab365 -> 48cb7a717463, quarantine
+INFO  [alembic.runtime.migration] Running upgrade 48cb7a717463 -> c3c1858c1db2, validate_chk_users_tenant_resolution
+INFO  [alembic.runtime.migration] Running upgrade c3c1858c1db2 -> 8527a001a1bc, add bootstrap ledger
+INFO  [alembic.runtime.migration] Running upgrade 8527a001a1bc -> f1a2b3c4d5e6, expand_processing_jobs_v53
+=============================== warnings summary ===============================
+app/models/base.py:3
+  /app/app/models/base.py:3: MovedIn20Warning: The ``declarative_base()`` function is now available as sqlalchemy.orm.declarative_base(). (deprecated since: 2.0) (Background on SQLAlchemy 2.0 at: https://sqlalche.me/e/b8d9)
+    Base = declarative_base()
+
+../usr/local/lib/python3.12/site-packages/passlib/utils/__init__.py:854
+  /usr/local/lib/python3.12/site-packages/passlib/utils/__init__.py:854: DeprecationWarning: 'crypt' is deprecated and slated for removal in Python 3.13
+    from crypt import crypt as _crypt
+
+app/core/config.py:4
+  /app/app/core/config.py:4: PydanticDeprecatedSince20: Support for class-based `config` is deprecated, use ConfigDict instead. Deprecated in Pydantic V2.0 to be removed in V3.0. See Pydantic V2 Migration Guide at https://errors.pydantic.dev/2.13/migration/
+    class Settings(BaseSettings):
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED tests/e2e/test_full_document_pipeline.py::test_full_document_pipeline
+================== 1 failed, 3 warnings in 141.60s (0:02:21) ===================

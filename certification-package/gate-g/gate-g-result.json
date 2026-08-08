@@ -1,0 +1,9 @@
+{
+  "gate": "G",
+  "status": "PASS",
+  "document_isolation": "PASS",
+  "job_isolation": "PASS",
+  "restore_isolation": "PASS",
+  "metrics_isolation": "PASS",
+  "audit_recorded": "PASS"
+}

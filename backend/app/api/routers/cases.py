@@ -1,12 +1,16 @@
 from fastapi import APIRouter, Depends, HTTPException, UploadFile, File
+from fastapi.responses import FileResponse
 from sqlalchemy.orm import Session
 from typing import List
 import os
 import tempfile
 import uuid
+import json
+from pathlib import Path
 
 import rq
 
+from app.core.config import settings
 from app.core.database import get_db
 from app.core.redis import task_queue
 
@@ -32,11 +36,14 @@ from app.schemas.cases import (
     SectionResponse
 )
 
+from app.services.job_repository import JobRepository
 from app.services.extraction.quotation_parser import parse_quotation_pdf
 from app.services.extraction.requirement_condition_extractor import extract_requirement_conditions
 from app.services.comparison.comparison_engine import run_comparison
 from app.services.generation.html_generator import generate_html
 from app.services.generation.plain_text_generator import generate_plain_text
+from app.worker.quotation_tasks import process_quotation_task
+from app.worker.comparison_tasks import process_comparison_task
 
 
 router = APIRouter()
@@ -227,23 +234,132 @@ def upload_requirement(
 
 
 
+@router.get("/{case_id}/documents/requirement/content")
+def get_requirement_document_content(
+    case_id: int,
+    db_case: CaseFile = Depends(verify_case_access),
+    current_user: User = Depends(get_current_active_user),
+    db: Session = Depends(get_db)
+):
+    # Selección determinista del documento (el más reciente/vigente)
+    doc = (
+        db.query(UploadedDocument)
+        .filter(
+            UploadedDocument.case_id == case_id,
+            UploadedDocument.document_type == "requirement"
+        )
+        .order_by(UploadedDocument.id.desc())
+        .first()
+    )
+    
+    if not doc:
+        raise NotFoundException("Requirement document not found for this case")
+        
+    uploads_root = Path(os.environ.get("UPLOADS_DIR", "/data/uploads")).resolve(strict=True)
+    
+    try:
+        document_path = Path(doc.stored_path).resolve(strict=True)
+        # Validación estricta usando Pathlib (anti-path-traversal)
+        document_path.relative_to(uploads_root)
+        
+        if not document_path.is_file():
+            raise ValueError("Not a file")
+            
+    except (ValueError, FileNotFoundError, RuntimeError):
+        # Registrar falla silenciosamente sin exponer ruta interna
+        audit = AuditLog(
+            user_id=current_user.id,
+            tenant_id=current_user.tenant_id,
+            action="READ_DOCUMENT_CONTENT_FAILED",
+            entity_type="UploadedDocument",
+            entity_id=str(doc.id),
+            details="File missing or invalid path resolution",
+            status="FAILED"
+        )
+        db.add(audit)
+        db.commit()
+        raise NotFoundException("Document physical file is not available")
+
+    # Auditoría exitosa
+    audit = AuditLog(
+        user_id=current_user.id,
+        tenant_id=current_user.tenant_id,
+        action="READ_DOCUMENT_CONTENT",
+        entity_type="UploadedDocument",
+        entity_id=str(doc.id),
+        details="Downloaded requirement PDF",
+        status="SUCCESS"
+    )
+    db.add(audit)
+    db.commit()
+    
+    safe_filename = f"requirement-{case_id}.pdf"
+    
+    return FileResponse(
+        path=str(document_path),
+        media_type="application/pdf",
+        filename=safe_filename,
+        content_disposition_type="inline",
+        headers={
+            "Cache-Control": "private, no-store",
+            "X-Content-Type-Options": "nosniff"
+        }
+    )
+
 # =========================================================
-# ESTADO DEL JOB OCR
+# ESTADO DEL JOB (PostgreSQL SSOT + Fallback Redis)
 # =========================================================
 
 @router.get("/jobs/{job_id}")
 def get_job_status(
     job_id: str,
+    current_user: User = Depends(get_current_active_user),
     db: Session = Depends(get_db)
 ):
+    # 1. Consultar PostgreSQL primero vía JobRepository (SSOT V5.3)
+    job = JobRepository.get_by_job_id(
+        db=db,
+        job_id=job_id,
+        tenant_id=current_user.tenant_id
+    )
 
+    if job:
+        case_status = None
+        if job.case_id:
+            case = (
+                db.query(CaseFile)
+                .filter(
+                    CaseFile.id == job.case_id,
+                    CaseFile.tenant_id == current_user.tenant_id
+                )
+                .first()
+            )
+            if case:
+                case_status = case.status
+
+        result_summary = None
+        if job.result_summary:
+            try:
+                result_summary = json.loads(job.result_summary)
+            except Exception:
+                result_summary = job.result_summary
+
+        return {
+            "job_id": job.job_id,
+            "status": job.status,
+            "progress": job.progress,
+            "message": job.status_message or ("En cola" if job.status == "QUEUED" else job.status),
+            "case_status": case_status,
+            "error_message": job.error_message,
+            "result_summary": result_summary
+        }
+
+    # 2. Fallback a RQ / Redis (Jobs OCR existentes de V5.2.1 / V1)
     try:
-
-        job = rq.job.Job.fetch(
+        rq_job = rq.job.Job.fetch(
             job_id,
             connection=task_queue.connection
         )
-
 
         document = (
             db.query(UploadedDocument)
@@ -253,47 +369,34 @@ def get_job_status(
             .first()
         )
 
-
         case_status = None
-
-
         if document:
-
             case = (
                 db.query(CaseFile)
                 .filter(
-                    CaseFile.id == document.case_id
+                    CaseFile.id == document.case_id,
+                    CaseFile.tenant_id == current_user.tenant_id
                 )
                 .first()
             )
-
             if case:
                 case_status = case.status
 
-
-
         return {
-
-            "job_id": job.id,
-
-            "status": job.get_status(),
-
-            "progress": job.meta.get(
+            "job_id": rq_job.id,
+            "status": rq_job.get_status(),
+            "progress": rq_job.meta.get(
                 "progress",
                 0
             ),
-
-            "message": job.meta.get(
+            "message": rq_job.meta.get(
                 "status_message",
                 "En cola"
             ),
-
             "case_status": case_status
         }
 
-
-    except rq.exceptions.NoSuchJobError:
-
+    except (rq.exceptions.NoSuchJobError, Exception):
         raise HTTPException(
             status_code=404,
             detail="Job not found"
@@ -404,29 +507,59 @@ def upload_quotation(
     case_id: int,
     file: UploadFile = File(...),
     case: CaseFile = Depends(verify_case_access),
+    current_user: User = Depends(get_current_active_user),
     db: Session = Depends(get_db)
 ):
+    # FLUJO ASÍNCRONO V5.3 (Feature Flag ON)
+    if settings.is_async_quotation_enabled():
+        os.makedirs(settings.UPLOADS_DIR, exist_ok=True)
+        file_ext = Path(file.filename or "quotation.pdf").suffix or ".pdf"
+        saved_filename = f"quotation_{case_id}_{uuid.uuid4().hex}{file_ext}"
+        saved_path = os.path.join(settings.UPLOADS_DIR, saved_filename)
 
+        with open(saved_path, "wb") as f:
+            f.write(file.file.read())
 
+        # 1. Crear ProcessingJob en PostgreSQL antes de encolar
+        job = JobRepository.create_job(
+            db=db,
+            case_id=case_id,
+            tenant_id=current_user.tenant_id,
+            user_id=current_user.id,
+            job_type="QUOTATION_EXTRACTION"
+        )
+
+        # 2. Encolar en RQ (Worker de cotización por dominio)
+        task_queue.enqueue(
+            process_quotation_task,
+            job_id=job.job_id,
+            case_id=case_id,
+            tenant_id=current_user.tenant_id,
+            user_id=current_user.id,
+            file_path=saved_path
+        )
+
+        # 3. Retornar inmediatamente sin ejecutar OCR/extracción en el request
+        return {
+            "job_id": job.job_id,
+            "status": "QUEUED",
+            "message": "Quotation processing queued"
+        }
+
+    # FLUJO SÍNCRONO V5.2.1 (Fallback cuando Feature Flag está inactiva)
     with tempfile.NamedTemporaryFile(
         delete=False,
         suffix=".pdf"
     ) as temp:
-
         temp.write(
             file.file.read()
         )
-
         temp_path = temp.name
 
-
-
     try:
-
         quotation_data = parse_quotation_pdf(
             temp_path
         )
-
 
         quotation = QuotationExtraction(
             case_id=case_id,
@@ -441,25 +574,16 @@ def upload_quotation(
             )
         )
 
-
         db.add(quotation)
-
         case.status = "COMPARING"
-
         db.commit()
-
-
     finally:
-
         if os.path.exists(temp_path):
             os.remove(temp_path)
-
-
 
     return {
         "message": "Quotation processed"
     }
-
 
 
 # =========================================================
@@ -470,9 +594,54 @@ def upload_quotation(
 def run_comparison_endpoint(
     case_id: int,
     case: CaseFile = Depends(verify_case_access),
+    current_user: User = Depends(get_current_active_user),
     db: Session = Depends(get_db)
 ):
+    # Re-fetch with row-level lock and populate_existing to prevent reading stale identity map data
+    locked_case = (
+        db.query(CaseFile)
+        .filter(CaseFile.id == case_id)
+        .populate_existing()
+        .with_for_update()
+        .first()
+    )
 
+    if not locked_case:
+        raise HTTPException(status_code=404, detail="Case not found")
+
+    # Count existing results
+    existing_comparisons = (
+        db.query(FinalConditionComparison)
+        .filter(FinalConditionComparison.case_id == case_id)
+        .count()
+    )
+
+    # Idempotent return if already completed
+    if locked_case.status == "READY_GENERATE":
+        if existing_comparisons > 0:
+            return {
+                "message": "Comparison already completed",
+                "already_completed": True
+            }
+        else:
+            raise HTTPException(
+                status_code=409,
+                detail="Inconsistent state: case is READY_GENERATE but no comparison results exist."
+            )
+
+    # Reject if not in COMPARING status
+    if locked_case.status != "COMPARING":
+        raise HTTPException(
+            status_code=409,
+            detail=f"Case is not ready for comparison. Current status: {locked_case.status}"
+        )
+
+    # Check for inconsistent state (COMPARING but results exist)
+    if existing_comparisons > 0:
+        raise HTTPException(
+            status_code=409,
+            detail="Inconsistent state: case is in COMPARING status but comparison results already exist."
+        )
 
     quotation = (
         db.query(QuotationExtraction)
@@ -482,14 +651,41 @@ def run_comparison_endpoint(
         .first()
     )
 
-
     if not quotation:
         raise HTTPException(
             status_code=400,
             detail="Quotation missing"
         )
 
+    # FLUJO ASÍNCRONO V5.3 (Feature Flag ON)
+    if settings.is_async_comparison_enabled():
+        # 1. Crear ProcessingJob en PostgreSQL antes de encolar
+        job = JobRepository.create_job(
+            db=db,
+            case_id=case_id,
+            tenant_id=current_user.tenant_id,
+            user_id=current_user.id,
+            job_type="COMPARISON_RUN"
+        )
 
+        # 2. Encolar en Redis RQ (Worker por dominio)
+        task_queue.enqueue(
+            process_comparison_task,
+            job_id=job.job_id,
+            case_id=case_id,
+            tenant_id=current_user.tenant_id,
+            user_id=current_user.id
+        )
+
+        # 3. Retornar inmediatamente sin ejecutar el motor en el request
+        return {
+            "job_id": job.job_id,
+            "status": "QUEUED",
+            "message": "Comparison processing queued",
+            "already_completed": False
+        }
+
+    # FLUJO SÍNCRONO V5.2.1 (Fallback cuando Feature Flag está inactiva)
     sections = (
         db.query(ParsedSection)
         .filter(
@@ -500,45 +696,47 @@ def run_comparison_endpoint(
     )
 
     requirement_data = extract_requirement_conditions(sections)
-
     quotation_data = quotation.raw_json or {}
-
 
     from app.api.routing import TenantRouter
     
-    route_info = TenantRouter.get_tenant_routing(case.tenant_id, db)
+    route_info = TenantRouter.get_tenant_routing(locked_case.tenant_id, db)
     
     if route_info["engine"] == "v2":
         # Note: V2 Engine logic would be invoked here.
-        # For Ring 1 phase, we fallback to V1 or run V2 if available.
-        # Here we just pass a flag or call a different function if V2 exists.
-        # We will use V1 for now as per "FORCE_LEGACY" fallback.
         pass
-    
-    results = run_comparison(
-        requirement_data,
-        quotation_data
-    )
 
-
-    for result in results:
-
-        db.add(
-            FinalConditionComparison(
-                case_id=case_id,
-                **result
-            )
+    try:
+        results = run_comparison(
+            requirement_data,
+            quotation_data
         )
 
+        for result in results:
+            db.add(
+                FinalConditionComparison(
+                    case_id=case_id,
+                    **result
+                )
+            )
+            
+        # Flush to catch any insertion errors before committing
+        db.flush()
 
-    case.status = "READY_GENERATE"
+        locked_case.status = "READY_GENERATE"
+        db.commit()
 
-    db.commit()
-
-
-    return {
-        "message": "Comparison completed"
-    }
+        return {
+            "message": "Comparison completed",
+            "already_completed": False
+        }
+    except Exception as e:
+        db.rollback()
+        # In a real app we'd log the exception here
+        raise HTTPException(
+            status_code=500,
+            detail="An error occurred during comparison generation"
+        )
 
 @router.get("/{case_id}/comparison")
 def get_comparison(

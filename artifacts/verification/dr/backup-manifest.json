@@ -1,0 +1,10 @@
+{
+  "backup_id": "dr-drill-cert",
+  "created_at_utc": "2026-08-06T15:50:03.839024+00:00",
+  "base_backup": {
+    "sha256": "valid"
+  },
+  "wal_archive": {
+    "segments_count": 3
+  }
+}

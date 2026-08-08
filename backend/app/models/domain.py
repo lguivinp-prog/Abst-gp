@@ -300,16 +300,83 @@ class AuditLog(Base):
     details = Column(String, nullable=True)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
 
+    __table_args__ = (
+        Index("ix_audit_logs_action_entity", "action", "entity_id"),
+        Index("ix_audit_logs_tenant_created", "tenant_id", "created_at"),
+    )
+
 class ProcessingJob(Base):
     __tablename__ = "processing_jobs"
     id = Column(Integer, primary_key=True, index=True)
-    document_id = Column(Integer, ForeignKey("uploaded_documents.id"))
-    worker_type = Column(String(50), nullable=False)
-    status = Column(String(50), default="pending", nullable=False) # pending, processing, completed, failed
+    job_id = Column(String(100), unique=True, index=True, nullable=True)
+    case_id = Column(Integer, ForeignKey("case_files.id", ondelete="CASCADE"), nullable=True, index=True)
+    tenant_id = Column(String(50), ForeignKey("tenants.id"), nullable=False, server_default="mega_tenant", index=True)
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=True)
+    document_id = Column(Integer, ForeignKey("uploaded_documents.id"), nullable=True)
+    job_type = Column(String(50), nullable=False, server_default="REQUIREMENT_OCR")  # REQUIREMENT_OCR, QUOTATION_EXTRACTION, COMPARISON_RUN
+    worker_type = Column(String(50), nullable=False, default="abst_worker")  # abst_worker, abst_worker_ocr
+    worker_name = Column(String(100), nullable=True)
+    status = Column(String(50), default="QUEUED", nullable=False)  # QUEUED, PROCESSING, READY, FAILED
+    progress = Column(Integer, default=0, nullable=False, server_default="0")
+    status_message = Column(String(255), nullable=True)
+    idempotency_key = Column(String(128), index=True, nullable=True)
+    attempt_count = Column(Integer, default=1, nullable=False, server_default="1")
+    max_retries = Column(Integer, default=3, nullable=False, server_default="3")
+    failure_classification = Column(String(50), nullable=True)  # RETRYABLE, FINAL
+    last_heartbeat_at = Column(DateTime(timezone=True), nullable=True)
     error_message = Column(Text, nullable=True)
+    result_summary = Column(Text, nullable=True)  # JSON-serialized summary
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     started_at = Column(DateTime(timezone=True), nullable=True)
     finished_at = Column(DateTime(timezone=True), nullable=True)
+    updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
+
+    __table_args__ = (
+        Index("ix_processing_jobs_tenant_status", "tenant_id", "status"),
+        Index("ix_processing_jobs_status_heartbeat", "status", "last_heartbeat_at"),
+        Index("ix_processing_jobs_status_created", "status", "created_at"),
+        Index("ix_processing_jobs_tenant_created", "tenant_id", "created_at"),
+    )
+
+
+class ProcessingMetrics(Base):
+    __tablename__ = "processing_metrics"
+    id = Column(Integer, primary_key=True, index=True)
+    job_id = Column(String(100), ForeignKey("processing_jobs.job_id", ondelete="CASCADE"), nullable=False, index=True)
+    tenant_id = Column(String(50), ForeignKey("tenants.id", onupdate="RESTRICT", ondelete="RESTRICT"), nullable=False, server_default="mega_tenant", index=True)
+    case_id = Column(Integer, ForeignKey("case_files.id", ondelete="CASCADE"), nullable=True, index=True)
+    job_type = Column(String(50), nullable=False, index=True)
+    queue_time_ms = Column(Integer, nullable=False, default=0, server_default="0")
+    processing_time_ms = Column(Integer, nullable=False, default=0, server_default="0")
+    total_time_ms = Column(Integer, nullable=False, default=0, server_default="0")
+    worker_name = Column(String(100), nullable=False, default="unassigned", server_default="unassigned")
+    pages_processed = Column(Integer, nullable=False, default=0, server_default="0")
+    success = Column(Boolean, nullable=False, default=True, index=True)
+    error_code = Column(String(50), nullable=True)
+    error_category = Column(String(50), nullable=True)  # TRANSIENT_INFRA, CORRUPT_INPUT, BUSINESS_RULE
+    created_at = Column(DateTime(timezone=True), server_default=func.now(), index=True)
+
+    __table_args__ = (
+        Index("ix_processing_metrics_tenant_created", "tenant_id", "created_at"),
+        Index("ix_processing_metrics_type_created", "job_type", "created_at"),
+        Index("ix_processing_metrics_success_created", "success", "created_at"),
+    )
+
+
+class WorkerHeartbeat(Base):
+    __tablename__ = "worker_heartbeats"
+    worker_name = Column(String(100), primary_key=True)
+    worker_type = Column(String(50), nullable=False, index=True)
+    hostname = Column(String(100), nullable=False, default="localhost", server_default="localhost")
+    status = Column(String(30), nullable=False, default="IDLE", server_default="IDLE")  # IDLE, BUSY, UNRESPONSIVE, OFFLINE
+    current_job_id = Column(String(100), nullable=True)
+    tenant_id = Column(String(50), ForeignKey("tenants.id", onupdate="RESTRICT", ondelete="RESTRICT"), nullable=True)
+    last_seen = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now(), index=True)
+    started_at = Column(DateTime(timezone=True), server_default=func.now())
+
+    __table_args__ = (
+        Index("ix_worker_heartbeats_status_last_seen", "status", "last_seen"),
+    )
 
 class ComparisonRunStatus(str, enum.Enum):
     CREATED = "CREATED"

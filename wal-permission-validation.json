@@ -1,0 +1,12 @@
+{
+  "phase": "7.4",
+  "change_id": "7.4-A.2",
+  "target_path": "/var/lib/postgresql/archive",
+  "owner": "postgres",
+  "group": "postgres",
+  "permissions_octal": "0700",
+  "permissions_symbolic": "drwx------",
+  "idempotent_init_script": "verification/dr/init-replication.sh",
+  "validation_timestamp_utc": "2026-08-07T19:45:03Z",
+  "directory_permissions_status": "PASS"
+}

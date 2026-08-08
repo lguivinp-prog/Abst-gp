@@ -1,0 +1,47 @@
+================================================================================
+GATE A: POSTGRESQL PHYSICAL RECOVERY EXECUTION LOG
+Timestamp: 2026-08-07T23:30:10Z to 2026-08-07T23:30:18Z
+Environment: Docker Compose project 'verification', Service 'backend-dr', DB 'verification-db-dr-1'
+PostgreSQL Version: PostgreSQL 16.14 on x86_64-pc-linux-musl
+================================================================================
+
+[COMMAND 1: Pytest Gate A Suite]
+docker compose -p verification -f verification/docker-compose.dr.yml run --rm backend-dr pytest tests/dr/test_disaster_recovery.py -k "test_scenario_a_full_postgresql_recovery or test_7_4_a" -v
+
+[OUTPUT 1]
+============================= test session starts ==============================
+platform linux -- Python 3.12.3, pytest-9.1.1, pluggy-1.6.0 -- /usr/local/bin/python
+cachedir: .pytest_cache
+rootdir: /app
+configfile: pytest.ini
+plugins: mock-3.15.1, asyncio-1.4.0, anyio-4.14.2
+asyncio: mode=Mode.STRICT, debug=False, asyncio_default_fixture_loop_scope=None, asyncio_default_test_loop_scope=function
+collecting ... collected 15 items / 8 deselected / 7 selected
+
+tests/dr/test_disaster_recovery.py::test_scenario_a_full_postgresql_recovery PASSED [ 14%]
+tests/dr/test_disaster_recovery.py::test_7_4_a_physical_backup_uses_pg_basebackup PASSED [ 28%]
+tests/dr/test_disaster_recovery.py::test_7_4_a_pg_dump_cannot_be_physical_fallback PASSED [ 42%]
+tests/dr/test_disaster_recovery.py::test_7_4_a_failure_of_pg_verifybackup_produces_rejection PASSED [ 57%]
+tests/dr/test_disaster_recovery.py::test_7_4_a_postgres_major_different_than_16_fails PASSED [ 71%]
+tests/dr/test_disaster_recovery.py::test_7_4_a_hmac_manifest_contains_key_id_without_secrets PASSED [ 85%]
+tests/dr/test_disaster_recovery.py::test_7_4_a_logical_dump_marked_as_complementary PASSED [100%]
+================= 7 passed, 8 deselected, 3 warnings in 38.48s =================
+Exit code: 0
+
+[COMMAND 2: Physical Backup & Restore Drill]
+2026-08-07 23:30:10,758 [INFO] abst_gp.dr.create_backup: Ejecutando pg_basebackup hacia /app/dr_vault/.staging_gate-a-certification-drill/physical_basebackup...
+2026-08-07 23:30:11,426 [INFO] abst_gp.dr.create_backup: pg_basebackup completado exitosamente. backup_manifest SHA-256: 94815315f16af21356246a44985f1216644ca115a9623c6ec852d9eb2f50bff3
+2026-08-07 23:30:11,426 [INFO] abst_gp.dr.create_backup: Ejecutando pg_verifybackup sobre /app/dr_vault/.staging_gate-a-certification-drill/physical_basebackup...
+2026-08-07 23:30:11,469 [INFO] abst_gp.dr.create_backup: pg_verifybackup exitoso: backup successfully verified
+2026-08-07 23:30:11,586 [INFO] abst_gp.dr.create_backup: Generando snapshot documental y catalogo SHA-256...
+2026-08-07 23:30:11,590 [INFO] abst_gp.dr.create_backup: === PHYSICAL BASE BACKUP PUBLICADO EXITOSAMENTE en 0.91s: /app/dr_vault/gate-a-certification-drill ===
+2026-08-07 23:30:11,591 [INFO] abst_gp.dr.restore_backup: [RESTORE MILESTONE] RESTORE_INITIATED (t=0.00s)
+2026-08-07 23:30:11,592 [INFO] abst_gp.dr.restore_backup: [RESTORE MILESTONE] MANIFEST_LOADED (t=0.00s)
+2026-08-07 23:30:11,592 [INFO] abst_gp.dr.restore_backup: [RESTORE MILESTONE] MANIFEST_SIGNATURE_VERIFIED (t=0.00s)
+2026-08-07 23:30:11,592 [INFO] abst_gp.dr.restore_backup: [RESTORE MILESTONE] ARTIFACTS_CHECKSUMS_VERIFIED (t=0.00s)
+2026-08-07 23:30:11,593 [INFO] abst_gp.dr.restore_backup: [RESTORE MILESTONE] POSTGRES_RESTORE_STARTED (t=0.00s)
+2026-08-07 23:30:18,271 [INFO] abst_gp.dr.restore_backup: [RESTORE MILESTONE] POSTGRES_RESTORE_COMPLETED (t=6.68s)
+2026-08-07 23:30:18,271 [INFO] abst_gp.dr.restore_backup: [RESTORE MILESTONE] DOCUMENTS_RESTORE_STARTED (t=6.68s)
+2026-08-07 23:30:18,272 [INFO] abst_gp.dr.restore_backup: [RESTORE MILESTONE] DOCUMENTS_RESTORE_COMPLETED (t=6.68s)
+2026-08-07 23:30:18,272 [INFO] abst_gp.dr.restore_backup: [RESTORE MILESTONE] RESTORE_SUCCESS (t=6.68s)
+Exit code: 0

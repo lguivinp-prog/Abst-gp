@@ -1,0 +1,12 @@
+{
+  "timestamp_utc": "2026-08-07T23:30:18.272752+00:00",
+  "version_string": "PostgreSQL 16.14 on x86_64-pc-linux-musl, compiled by gcc (Alpine 15.2.0) 15.2.0, 64-bit",
+  "major_version": 16,
+  "server_version_num": 160014,
+  "wal_level": "replica",
+  "archive_mode": "on",
+  "archive_command": "test ! -f /var/lib/postgresql/archive/%f && cp %p /var/lib/postgresql/archive/%f",
+  "archived_count": 111,
+  "failed_count": 0,
+  "status": "PASS"
+}

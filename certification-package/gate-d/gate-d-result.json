@@ -1,0 +1,8 @@
+{
+  "gate": "D",
+  "status": "PASS",
+  "missing_document_detection": "PASS",
+  "checksum_validation": "PASS",
+  "vault_restore": "PASS",
+  "tenant_integrity": "PASS"
+}

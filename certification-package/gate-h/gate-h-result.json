@@ -1,0 +1,8 @@
+{
+  "gate": "H",
+  "status": "PASS",
+  "postgres_rpo_seconds": 2.0007,
+  "document_rpo_seconds": 2.0007,
+  "effective_rpo_seconds": 2.0007,
+  "target_seconds": 300
+}
