@@ -1,0 +1,60 @@
+# ABST-GP V5.6 - PROMETHEUS METRICS DEFINITIONS
+# SRE Observability Data Model
+
+## PostgreSQL 16
+# Métrica: Tiempo de retraso de los WALs no archivados.
+- name: abst_postgres_wal_archive_lag_seconds
+  type: gauge
+  help: "Lag in seconds for PostgreSQL WAL archiving"
+  source: pg_stat_archiver (last_failed_time vs last_archived_time)
+
+# Métrica: Timestamp del último backup físico base exitoso.
+- name: abst_postgres_backup_last_success_timestamp
+  type: gauge
+  help: "Unix timestamp of the last successful pg_basebackup execution"
+  source: Cron execution log / SRE custom exporter
+
+# Métrica: Timestamp del último drill exitoso de Point-In-Time Recovery.
+- name: abst_postgres_pitr_last_validation_timestamp
+  type: gauge
+  help: "Unix timestamp of the last successful PITR validation drill"
+  source: DR Automation Suite execution log
+
+## Redis 7
+# Métrica: Estado general de salud del Broker.
+- name: abst_redis_health
+  type: gauge
+  help: "Redis 7 instance connectivity and health status (1 = UP, 0 = DOWN)"
+  source: redis_exporter (redis_up)
+
+# Métrica: Cantidad de eventos de reconstrucción forzada ejecutados.
+- name: abst_redis_rebuild_events_total
+  type: counter
+  help: "Total number of times FLUSHDB and SSOT-to-Redis rebuild was executed"
+  source: SRE custom exporter parsing dr_rebuild scripts
+
+## Workers
+# Métrica: Cantidad de trabajos bloqueados en PROCESSING excediendo su timeout sin resolver.
+- name: abst_worker_stale_processing_jobs
+  type: gauge
+  help: "Current number of jobs in PROCESSING state beyond expected completion time"
+  source: PostgreSQL read-only query on jobs table
+
+# Métrica: Recuento de eventos donde un worker falló en emitir su heartbeat.
+- name: abst_worker_heartbeat_timeout_count_total
+  type: counter
+  help: "Total incidents of missing heartbeats triggering JobRecoveryEngine"
+  source: Application Event Log / PostgreSQL read-only audit query
+
+## Documentos
+# Métrica: Fallos de integridad criptográfica SHA-256 detectados en disco.
+- name: abst_document_checksum_failures_total
+  type: counter
+  help: "Total number of files in /storage/documents with mismatched SHA-256 vs database"
+  source: SRE daily asynchronous batch validation job
+
+# Métrica: Documentos presentes en disco sin referencia en el SSOT.
+- name: abst_document_orphan_documents
+  type: gauge
+  help: "Current number of orphan document files in vault without DB record"
+  source: SRE daily asynchronous batch validation job

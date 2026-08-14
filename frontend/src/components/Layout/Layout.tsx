@@ -7,7 +7,7 @@ import './Layout.css';
 const Layout: React.FC = () => {
   const location = useLocation();
   const { user } = useAuth();
-  const isAdmin = user?.role === 'ADMIN' || !user?.role; // default permissive if not loaded
+  const isAdmin = user?.role === 'ADMIN';
 
   const getBreadcrumb = () => {
     if (location.pathname.includes('/monitoring')) {
@@ -61,10 +61,10 @@ const Layout: React.FC = () => {
         
         <div className="sidebar-footer">
           <div className="user-profile">
-            <div className="avatar">{user?.username ? user.username.charAt(0).toUpperCase() : 'A'}</div>
+            <div className="avatar">{user?.username ? user.username.charAt(0).toUpperCase() : '?'}</div>
             <div className="user-info">
-              <span className="user-name">{user?.username || 'Admin Usuario'}</span>
-              <span className="user-role">{user?.role || 'Administrador'}</span>
+              <span className="user-name">{user?.username || 'Guest'}</span>
+              <span className="user-role">{user?.role || 'None'}</span>
             </div>
           </div>
         </div>

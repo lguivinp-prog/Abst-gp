@@ -2,13 +2,13 @@ version: '3.8'
 
 services:
   db:
-    image: postgres:16-alpine
+    image: postgres:15-alpine
     container_name: abst_db
     restart: always
     environment:
       POSTGRES_USER: ${POSTGRES_USER:-abst_user}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-abst_password}
-      POSTGRES_DB: ${POSTGRES_DB:-abst_gp}
+      POSTGRES_DB: ${POSTGRES_DB:-v49_db}
     volumes:
       - pgdata:/var/lib/postgresql/data
     ports:
@@ -29,7 +29,7 @@ services:
     container_name: abst_api
     restart: always
     environment:
-      - DATABASE_URL=postgresql://${POSTGRES_USER:-abst_user}:${POSTGRES_PASSWORD:-abst_password}@db:5432/${POSTGRES_DB:-abst_gp}
+      - DATABASE_URL=postgresql://${POSTGRES_USER:-abst_user}:${POSTGRES_PASSWORD:-abst_password}@db:5432/${POSTGRES_DB:-v49_db}
       - REDIS_URL=redis://redis:6379/0
       - SECRET_KEY=${SECRET_KEY:-supersecretkey_change_in_production}
       - UPLOADS_DIR=/data/uploads
@@ -49,7 +49,7 @@ services:
     restart: always
     command: ["rq", "worker", "-u", "redis://redis:6379/0", "default"]
     environment:
-      - DATABASE_URL=postgresql://${POSTGRES_USER:-abst_user}:${POSTGRES_PASSWORD:-abst_password}@db:5432/${POSTGRES_DB:-abst_gp}
+      - DATABASE_URL=postgresql://${POSTGRES_USER:-abst_user}:${POSTGRES_PASSWORD:-abst_password}@db:5432/${POSTGRES_DB:-v49_db}
       - REDIS_URL=redis://redis:6379/0
       - SECRET_KEY=${SECRET_KEY:-supersecretkey_change_in_production}
       - UPLOADS_DIR=/data/uploads
@@ -68,7 +68,7 @@ services:
     restart: always
     command: ["rq", "worker", "-u", "redis://redis:6379/0", "ocr_tasks"]
     environment:
-      - DATABASE_URL=postgresql://${POSTGRES_USER:-abst_user}:${POSTGRES_PASSWORD:-abst_password}@db:5432/${POSTGRES_DB:-abst_gp}
+      - DATABASE_URL=postgresql://${POSTGRES_USER:-abst_user}:${POSTGRES_PASSWORD:-abst_password}@db:5432/${POSTGRES_DB:-v49_db}
       - REDIS_URL=redis://redis:6379/0
       - SECRET_KEY=${SECRET_KEY:-supersecretkey_change_in_production}
       - UPLOADS_DIR=/data/uploads
@@ -89,6 +89,66 @@ services:
       - "8080:80"
     depends_on:
       - api
+
+  sre-exporter:
+    build:
+      context: ./monitoring/exporter
+    container_name: abst_sre_exporter
+    restart: always
+    environment:
+      - DB_HOST=db
+      - DB_PORT=5432
+      - DB_USER=${POSTGRES_USER:-abst_user}
+      - DB_PASS=${POSTGRES_PASSWORD:-abst_password}
+      - DB_NAME=${POSTGRES_DB:-v49_db}
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+    ports:
+      - "8001:8000"
+    depends_on:
+      - db
+      - redis
+
+  prometheus:
+    image: prom/prometheus:v2.53.0
+    container_name: abst_prometheus
+    restart: always
+    volumes:
+      - ./monitoring/prometheus:/etc/prometheus
+      - ./monitoring/alerts.yml:/etc/prometheus/alerts.yml
+    ports:
+      - "9091:9090"
+    command:
+      - "--config.file=/etc/prometheus/prometheus.yml"
+      - "--storage.tsdb.path=/prometheus"
+    depends_on:
+      - sre-exporter
+
+  alertmanager:
+    image: prom/alertmanager:v0.27.0
+    container_name: abst_alertmanager
+    restart: always
+    volumes:
+      - ./monitoring/alertmanager:/etc/alertmanager
+    ports:
+      - "9093:9093"
+    command:
+      - "--config.file=/etc/alertmanager/alertmanager.yml"
+
+  grafana:
+    image: grafana/grafana:11.1.0
+    container_name: abst_grafana
+    restart: always
+    environment:
+      - GF_SECURITY_ADMIN_PASSWORD=admin
+    volumes:
+      - ./monitoring/grafana/provisioning/datasources:/etc/grafana/provisioning/datasources
+      - ./monitoring/grafana/provisioning/dashboards:/etc/grafana/provisioning/dashboards
+      - ./monitoring/grafana/dashboards:/etc/grafana/provisioning/dashboards/json
+    ports:
+      - "3001:3000"
+    depends_on:
+      - prometheus
 
 volumes:
   pgdata:

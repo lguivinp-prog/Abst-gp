@@ -5,7 +5,8 @@ from redis import Redis
 
 from app.core.config import settings
 from app.core.database import get_db
-from app.api.routers import cases, validation
+from app.api.routers import cases, validation, v2_upload
+from app.api.routers import v6_requirements, v6_suppliers, v6_offers, v6_validations, v6_evaluations, v6_selection, v6_outputs, v6_ai, v6_health
 from app.api.exceptions import setup_exception_handlers
 from app.core.telemetry import OpenTelemetryMiddleware, metrics_registry
 from fastapi.responses import Response
@@ -32,6 +33,18 @@ app.add_middleware(
 
 app.include_router(cases.router, prefix="/cases", tags=["cases"])
 app.include_router(validation.router, prefix="/validation", tags=["validation"])
+app.include_router(v2_upload.router)
+
+# Mount API V6
+app.include_router(v6_requirements.router, prefix="/api/v6", tags=["v6_requirements"])
+app.include_router(v6_suppliers.router, prefix="/api/v6", tags=["v6_suppliers"])
+app.include_router(v6_offers.router, prefix="/api/v6", tags=["v6_offers"])
+app.include_router(v6_validations.router, prefix="/api/v6", tags=["v6_validations"])
+app.include_router(v6_evaluations.router, prefix="/api/v6", tags=["v6_evaluations"])
+app.include_router(v6_selection.router, prefix="/api/v6", tags=["v6_selection"])
+app.include_router(v6_outputs.router, prefix="/api/v6", tags=["v6_outputs"])
+app.include_router(v6_ai.router, prefix="/api/v6/ai", tags=["v6_ai"])
+app.include_router(v6_health.router, prefix="/api/v6", tags=["v6_health"])
 
 from app.api.routers import auth_router, admin
 app.include_router(auth_router.router, prefix="/auth", tags=["auth"])

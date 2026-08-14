@@ -1,0 +1,40 @@
+{
+  "title": "Worker Processing Health",
+  "tags": ["sre", "workers"],
+  "timezone": "browser",
+  "refresh": "10s",
+  "panels": [
+    {
+      "title": "Queued Jobs",
+      "type": "stat",
+      "gridPos": {"x": 0, "y": 0, "w": 8, "h": 6},
+      "targets": [{"expr": "abst_queue_depth"}]
+    },
+    {
+      "title": "Processing Jobs",
+      "type": "stat",
+      "gridPos": {"x": 8, "y": 0, "w": 8, "h": 6},
+      "targets": [{"expr": "sum(abst_jobs_total{status=\"PROCESSING\"})"}]
+    },
+    {
+      "title": "Stale Jobs",
+      "type": "stat",
+      "gridPos": {"x": 16, "y": 0, "w": 8, "h": 6},
+      "targets": [{"expr": "abst_worker_stale_processing_jobs"}],
+      "fieldConfig": {"defaults": {"thresholds": {"mode": "absolute", "steps": [{"value": null, "color": "green"}, {"value": 10, "color": "orange"}, {"value": 20, "color": "red"}]}}}
+    },
+    {
+      "title": "Heartbeat Timeouts",
+      "type": "timeseries",
+      "gridPos": {"x": 0, "y": 6, "w": 12, "h": 6},
+      "targets": [{"expr": "rate(abst_worker_heartbeat_timeout_count_total[5m])"}]
+    },
+    {
+      "title": "Recovery Events",
+      "type": "timeseries",
+      "gridPos": {"x": 12, "y": 6, "w": 12, "h": 6},
+      "targets": [{"expr": "rate(abst_dr_reconciliation_total[5m])"}]
+    }
+  ],
+  "schemaVersion": 36
+}

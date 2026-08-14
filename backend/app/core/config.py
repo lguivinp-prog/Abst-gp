@@ -14,6 +14,14 @@ class Settings(BaseSettings):
     
     APP_ENV: str = os.getenv('APP_ENV', 'development')
     UPLOADS_DIR: str = os.getenv("UPLOADS_DIR", "./data/uploads")
+    STORAGE_BACKEND: str = os.getenv("STORAGE_BACKEND", "local")
+    
+    # Object Storage Configuration (V6)
+    S3_ENDPOINT_URL: str = os.getenv("S3_ENDPOINT_URL", "http://minio:9000")
+    S3_ACCESS_KEY: str = os.getenv("S3_ACCESS_KEY", "minioadmin")
+    S3_SECRET_KEY: str = os.getenv("S3_SECRET_KEY", "minioadmin123")
+    S3_BUCKET_NAME: str = os.getenv("S3_BUCKET_NAME", "abst-documents")
+    DOCUMENT_UPLOAD_MODE: str = os.getenv("DOCUMENT_UPLOAD_MODE", "legacy")
     
     # OCR Engine Configuration
     OCR_ENGINE: str = os.getenv("OCR_ENGINE", "v1")

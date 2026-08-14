@@ -1,0 +1,41 @@
+version: '3.8'
+
+services:
+  secure-gateway-dev:
+    build:
+      context: ./v7_gateway_service
+    ports:
+      - "8000:8000"
+    environment:
+      - DEV_MODE=true
+      - PGVECTOR_DSN=postgresql://v7_dev:devpass@pgvector-dev:5432/v7_db
+
+  vector-service-dev:
+    build:
+      context: ./v7_vector_service
+    ports:
+      - "8001:8001"
+    environment:
+      - PGVECTOR_DSN=postgresql://v7_dev:devpass@pgvector-dev:5432/v7_db
+    depends_on:
+      - pgvector-dev
+
+  pgvector-dev:
+    image: ankane/pgvector:latest
+    environment:
+      POSTGRES_USER: v7_dev
+      POSTGRES_PASSWORD: devpass
+      POSTGRES_DB: v7_db
+    ports:
+      - "5434:5432"
+
+  mock-cognitive-provider:
+    image: python:3.11-slim
+    command: python -m http.server 8080
+    ports:
+      - "8080:8080"
+
+  observability-prometheus:
+    image: prom/prometheus:latest
+    ports:
+      - "9091:9090"

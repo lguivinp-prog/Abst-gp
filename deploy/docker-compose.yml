@@ -1,0 +1,60 @@
+version: '3.8'
+
+services:
+  # V5.5 Legacy Database
+  db:
+    image: postgres:14
+    environment:
+      POSTGRES_DB: abastgp
+      POSTGRES_USER: ${DB_USER}
+      POSTGRES_PASSWORD: ${DB_PASS}
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    restart: always
+
+  # Redis for Celery Broker
+  redis:
+    image: redis:7-alpine
+    restart: always
+
+  # Backend API (V5.5 Legacy + V6.1 AI)
+  api:
+    build: 
+      context: ./backend
+    environment:
+      - DATABASE_URL=postgresql://${DB_USER}:${DB_PASS}@db/abastgp
+      - REDIS_URL=redis://redis:6379/0
+      # External PIDE
+      - SUNAT_API_KEY=${SUNAT_API_KEY}
+    ports:
+      - "8000:8000"
+    depends_on:
+      - db
+      - redis
+
+  # OCR Worker (V6)
+  celery_worker:
+    build:
+      context: ./backend
+    command: celery -A app.worker worker --loglevel=info
+    environment:
+      - DATABASE_URL=postgresql://${DB_USER}:${DB_PASS}@db/abastgp
+      - REDIS_URL=redis://redis:6379/0
+    depends_on:
+      - redis
+      - db
+
+  # Telemetry Scheduler (V6.1)
+  celery_beat:
+    build:
+      context: ./backend
+    command: celery -A app.worker beat --loglevel=info
+    environment:
+      - DATABASE_URL=postgresql://${DB_USER}:${DB_PASS}@db/abastgp
+      - REDIS_URL=redis://redis:6379/0
+    depends_on:
+      - redis
+      - db
+
+volumes:
+  pgdata:

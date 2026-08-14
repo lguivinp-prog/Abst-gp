@@ -72,7 +72,7 @@ const CasesList: React.FC = () => {
           <h1 className="text-2xl font-bold mb-1">Expedientes de Contratación</h1>
           <p className="text-gray-500 text-sm">Gestione los requerimientos y cotizaciones</p>
         </div>
-        <RoleGuard roles={['ADMIN', 'operator']}>
+        <RoleGuard roles={['ADMIN', 'OPERATOR']}>
           <Button leftIcon={<PlusCircle size={18} />} onClick={() => setIsModalOpen(true)}>
             Nuevo Expediente
           </Button>
@@ -146,7 +146,15 @@ const CasesList: React.FC = () => {
                   </CardHeader>
                   <CardContent>
                     <div className="text-sm text-gray-600 mb-3 flex flex-col gap-1">
-                      <span className="flex items-center gap-1"><Badge variant="secondary" className="text-xs">{c.contract_type.toUpperCase()}</Badge></span>
+                      <span className="flex items-center gap-1">
+                        <Badge variant="secondary" className="text-xs">
+                          {c.contract_type === 'bienes' ? 'BIENES' : 
+                           c.contract_type === 'servicios' ? 'SERVICIOS' : 
+                           c.contract_type === 'obras' ? 'OBRA' : 
+                           c.contract_type === 'consultoria_obras' ? 'CONSULTORÍA DE OBRA' : 
+                           c.contract_type.toUpperCase()}
+                        </Badge>
+                      </span>
                     </div>
                   </CardContent>
                 </Card>

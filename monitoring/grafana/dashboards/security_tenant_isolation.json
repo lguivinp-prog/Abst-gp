@@ -1,0 +1,22 @@
+{
+  "title": "Security & Tenant Isolation",
+  "tags": ["sre", "security"],
+  "timezone": "browser",
+  "refresh": "1m",
+  "panels": [
+    {
+      "title": "Rejected Cross Tenant Events",
+      "type": "stat",
+      "gridPos": {"x": 0, "y": 0, "w": 12, "h": 6},
+      "targets": [{"expr": "increase(abst_security_rejected_cross_tenant_total[1h])"}],
+      "fieldConfig": {"defaults": {"thresholds": {"mode": "absolute", "steps": [{"value": null, "color": "green"}, {"value": 1, "color": "red"}]}}}
+    },
+    {
+      "title": "Audit Security Events",
+      "type": "timeseries",
+      "gridPos": {"x": 12, "y": 0, "w": 12, "h": 6},
+      "targets": [{"expr": "rate(abst_security_audit_events_total[5m])"}]
+    }
+  ],
+  "schemaVersion": 36
+}

@@ -14,6 +14,19 @@ COPY --from=build /app/dist /usr/share/nginx/html
 # Configuración para soportar react-router (SPA)
 RUN echo 'server { \
     listen 80; \
+    client_max_body_size 10M; \
+    location /auth/ { \
+        proxy_pass http://api:8000/auth/; \
+        proxy_set_header Host $host; \
+    } \
+    location /api/ { \
+        proxy_pass http://api:8000/api/; \
+        proxy_set_header Host $host; \
+    } \
+    location /cases/ { \
+        proxy_pass http://api:8000/cases/; \
+        proxy_set_header Host $host; \
+    } \
     location / { \
         root   /usr/share/nginx/html; \
         index  index.html index.htm; \

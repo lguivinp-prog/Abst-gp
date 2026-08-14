@@ -1,0 +1,29 @@
+{
+  "title": "Document Integrity",
+  "tags": ["sre", "storage"],
+  "timezone": "browser",
+  "refresh": "1h",
+  "panels": [
+    {
+      "title": "Checksum Failures",
+      "type": "stat",
+      "gridPos": {"x": 0, "y": 0, "w": 8, "h": 6},
+      "targets": [{"expr": "abst_document_checksum_failures_total"}],
+      "fieldConfig": {"defaults": {"thresholds": {"mode": "absolute", "steps": [{"value": null, "color": "green"}, {"value": 1, "color": "red"}]}}}
+    },
+    {
+      "title": "Orphan Documents",
+      "type": "stat",
+      "gridPos": {"x": 8, "y": 0, "w": 8, "h": 6},
+      "targets": [{"expr": "abst_document_orphan_documents"}],
+      "fieldConfig": {"defaults": {"thresholds": {"mode": "absolute", "steps": [{"value": null, "color": "green"}, {"value": 10, "color": "orange"}]}}}
+    },
+    {
+      "title": "Restore Validations",
+      "type": "timeseries",
+      "gridPos": {"x": 16, "y": 0, "w": 8, "h": 6},
+      "targets": [{"expr": "rate(abst_dr_restore_total[1h])"}]
+    }
+  ],
+  "schemaVersion": 36
+}

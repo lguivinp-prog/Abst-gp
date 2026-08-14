@@ -1,0 +1,62 @@
+groups:
+  - name: abst_gp_dr_critical_alerts
+    rules:
+      # ALERTA: WAL Lag > umbral (Riesgo a SLA de RPO)
+      - alert: PostgreSQLWalArchiveLagCritical
+        expr: abst_postgres_wal_archive_lag_seconds > 300
+        for: 2m
+        labels:
+          severity: critical
+          service: postgresql
+          team: sre
+        annotations:
+          summary: "PostgreSQL WAL archive lag exceeded 5 minutes"
+          description: "WAL archiving lag is currently at {{ $value }} seconds. The Disaster Recovery RPO SLA (<= 300s) is at risk. Check archiver process and target storage immediately."
+
+      # ALERTA: Backup fallido o muy antiguo
+      - alert: PostgreSQLPhysicalBackupStale
+        expr: (time() - abst_postgres_backup_last_success_timestamp) > 129600 # 36 horas
+        for: 15m
+        labels:
+          severity: critical
+          service: postgresql
+          team: dba
+        annotations:
+          summary: "No successful pg_basebackup in the last 36 hours"
+          description: "The last successful physical base backup was {{ $value }} seconds ago. The baseline DR vault might be outdated. Investigate pg_basebackup cron job logs."
+
+      # ALERTA: Crecimiento jobs stale
+      - alert: WorkerStaleJobsSpike
+        expr: abst_worker_stale_processing_jobs > 20
+        for: 5m
+        labels:
+          severity: critical
+          service: worker-cluster
+          team: application
+        annotations:
+          summary: "High number of stale jobs in PROCESSING state"
+          description: "Detected {{ $value }} stale jobs blocking queues. Ensure JobRecoveryEngine is actively running and workers are healthy."
+
+      # ALERTA: Pérdida worker heartbeat
+      - alert: WorkerHeartbeatTimeoutSpike
+        expr: rate(abst_worker_heartbeat_timeout_count_total[10m]) > 0.5
+        for: 5m
+        labels:
+          severity: critical
+          service: worker-cluster
+          team: application
+        annotations:
+          summary: "Elevated rate of missing worker heartbeats"
+          description: "Workers are dropping heartbeats abnormally. Possible CPU starvation, OOM kills, or unhandled crashes in OCR engines."
+
+      # ALERTA: Checksum mismatch (Integridad documental)
+      - alert: DocumentChecksumMismatch
+        expr: increase(abst_document_checksum_failures_total[1h]) > 0
+        for: 1m
+        labels:
+          severity: critical
+          service: storage
+          team: sre
+        annotations:
+          summary: "Document SHA-256 integrity failure detected"
+          description: "Cryptographic mismatch found between local document files and PostgreSQL SSOT checksums. Possible silent corruption or unauthorized alteration."

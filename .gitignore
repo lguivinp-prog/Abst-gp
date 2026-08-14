@@ -51,3 +51,17 @@ logs/
 !backend/tests/mock_data/cotizacion_digital.pdf
 !backend/tests/mock_data/req_bienes_digital.pdf
 !backend/tests/mock_data/req_bienes_scanned.pdf
+
+# Rescate Exclusions
+*.pdf
+node_modules/
+.venv/
+__pycache__/
+.pytest_cache/
+*.exe
+playwright-report/
+test-results/
+*.log
+.env
+.env.*
+!.env.example

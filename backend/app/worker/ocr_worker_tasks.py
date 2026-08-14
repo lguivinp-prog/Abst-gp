@@ -114,26 +114,26 @@ def process_run_v2(run_id: str):
                 
             # 1. Run V2 Pipeline
             pipeline = OCRV2Pipeline()
-            structured_doc = pipeline.process_document(file_path)
+            from app.storage.workspace import materialize_document
+            with materialize_document(file_path) as local_temp_path:
+                structured_doc = pipeline.process_document(local_temp_path)
             
             from app.core.config import settings
+            from app.storage.factory import get_storage
+            import io
+            storage = get_storage()
             
             finish_now = datetime.now(timezone.utc)
             if run.execution_role == "SHADOW":
-                # Shadow Mode: Save artifacts to isolated path
+                # Shadow Mode: Save artifacts to isolated path using DocumentStorage
                 val_case = run.validation_case_id
-                isolated_dir = os.path.join(
-                    settings.UPLOADS_DIR,
-                    "validation_artifacts",
-                    str(val_case) if val_case else "unknown",
-                    str(doc.id),
-                    str(run.run_id)
-                )
-                os.makedirs(isolated_dir, exist_ok=True)
-                doc_path = os.path.join(isolated_dir, f"structured_doc_{run.run_id}.json")
                 
-                with open(doc_path, "w", encoding="utf-8") as f:
-                    json.dump(structured_doc.model_dump(), f, ensure_ascii=False, indent=2)
+                json_bytes = json.dumps(structured_doc.model_dump(), ensure_ascii=False, indent=2).encode('utf-8')
+                doc_path = storage.put(
+                    tenant_id=f"validation_artifacts/{val_case if val_case else 'unknown'}",
+                    document_id=f"{doc.id}/{run.run_id}/structured_doc_{run.run_id}.json",
+                    file_stream=io.BytesIO(json_bytes)
+                )
                     
                 # DO NOT overwrite UploadedDocument or ParsedSection product records
                 run.status = 'COMPLETED'
@@ -154,12 +154,18 @@ def process_run_v2(run_id: str):
                 db.commit()
                 
             else: # PRIMARY
-                # Use AtomicPersistence for product record
-                persister = AtomicPersistence()
-                doc_path, doc_checksum = persister.save_structured_document(
-                    settings.UPLOADS_DIR,
-                    run.run_id,
-                    structured_doc.model_dump()
+                # Save structured document via DocumentStorage
+                from app.services.ocr.checksum import calculate_structured_document_checksum
+                content_dump = structured_doc.model_dump()
+                doc_checksum = calculate_structured_document_checksum(content_dump)
+                content_dump["checksum"] = doc_checksum
+                
+                canonical_bytes = json.dumps(content_dump, ensure_ascii=False, indent=2, sort_keys=True).encode('utf-8')
+                
+                doc_path = storage.put(
+                    tenant_id=tenant_id,
+                    document_id=f"structured_{run.run_id}.json",
+                    file_stream=io.BytesIO(canonical_bytes)
                 )
                 
                 score = structured_doc.confidence

@@ -13,6 +13,7 @@ import rq
 from app.core.config import settings
 from app.core.database import get_db
 from app.core.redis import task_queue
+from app.storage.factory import get_storage
 
 from app.models.domain import (
     CaseFile,
@@ -64,7 +65,8 @@ def create_case(
         title=case.title,
         contract_type=case.contract_type,
         status="CREATED",
-        created_by=current_user.id
+        created_by=current_user.id,
+        assigned_to_user_id=current_user.id
     )
 
     db.add(db_case)
@@ -167,6 +169,7 @@ def upload_requirement(
     case_id: int,
     file: UploadFile = File(...),
     db_case: CaseFile = Depends(verify_case_access),
+    current_user: User = Depends(get_current_active_user),
     db: Session = Depends(get_db)
 ):
 
@@ -178,29 +181,15 @@ def upload_requirement(
         )
 
 
-    uploads_dir = os.environ.get(
-        "UPLOADS_DIR",
-        "/data/uploads"
+    storage = get_storage()
+    file_id = f"{uuid.uuid4()}.pdf"
+    
+    file.file.seek(0)
+    file_path = storage.put(
+        tenant_id=current_user.tenant_id,
+        document_id=file_id,
+        file_stream=file.file
     )
-
-    os.makedirs(
-        uploads_dir,
-        exist_ok=True
-    )
-
-
-    file_id = str(uuid.uuid4())
-
-    file_path = os.path.join(
-        uploads_dir,
-        f"{file_id}.pdf"
-    )
-
-
-    with open(file_path, "wb") as buffer:
-        buffer.write(
-            file.file.read()
-        )
 
 
     job_id = str(uuid.uuid4())
@@ -255,17 +244,8 @@ def get_requirement_document_content(
     if not doc:
         raise NotFoundException("Requirement document not found for this case")
         
-    uploads_root = Path(os.environ.get("UPLOADS_DIR", "/data/uploads")).resolve(strict=True)
-    
-    try:
-        document_path = Path(doc.stored_path).resolve(strict=True)
-        # Validación estricta usando Pathlib (anti-path-traversal)
-        document_path.relative_to(uploads_root)
-        
-        if not document_path.is_file():
-            raise ValueError("Not a file")
-            
-    except (ValueError, FileNotFoundError, RuntimeError):
+    storage = get_storage()
+    if not storage.exists(doc.stored_path):
         # Registrar falla silenciosamente sin exponer ruta interna
         audit = AuditLog(
             user_id=current_user.id,
@@ -296,7 +276,7 @@ def get_requirement_document_content(
     safe_filename = f"requirement-{case_id}.pdf"
     
     return FileResponse(
-        path=str(document_path),
+        path=doc.stored_path,
         media_type="application/pdf",
         filename=safe_filename,
         content_disposition_type="inline",
@@ -474,6 +454,17 @@ def update_section(
 
     return section
 
+def has_unresolved_review(section: ParsedSection) -> bool:
+    if section.review_status == "pending_review":
+        return True
+    
+    # If a section was marked as MANUAL_REQUIRED or LOW_CONFIDENCE but hasn't been human-validated
+    if section.review_status != "validated" and section.warnings_json:
+        if any(w.get("code") in ("MANUAL_REQUIRED", "LOW_CONFIDENCE_TABLE", "LOW_CONFIDENCE_TITLE") for w in section.warnings_json):
+            return True
+            
+    return False
+
 @router.post(
     "/{case_id}/sections/confirm",
     response_model=CaseResponse
@@ -490,6 +481,10 @@ def confirm_sections(
     sections = db.query(ParsedSection).filter(ParsedSection.case_id == case_id).all()
     if not sections:
         raise HTTPException(status_code=400, detail="No hay secciones para confirmar")
+
+    pending_sections = [s for s in sections if has_unresolved_review(s)]
+    if pending_sections:
+        raise HTTPException(status_code=400, detail=f"Hay {len(pending_sections)} secciones con problemas no resueltos. Por favor revise y valide manualmente las secciones requeridas.")
 
     case.status = "WAITING_QUOTATION"
     db.commit()
@@ -512,13 +507,16 @@ def upload_quotation(
 ):
     # FLUJO ASÍNCRONO V5.3 (Feature Flag ON)
     if settings.is_async_quotation_enabled():
-        os.makedirs(settings.UPLOADS_DIR, exist_ok=True)
+        storage = get_storage()
         file_ext = Path(file.filename or "quotation.pdf").suffix or ".pdf"
         saved_filename = f"quotation_{case_id}_{uuid.uuid4().hex}{file_ext}"
-        saved_path = os.path.join(settings.UPLOADS_DIR, saved_filename)
-
-        with open(saved_path, "wb") as f:
-            f.write(file.file.read())
+        
+        file.file.seek(0)
+        saved_path = storage.put(
+            tenant_id=current_user.tenant_id,
+            document_id=saved_filename,
+            file_stream=file.file
+        )
 
         # 1. Crear ProcessingJob en PostgreSQL antes de encolar
         job = JobRepository.create_job(

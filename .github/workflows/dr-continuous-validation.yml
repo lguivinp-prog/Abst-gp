@@ -1,0 +1,64 @@
+name: DR Continuous Validation
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '0 0 * * *'
+
+jobs:
+  dr-validation:
+    name: Execute Disaster Recovery Verification Suite
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Prepare DR Environment
+        run: |
+          echo "Starting DR verification environment preparation..."
+          docker compose -p verification -f verification/docker-compose.dr.yml pull || true
+          docker compose -p verification -f verification/docker-compose.dr.yml build
+
+      - name: Execute DR Test Suite and Generate Report
+        run: |
+          # Ejecutamos la suite de DR inyectando pytest-json-report para cumplir con el requerimiento de formato
+          docker compose -p verification -f verification/docker-compose.dr.yml run --rm backend-dr bash -c "pip install pytest-json-report && pytest tests/dr/test_disaster_recovery.py -v --json-report --json-report-file=/app/dr-validation-report.json"
+          
+      - name: Move Report to Workspace Root
+        if: always()
+        run: |
+          mv backend/dr-validation-report.json ./dr-validation-report.json || true
+
+      - name: Extract and Publish DR Metrics
+        if: always()
+        run: |
+          echo "==== DR DRILL METRICS ===="
+          echo "Execution Date: $(date -u +'%Y-%m-%dT%H:%M:%SZ')"
+          
+          if [ -f "dr-validation-report.json" ]; then
+            TOTAL_DURATION=$(grep -o '"total": [0-9.]*' dr-validation-report.json | head -1 | cut -d':' -f2 | tr -d ' ')
+            PASSED=$(grep -o '"passed": [0-9]*' dr-validation-report.json | head -1 | cut -d':' -f2 | tr -d ' ')
+            FAILED=$(grep -o '"failed": [0-9]*' dr-validation-report.json | head -1 | cut -d':' -f2 | tr -d ' ')
+            
+            echo "Total Duration (seconds): $TOTAL_DURATION"
+            echo "Result: PASSED=$PASSED, FAILED=$FAILED"
+            
+            if [ "$FAILED" != "0" ] && [ ! -z "$FAILED" ]; then
+              echo "DR DRILL OUTCOME: FAILED"
+              exit 1
+            else
+              echo "DR DRILL OUTCOME: SUCCESS"
+            fi
+          else
+            echo "Error: dr-validation-report.json not found. Execution failed catastrophically."
+            exit 1
+          fi
+
+      - name: Archive DR Validation Report
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: dr-validation-report
+          path: dr-validation-report.json
+          retention-days: 90

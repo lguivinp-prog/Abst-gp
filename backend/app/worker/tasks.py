@@ -168,7 +168,9 @@ def execute_v1_pipeline(case_id: int, file_path: str, job_id: str, fallback_used
             db.commit()
 
         # 2. Run OCR
-        ocr_result = process_pdf(file_path)
+        from app.storage.workspace import materialize_document
+        with materialize_document(file_path) as local_temp_path:
+            ocr_result = process_pdf(local_temp_path)
         
         if job:
             job.meta['progress'] = 50
@@ -182,7 +184,7 @@ def execute_v1_pipeline(case_id: int, file_path: str, job_id: str, fallback_used
         agent = DocumentExtractionAgent()
         db_case = db.query(CaseFile).filter(CaseFile.id == case_id).first()
         
-        extracted_sections = agent.process(ocr_result.pages_text, db_case.contract_type)
+        extracted_sections = agent.process(ocr_result.pages_text, db_case.contract_type, ocr_result.structured_document)
         if not extracted_sections:
             raise NoSectionsExtractedError("No se detectaron secciones estructurales válidas en el documento (V1).")
         
@@ -203,13 +205,22 @@ def execute_v1_pipeline(case_id: int, file_path: str, job_id: str, fallback_used
             job.meta['status_message'] = "Detectando y limpiando secciones..."
             job.save_meta()
 
+        has_warnings = False
         for sec_data in extracted_sections:
+            sec_has_warnings = any(w.get("code") in ("MANUAL_REQUIRED", "LOW_CONFIDENCE_TABLE", "LOW_CONFIDENCE_TITLE") for w in sec_data.warnings_json)
+            if sec_has_warnings:
+                has_warnings = True
+
+            # Ensure schema_version is explicitly preserved in the persistence layer
+            meta = sec_data.metadata or {}
+            meta["schema_version"] = 1
+                
             sec = ParsedSection(
                 case_id=case_id,
                 document_id=doc.id,
-                original_roman=sec_data.metadata.get("original_roman"),
-                original_order=sec_data.metadata.get("original_order"),
-                title=sec_data.metadata.get("title"),
+                original_roman=meta.get("original_roman"),
+                original_order=meta.get("original_order"),
+                title=meta.get("title"),
                 original_text=sec_data.original_text,
                 cleaned_text=sec_data.cleaned_text,
                 normalized_text=sec_data.normalized_text,
@@ -217,20 +228,20 @@ def execute_v1_pipeline(case_id: int, file_path: str, job_id: str, fallback_used
                 structure_json=sec_data.structure_json,
                 corrections_json=sec_data.corrections_json,
                 warnings_json=sec_data.warnings_json,
-                extraction_metadata=sec_data.metadata,
-                confidence_score=sec_data.metadata.get("confidence", 0.0),
-                review_status="pending_review"
+                extraction_metadata=meta,
+                confidence_score=meta.get("confidence", 0.0),
+                review_status="pending_review" if sec_has_warnings else "validated"
             )
             db.add(sec)
         
         # 7. Update Case Status and Doc Status
         db_case.status = "REVIEW_SECTIONS"
         if doc:
-            doc.processing_status = "finished"
+            doc.processing_status = "review_required" if has_warnings else "finished"
         
         if job:
             job.meta['progress'] = 100
-            job.meta['status_message'] = "Completado"
+            job.meta['status_message'] = "Procesado - Pendiente Revisión" if has_warnings else "Completado"
             job.save_meta()
             
         db.commit()
@@ -284,3 +295,34 @@ def ocr_shadow_task(case_id: int, file_path: str):
     Dummy shadow task for V1 to prevent ImportError in ExtractionOrchestrator.
     """
     pass
+
+def cleanup_abandoned_uploads_task():
+    """
+    Cleans up abandoned uploads (UPLOADING state > 24 hours).
+    Marks them as EXPIRED and attempts to delete the physical object via DocumentStorage.
+    """
+    from app.storage.factory import get_storage
+    from datetime import timedelta
+    
+    db = SessionLocal()
+    storage = get_storage()
+    try:
+        threshold = datetime.utcnow() - timedelta(hours=24)
+        abandoned_docs = db.query(UploadedDocument).filter(
+            UploadedDocument.processing_status == "UPLOADING",
+            UploadedDocument.created_at < threshold
+        ).all()
+        
+        for doc in abandoned_docs:
+            doc.processing_status = "EXPIRED"
+            try:
+                storage.delete(doc.stored_path)
+            except Exception as e:
+                logging.warning(f"Failed to delete abandoned object {doc.stored_path}: {str(e)}")
+                
+        db.commit()
+    except Exception as e:
+        db.rollback()
+        logging.error(f"Error in cleanup_abandoned_uploads_task: {str(e)}")
+    finally:
+        db.close()

@@ -20,6 +20,7 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from app.models.base import Base
 import app.models.domain
+import app.models.v6  # Register V6 models
 
 # add your model's MetaData object here
 # for 'autogenerate' support

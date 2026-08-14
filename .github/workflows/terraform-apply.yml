@@ -1,0 +1,47 @@
+name: Terraform Apply (Dev)
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'terraform/**'
+
+permissions:
+  id-token: write
+  contents: read
+
+env:
+  TF_VERSION: "1.5.0"
+  AWS_REGION: "us-east-1"
+  ROLE_TO_ASSUME: "arn:aws:iam::123456789012:role/AbastGP-Terraform-Apply-Role"
+
+jobs:
+  terraform-apply-dev:
+    name: Terraform Apply (Dev Environment)
+    runs-on: ubuntu-latest
+    environment: dev-approval # Requires manual approval in GitHub
+    defaults:
+      run:
+        working-directory: terraform/environments/dev
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v3
+
+      - name: Configure AWS Credentials via OIDC
+        uses: aws-actions/configure-aws-credentials@v3
+        with:
+          role-to-assume: ${{ env.ROLE_TO_ASSUME }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v2
+        with:
+          terraform_version: ${{ env.TF_VERSION }}
+
+      - name: Terraform Init
+        run: terraform init
+
+      - name: Terraform Apply
+        run: terraform apply -auto-approve

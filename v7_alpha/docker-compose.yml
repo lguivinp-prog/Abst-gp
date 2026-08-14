@@ -1,0 +1,11 @@
+version: '3.8'
+
+services:
+  pgvector-alpha:
+    image: ankane/pgvector:latest
+    environment:
+      POSTGRES_USER: v7_admin
+      POSTGRES_PASSWORD: v7_password
+      POSTGRES_DB: vector_store
+    ports:
+      - "5433:5432" # Use 5433 to avoid conflicts with V5.5 if it's running

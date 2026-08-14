@@ -1,0 +1,249 @@
+﻿
+  backend\scripts\full_output4.txt:397:              "row_span": 1,
+  backend\scripts\full_output4.txt:398:              "col_span": 1,
+  backend\scripts\full_output4.txt:399:              "confidence": null,
+  backend\scripts\full_output4.txt:400:              "manual_required": false
+  backend\scripts\full_output4.txt:401:            },
+  backend\scripts\full_output4.txt:402:            {
+  backend\scripts\full_output4.txt:403:              "text": "",
+  backend\scripts\full_output4.txt:404:              "bbox": null,
+  backend\scripts\full_output4.txt:405:              "row_span": 1,
+  backend\scripts\full_output4.txt:406:              "col_span": 1,
+  backend\scripts\full_output4.txt:407:              "confidence": null,
+  backend\scripts\full_output4.txt:408:              "manual_required": false
+  backend\scripts\full_output4.txt:409:            },
+  backend\scripts\full_output4.txt:410:            {
+  backend\scripts\full_output4.txt:411:              "text": "",
+  backend\scripts\full_output4.txt:412:              "bbox": null,
+  backend\scripts\full_output4.txt:413:              "row_span": 1,
+  backend\scripts\full_output4.txt:414:              "col_span": 1,
+  backend\scripts\full_output4.txt:415:              "confidence": null,
+  backend\scripts\full_output4.txt:416:              "manual_required": false
+  backend\scripts\full_output4.txt:417:            },
+  backend\scripts\full_output4.txt:418:            {
+  backend\scripts\full_output4.txt:419:              "text": "01",
+  backend\scripts\full_output4.txt:420:              "bbox": null,
+  backend\scripts\full_output4.txt:421:              "row_span": 1,
+  backend\scripts\full_output4.txt:422:              "col_span": 1,
+  backend\scripts\full_output4.txt:423:              "confidence": null,
+  backend\scripts\full_output4.txt:424:              "manual_required": false
+  backend\scripts\full_output4.txt:425:            },
+  backend\scripts\full_output4.txt:426:            {
+> backend\scripts\full_output4.txt:427:              "text": "PAPEL BOND",
+  backend\scripts\full_output4.txt:428:              "bbox": null,
+  backend\scripts\full_output4.txt:429:              "row_span": 1,
+  backend\scripts\full_output4.txt:430:              "col_span": 1,
+  backend\scripts\full_output4.txt:431:              "confidence": null,
+  backend\scripts\full_output4.txt:432:              "manual_required": false
+  backend\scripts\full_output4.txt:433:            },
+  backend\scripts\full_output4.txt:434:            {
+  backend\scripts\full_output4.txt:435:              "text": "",
+  backend\scripts\full_output4.txt:436:              "bbox": null,
+  backend\scripts\full_output4.txt:437:              "row_span": 1,
+  backend\scripts\full_output4.txt:438:              "col_span": 1,
+  backend\scripts\full_output4.txt:439:              "confidence": null,
+  backend\scripts\full_output4.txt:440:              "manual_required": false
+  backend\scripts\full_output4.txt:441:            },
+  backend\scripts\full_output4.txt:442:            {
+  backend\scripts\full_output4.txt:443:              "text": "",
+  backend\scripts\full_output4.txt:444:              "bbox": null,
+  backend\scripts\full_output4.txt:445:              "row_span": 1,
+  backend\scripts\full_output4.txt:446:              "col_span": 1,
+  backend\scripts\full_output4.txt:447:              "confidence": null,
+  backend\scripts\full_output4.txt:448:              "manual_required": false
+  backend\scripts\full_output4.txt:449:            },
+  backend\scripts\full_output4.txt:450:            {
+  backend\scripts\full_output4.txt:451:              "text": "30",
+  backend\scripts\full_output4.txt:452:              "bbox": null,
+  backend\scripts\full_output4.txt:453:              "row_span": 1,
+  backend\scripts\full_output4.txt:454:              "col_span": 1,
+  backend\scripts\full_output4.txt:455:              "confidence": null,
+  backend\scripts\full_output4.txt:456:              "manual_required": false
+  backend\scripts\full_output4.txt:457:            },
+  backend\scripts\full_output4.txt:936:              "row_span": 1,
+  backend\scripts\full_output4.txt:937:              "col_span": 1,
+  backend\scripts\full_output4.txt:938:              "confidence": null,
+  backend\scripts\full_output4.txt:939:              "manual_required": false
+  backend\scripts\full_output4.txt:940:            },
+  backend\scripts\full_output4.txt:941:            {
+  backend\scripts\full_output4.txt:942:              "text": "2",
+  backend\scripts\full_output4.txt:943:              "bbox": null,
+  backend\scripts\full_output4.txt:944:              "row_span": 1,
+  backend\scripts\full_output4.txt:945:              "col_span": 1,
+  backend\scripts\full_output4.txt:946:              "confidence": null,
+  backend\scripts\full_output4.txt:947:              "manual_required": false
+  backend\scripts\full_output4.txt:948:            },
+  backend\scripts\full_output4.txt:949:            {
+  backend\scripts\full_output4.txt:950:              "text": "",
+  backend\scripts\full_output4.txt:951:              "bbox": null,
+  backend\scripts\full_output4.txt:952:              "row_span": 1,
+  backend\scripts\full_output4.txt:953:              "col_span": 1,
+  backend\scripts\full_output4.txt:954:              "confidence": null,
+  backend\scripts\full_output4.txt:955:              "manual_required": false
+  backend\scripts\full_output4.txt:956:            },
+  backend\scripts\full_output4.txt:957:            {
+  backend\scripts\full_output4.txt:958:              "text": "",
+  backend\scripts\full_output4.txt:959:              "bbox": null,
+  backend\scripts\full_output4.txt:960:              "row_span": 1,
+  backend\scripts\full_output4.txt:961:              "col_span": 1,
+  backend\scripts\full_output4.txt:962:              "confidence": null,
+  backend\scripts\full_output4.txt:963:              "manual_required": false
+  backend\scripts\full_output4.txt:964:            },
+  backend\scripts\full_output4.txt:965:            {
+> backend\scripts\full_output4.txt:966:              "text": "PAPEL BOND",
+  backend\scripts\full_output4.txt:967:              "bbox": null,
+  backend\scripts\full_output4.txt:968:              "row_span": 1,
+  backend\scripts\full_output4.txt:969:              "col_span": 1,
+  backend\scripts\full_output4.txt:970:              "confidence": null,
+  backend\scripts\full_output4.txt:971:              "manual_required": false
+  backend\scripts\full_output4.txt:972:            },
+  backend\scripts\full_output4.txt:973:            {
+  backend\scripts\full_output4.txt:974:              "text": "T",
+  backend\scripts\full_output4.txt:975:              "bbox": null,
+  backend\scripts\full_output4.txt:976:              "row_span": 1,
+  backend\scripts\full_output4.txt:977:              "col_span": 1,
+  backend\scripts\full_output4.txt:978:              "confidence": null,
+  backend\scripts\full_output4.txt:979:              "manual_required": false
+  backend\scripts\full_output4.txt:980:            },
+  backend\scripts\full_output4.txt:981:            {
+  backend\scripts\full_output4.txt:982:              "text": "AMANO: A",
+  backend\scripts\full_output4.txt:983:              "bbox": null,
+  backend\scripts\full_output4.txt:984:              "row_span": 1,
+  backend\scripts\full_output4.txt:985:              "col_span": 1,
+  backend\scripts\full_output4.txt:986:              "confidence": null,
+  backend\scripts\full_output4.txt:987:              "manual_required": false
+  backend\scripts\full_output4.txt:988:            },
+  backend\scripts\full_output4.txt:989:            {
+  backend\scripts\full_output4.txt:990:              "text": "4",
+  backend\scripts\full_output4.txt:991:              "bbox": null,
+  backend\scripts\full_output4.txt:992:              "row_span": 1,
+  backend\scripts\full_output4.txt:993:              "col_span": 1,
+  backend\scripts\full_output4.txt:994:              "confidence": null,
+  backend\scripts\full_output4.txt:995:              "manual_required": false
+  backend\scripts\full_output4.txt:996:            },
+  backend\scripts\full_output4.txt:2556:      "x1": 279.64752197265625,
+  backend\scripts\full_output4.txt:2557:      "y1": 120.785400390625
+  backend\scripts\full_output4.txt:2558:    },
+  backend\scripts\full_output4.txt:2559:    "page_num": 2,
+  backend\scripts\full_output4.txt:2560:    "reading_order": 5,
+  backend\scripts\full_output4.txt:2561:    "children": null,
+  backend\scripts\full_output4.txt:2562:    "table_data": null,
+  backend\scripts\full_output4.txt:2563:    "confidence": null,
+  backend\scripts\full_output4.txt:2564:    "manual_required": false,
+  backend\scripts\full_output4.txt:2565:    "source_method": "ocr_blocks"
+  backend\scripts\full_output4.txt:2566:  },
+  backend\scripts\full_output4.txt:2567:  {
+  backend\scripts\full_output4.txt:2568:    "type": "PARAGRAPH",
+  backend\scripts\full_output4.txt:2569:    "text": "; \nER \n: \n: \nUnidad de ltem \nDescripción del bien \nCantidad 
+ medida",
+  backend\scripts\full_output4.txt:2570:    "bbox": {
+  backend\scripts\full_output4.txt:2571:      "x0": 104.11769104003906,
+  backend\scripts\full_output4.txt:2572:      "y0": 134.84461975097656,
+  backend\scripts\full_output4.txt:2573:      "x1": 485.78240966796875,
+  backend\scripts\full_output4.txt:2574:      "y1": 150.09751892089844
+  backend\scripts\full_output4.txt:2575:    },
+  backend\scripts\full_output4.txt:2576:    "page_num": 2,
+  backend\scripts\full_output4.txt:2577:    "reading_order": 6,
+  backend\scripts\full_output4.txt:2578:    "children": null,
+  backend\scripts\full_output4.txt:2579:    "table_data": null,
+  backend\scripts\full_output4.txt:2580:    "confidence": null,
+  backend\scripts\full_output4.txt:2581:    "manual_required": false,
+  backend\scripts\full_output4.txt:2582:    "source_method": "ocr_blocks"
+  backend\scripts\full_output4.txt:2583:  },
+  backend\scripts\full_output4.txt:2584:  {
+  backend\scripts\full_output4.txt:2585:    "type": "PARAGRAPH",
+> backend\scripts\full_output4.txt:2586:    "text": "01 \nPAPEL BOND \n30 \nPAQUETES\n02 \nTONER HP \n01 \nUNIDAD\n03 
+\nTONER HP 85A \n02 \nUNIDAD\n5.2 \nCaracterísticas técnicas*",
+  backend\scripts\full_output4.txt:2587:    "bbox": {
+  backend\scripts\full_output4.txt:2588:      "x0": 70.21192932128906,
+  backend\scripts\full_output4.txt:2589:      "y0": 157.8825225830078,
+  backend\scripts\full_output4.txt:2590:      "x1": 489.8487548828125,
+  backend\scripts\full_output4.txt:2591:      "y1": 203.8853759765625
+  backend\scripts\full_output4.txt:2592:    },
+  backend\scripts\full_output4.txt:2593:    "page_num": 2,
+  backend\scripts\full_output4.txt:2594:    "reading_order": 7,
+  backend\scripts\full_output4.txt:2595:    "children": null,
+  backend\scripts\full_output4.txt:2596:    "table_data": null,
+  backend\scripts\full_output4.txt:2597:    "confidence": null,
+  backend\scripts\full_output4.txt:2598:    "manual_required": false,
+  backend\scripts\full_output4.txt:2599:    "source_method": "ocr_blocks"
+  backend\scripts\full_output4.txt:2600:  },
+  backend\scripts\full_output4.txt:2601:  {
+  backend\scripts\full_output4.txt:2602:    "type": "PARAGRAPH",
+  backend\scripts\full_output4.txt:2603:    "text": "Ítem | Descripción del bien \nCaracterísticas técnicas",
+  backend\scripts\full_output4.txt:2604:    "bbox": {
+  backend\scripts\full_output4.txt:2605:      "x0": 80.41366577148438,
+  backend\scripts\full_output4.txt:2606:      "y0": 214.9755096435547,
+  backend\scripts\full_output4.txt:2607:      "x1": 426.37176513671875,
+  backend\scripts\full_output4.txt:2608:      "y1": 229.27651977539062
+  backend\scripts\full_output4.txt:2609:    },
+  backend\scripts\full_output4.txt:2610:    "page_num": 2,
+  backend\scripts\full_output4.txt:2611:    "reading_order": 8,
+  backend\scripts\full_output4.txt:2612:    "children": null,
+  backend\scripts\full_output4.txt:2613:    "table_data": null,
+  backend\scripts\full_output4.txt:2614:    "confidence": null,
+  backend\scripts\full_output4.txt:2615:    "manual_required": false,
+  backend\scripts\full_output4.txt:2616:    "source_method": "ocr_blocks"
+  backend\scripts\full_output4.txt:2624:      "x1": 389.94036865234375,
+  backend\scripts\full_output4.txt:2625:      "y1": 251.33131408691406
+  backend\scripts\full_output4.txt:2626:    },
+  backend\scripts\full_output4.txt:2627:    "page_num": 2,
+  backend\scripts\full_output4.txt:2628:    "reading_order": 9,
+  backend\scripts\full_output4.txt:2629:    "children": null,
+  backend\scripts\full_output4.txt:2630:    "table_data": null,
+  backend\scripts\full_output4.txt:2631:    "confidence": null,
+  backend\scripts\full_output4.txt:2632:    "manual_required": false,
+  backend\scripts\full_output4.txt:2633:    "source_method": "ocr_blocks"
+  backend\scripts\full_output4.txt:2634:  },
+  backend\scripts\full_output4.txt:2635:  {
+  backend\scripts\full_output4.txt:2636:    "type": "PARAGRAPH",
+  backend\scripts\full_output4.txt:2637:    "text": "IMPRESORA: HP LaserJetP1102w",
+  backend\scripts\full_output4.txt:2638:    "bbox": {
+  backend\scripts\full_output4.txt:2639:      "x0": 324.3551025390625,
+  backend\scripts\full_output4.txt:2640:      "y0": 248.14108276367188,
+  backend\scripts\full_output4.txt:2641:      "x1": 466.2783508300781,
+  backend\scripts\full_output4.txt:2642:      "y1": 259.17327880859375
+  backend\scripts\full_output4.txt:2643:    },
+  backend\scripts\full_output4.txt:2644:    "page_num": 2,
+  backend\scripts\full_output4.txt:2645:    "reading_order": 10,
+  backend\scripts\full_output4.txt:2646:    "children": null,
+  backend\scripts\full_output4.txt:2647:    "table_data": null,
+  backend\scripts\full_output4.txt:2648:    "confidence": null,
+  backend\scripts\full_output4.txt:2649:    "manual_required": false,
+  backend\scripts\full_output4.txt:2650:    "source_method": "ocr_blocks"
+  backend\scripts\full_output4.txt:2651:  },
+  backend\scripts\full_output4.txt:2652:  {
+  backend\scripts\full_output4.txt:2653:    "type": "PARAGRAPH",
+> backend\scripts\full_output4.txt:2654:    "text": "2 \nPAPEL BOND \nTAMANO: A4",
+  backend\scripts\full_output4.txt:2655:    "bbox": {
+  backend\scripts\full_output4.txt:2656:      "x0": 85.81459045410156,
+  backend\scripts\full_output4.txt:2657:      "y0": 261.9410705566406,
+  backend\scripts\full_output4.txt:2658:      "x1": 373.86322021484375,
+  backend\scripts\full_output4.txt:2659:      "y1": 272.9732666015625
+  backend\scripts\full_output4.txt:2660:    },
+  backend\scripts\full_output4.txt:2661:    "page_num": 2,
+  backend\scripts\full_output4.txt:2662:    "reading_order": 11,
+  backend\scripts\full_output4.txt:2663:    "children": null,
+  backend\scripts\full_output4.txt:2664:    "table_data": null,
+  backend\scripts\full_output4.txt:2665:    "confidence": null,
+  backend\scripts\full_output4.txt:2666:    "manual_required": false,
+  backend\scripts\full_output4.txt:2667:    "source_method": "ocr_blocks"
+  backend\scripts\full_output4.txt:2668:  },
+  backend\scripts\full_output4.txt:2669:  {
+  backend\scripts\full_output4.txt:2670:    "type": "PARAGRAPH",
+  backend\scripts\full_output4.txt:2671:    "text": "GRAMO: 759",
+  backend\scripts\full_output4.txt:2672:    "bbox": {
+  backend\scripts\full_output4.txt:2673:      "x0": 324.0550842285156,
+  backend\scripts\full_output4.txt:2674:      "y0": 277.5411071777344,
+  backend\scripts\full_output4.txt:2675:      "x1": 378.0639953613281,
+  backend\scripts\full_output4.txt:2676:      "y1": 288.57330322265625
+  backend\scripts\full_output4.txt:2677:    },
+  backend\scripts\full_output4.txt:2678:    "page_num": 2,
+  backend\scripts\full_output4.txt:2679:    "reading_order": 12,
+  backend\scripts\full_output4.txt:2680:    "children": null,
+  backend\scripts\full_output4.txt:2681:    "table_data": null,
+  backend\scripts\full_output4.txt:2682:    "confidence": null,
+  backend\scripts\full_output4.txt:2683:    "manual_required": false,
+  backend\scripts\full_output4.txt:2684:    "source_method": "ocr_blocks"
+
+

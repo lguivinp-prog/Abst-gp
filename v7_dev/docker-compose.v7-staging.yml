@@ -1,0 +1,70 @@
+version: '3.8'
+
+services:
+  gateway-staging:
+    build: 
+      context: ./v7_gateway_service
+    ports:
+      - "8000:8000"
+    environment:
+      - VECTOR_SERVICE_URL=http://vector-service-staging:8001/v7/vector
+    depends_on:
+      - vector-service-staging
+    networks:
+      - v7_staging_default
+
+  vector-service-staging:
+    build:
+      context: ./v7_vector_service
+    ports:
+      - "8001:8001"
+    environment:
+      - DB_HOST=pgvector-staging
+      - DB_USER=admin
+      - DB_PASS=secret
+      - DB_NAME=v7_vector_db
+    depends_on:
+      - pgvector-staging
+    networks:
+      - v7_staging_default
+
+  pgvector-staging:
+    image: ankane/pgvector:v0.5.1
+    environment:
+      - POSTGRES_USER=admin
+      - POSTGRES_PASSWORD=secret
+      - POSTGRES_DB=v7_vector_db
+    ports:
+      - "5432:5432"
+    networks:
+      - v7_staging_default
+
+  redis-staging:
+    image: redis:7-alpine
+    command: redis-server --maxmemory 256mb --maxmemory-policy volatile-lru
+    ports:
+      - "6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+    networks:
+      - v7_staging_default
+
+  celery-worker-staging:
+    build:
+      context: ./migration_toolkit
+    command: celery -A tasks worker --loglevel=info
+    environment:
+      - CELERY_BROKER_URL=redis://redis-staging:6379/0
+      - CELERY_RESULT_BACKEND=redis://redis-staging:6379/1
+      - GATEWAY_URL=http://gateway-staging:8000/v7/gateway
+    depends_on:
+      - redis-staging
+      - gateway-staging
+    networks:
+      - v7_staging_default
+
+networks:
+  v7_staging_default:

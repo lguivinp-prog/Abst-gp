@@ -15,13 +15,13 @@ export const SectionEditor: React.FC<SectionEditorProps> = ({ section, onSave, o
   const [loading, setLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
-  const handleSave = async () => {
+  const handleSave = async (validate: boolean) => {
     setLoading(true);
     setErrorMsg(null);
     try {
       const res = await apiClient.put(`/cases/sections/${section.id}`, {
         is_selected: true,
-        review_status: 'validated',
+        review_status: validate ? 'validated' : section.review_status,
         current_text: text
       });
       onSave(res.data);
@@ -84,7 +84,8 @@ export const SectionEditor: React.FC<SectionEditorProps> = ({ section, onSave, o
           </div>
           <div className="flex justify-end gap-2">
             <Button variant="outline" onClick={onCancel}>Cancelar</Button>
-            <Button onClick={handleSave} disabled={loading}>{loading ? 'Guardando...' : 'Guardar'}</Button>
+            <Button variant="outline" onClick={() => handleSave(false)} disabled={loading}>{loading ? 'Guardando...' : 'Guardar Cambios'}</Button>
+            <Button onClick={() => handleSave(true)} disabled={loading}>{loading ? 'Validando...' : 'Guardar y validar sección'}</Button>
           </div>
         </div>
       </CardContent>

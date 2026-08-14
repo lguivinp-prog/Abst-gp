@@ -16,7 +16,13 @@ export const SectionSelector: React.FC<SectionSelectorProps> = ({ sections, onEd
     <div className="sections-container">
       <div className="flex justify-between items-center mb-4">
         <h2 className="text-xl font-semibold">Secciones Detectadas (Revisión)</h2>
-        <Button onClick={onContinue}>Confirmar Secciones y Continuar</Button>
+        <Button 
+          onClick={onContinue}
+          disabled={sections.some(s => s.review_status !== 'validated')}
+          title={sections.some(s => s.review_status !== 'validated') ? "Debe validar todas las secciones antes de continuar" : ""}
+        >
+          Confirmar Secciones y Continuar
+        </Button>
       </div>
       
       <div className="grid gap-4">
@@ -36,46 +42,52 @@ export const SectionSelector: React.FC<SectionSelectorProps> = ({ sections, onEd
             <CardContent>
               {sec.structure_json && sec.structure_json.length > 0 ? (
                 <div className="text-gray-900 text-lg">
-                  {sec.structure_json.map((block: StructureBlock, idx: number) => {
-                    if (block.type === 'subsection_title') {
-                      const level = block.level || 1;
-                      const textSize = level === 1 ? 'text-xl' : level === 2 ? 'text-lg' : 'text-base';
-                      const mt = level === 1 ? 'mt-6' : 'mt-4';
-                      return <div key={idx} className={`${mt} mb-2 ${textSize}`}><strong>{block.label ? `${block.label} ` : ''}{block.text}</strong></div>;
+                  {sec.structure_json.map((block: any, idx: number) => {
+                    if (block.type === 'HEADING' || block.type === 'subsection_title' || block.type === 'section_title') {
+                      return <div key={idx} className={`mt-6 mb-2 text-xl`}><strong>{block.label ? `${block.label} ` : ''}{block.text}</strong></div>;
                     }
-                    if (block.type === 'paragraph') return <p key={idx} className="doc-paragraph">{block.text}</p>;
-                    if (block.type === 'numbered_item') return <div key={idx} className="doc-paragraph" style={{ marginLeft: `${(block.level || 1) * 1.5}rem`, marginBottom: "0.5rem" }}><strong>{block.label}</strong> {block.text}</div>;
-                    if (block.type === 'letter_item') return <div key={idx} className="doc-paragraph" style={{ marginLeft: "3rem", marginBottom: "0.5rem" }}><strong>{block.label}</strong> {block.text}</div>;
-                    if (block.type === 'bullet_item') return <div key={idx} className="doc-paragraph" style={{ marginLeft: "3rem", marginBottom: "0.5rem" }}>- {block.text}</div>;
-                    if (block.type === 'table_vertical') {
+                    if (block.type === 'PARAGRAPH' || block.type === 'paragraph') {
+                      return <p key={idx} className="doc-paragraph">{block.text}</p>;
+                    }
+                    if (block.type === 'LIST_ITEM' || block.type === 'bullet_item' || block.type === 'letter_item' || block.type === 'numbered_item') {
+                      return <div key={idx} className="doc-paragraph" style={{ marginLeft: "2rem", marginBottom: "0.5rem" }}>{block.text}</div>;
+                    }
+                    if (block.type === 'TABLE' || block.type === 'table_vertical') {
                       return (
                         <div key={idx} className="mb-4 overflow-x-auto">
-                          <table className="w-full border-collapse border border-slate-300 text-sm">
-                            <tbody>
-                              {block.rows?.map((row, rIdx) => (
-                                <React.Fragment key={rIdx}>
-                                  {Object.entries(row).map(([k, v], cIdx) => (
-                                    <tr key={cIdx}>
-                                      <td className="border border-slate-300 bg-slate-100 p-2 font-bold w-1/3 align-top">{k}</td>
-                                      <td className="border border-slate-300 p-2 align-top">
-                                        {Array.isArray(v) ? (
-                                          <ul className="list-disc ml-4">
-                                            {v.map((item, iIdx) => <li key={iIdx}>{item}</li>)}
-                                          </ul>
-                                        ) : (
-                                          <>{v as React.ReactNode}</>
-                                        )}
-                                      </td>
-                                    </tr>
-                                  ))}
-                                </React.Fragment>
-                              ))}
-                            </tbody>
-                          </table>
+                          {block.table_data ? (
+                            <table className="w-full border-collapse border border-slate-300 text-sm">
+                              <tbody>
+                                {block.table_data.rows?.map((row: any, rIdx: number) => (
+                                  <tr key={rIdx}>
+                                    {row.cells?.map((cell: any, cIdx: number) => (
+                                      <td key={cIdx} className="border border-slate-300 p-2 align-top">{cell.text}</td>
+                                    ))}
+                                  </tr>
+                                ))}
+                              </tbody>
+                            </table>
+                          ) : (
+                            <div className="p-4 bg-gray-100 border border-gray-300 rounded text-center">
+                              <em>Tabla detectada pero sin estructura tabular renderizable. {block.text}</em>
+                            </div>
+                          )}
+                          {block.manual_required && (
+                            <div className="text-xs text-red-600 mt-1">⚠️ Esta tabla requiere revisión manual.</div>
+                          )}
                         </div>
                       );
                     }
-                    if (block.type === 'warning') return <div key={idx} className="mb-2 p-2 bg-yellow-50 text-yellow-800 rounded border-l-4 border-yellow-500"><strong>Advertencia:</strong> {block.text}</div>;
+                    if (block.type === 'FORMULA_OR_LAYOUT_BLOCK') {
+                      return (
+                        <div key={idx} className="my-4 p-4 bg-slate-50 border border-slate-200 rounded text-center font-mono text-sm whitespace-pre-wrap">
+                          {block.text}
+                        </div>
+                      );
+                    }
+                    if (block.type === 'warning') {
+                      return <div key={idx} className="mb-2 p-2 bg-yellow-50 text-yellow-800 rounded border-l-4 border-yellow-500"><strong>Advertencia:</strong> {block.text}</div>;
+                    }
                     return <p key={idx} className="doc-paragraph">{block.text}</p>;
                   })}
                 </div>

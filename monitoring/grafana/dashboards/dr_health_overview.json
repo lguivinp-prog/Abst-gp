@@ -1,0 +1,51 @@
+{
+  "title": "Abst-gp DR Health Overview",
+  "tags": ["sre", "dr"],
+  "timezone": "browser",
+  "refresh": "10s",
+  "panels": [
+    {
+      "title": "Postgres WAL Archive Lag",
+      "type": "stat",
+      "gridPos": {"x": 0, "y": 0, "w": 8, "h": 6},
+      "targets": [{"expr": "abst_postgres_wal_archive_lag_seconds"}],
+      "fieldConfig": {"defaults": {"unit": "s", "thresholds": {"mode": "absolute", "steps": [{"value": null, "color": "green"}, {"value": 60, "color": "orange"}, {"value": 300, "color": "red"}]}}}
+    },
+    {
+      "title": "Backup Freshness",
+      "type": "stat",
+      "gridPos": {"x": 8, "y": 0, "w": 8, "h": 6},
+      "targets": [{"expr": "time() - abst_postgres_backup_last_success_timestamp"}],
+      "fieldConfig": {"defaults": {"unit": "s", "thresholds": {"mode": "absolute", "steps": [{"value": null, "color": "green"}, {"value": 86400, "color": "orange"}, {"value": 129600, "color": "red"}]}}}
+    },
+    {
+      "title": "PITR Validation Age",
+      "type": "stat",
+      "gridPos": {"x": 16, "y": 0, "w": 8, "h": 6},
+      "targets": [{"expr": "time() - abst_postgres_pitr_last_validation_timestamp"}],
+      "fieldConfig": {"defaults": {"unit": "s", "thresholds": {"mode": "absolute", "steps": [{"value": null, "color": "green"}, {"value": 86400, "color": "orange"}, {"value": 259200, "color": "red"}]}}}
+    },
+    {
+      "title": "Redis Health",
+      "type": "stat",
+      "gridPos": {"x": 0, "y": 6, "w": 8, "h": 6},
+      "targets": [{"expr": "abst_redis_health"}],
+      "fieldConfig": {"defaults": {"thresholds": {"mode": "absolute", "steps": [{"value": null, "color": "red"}, {"value": 1, "color": "green"}]}}}
+    },
+    {
+      "title": "RPO Current (Estimated)",
+      "type": "stat",
+      "gridPos": {"x": 8, "y": 6, "w": 8, "h": 6},
+      "targets": [{"expr": "abst_postgres_wal_archive_lag_seconds"}],
+      "fieldConfig": {"defaults": {"unit": "s", "thresholds": {"mode": "absolute", "steps": [{"value": null, "color": "green"}, {"value": 300, "color": "red"}]}}}
+    },
+    {
+      "title": "RTO History (avg seconds)",
+      "type": "timeseries",
+      "gridPos": {"x": 16, "y": 6, "w": 8, "h": 6},
+      "targets": [{"expr": "rate(abst_dr_restore_duration_seconds_sum[1h]) / rate(abst_dr_restore_duration_seconds_count[1h])"}],
+      "fieldConfig": {"defaults": {"unit": "s"}}
+    }
+  ],
+  "schemaVersion": 36
+}

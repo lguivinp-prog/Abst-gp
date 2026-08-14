@@ -1,0 +1,2035 @@
+Found 14 sections.
+
+--- Section 1: ANTECEDENTES (I) ---
+
+--- Section 2: FINALIDAD PÚBLICA (I) ---
+
+--- Section 3: ANTECEDENTES (II) ---
+
+--- Section 4: FINALIDAD PÚBLICA (I) ---
+
+--- Section 5: JUSTIFICACIÓN DE LOS BIENES A CONTRATAR (IV) ---
+=== ANCHOR A ===
+[
+  {
+    "type": "HEADING",
+    "text": "IV. JUSTIFICACIÓN DE LOS BIENES A CONTRATAR (obligatorio)",
+    "bbox": {
+      "x0": 79.14610290527344,
+      "y0": 645.9459838867188,
+      "x1": 388.2691650390625,
+      "y1": 662.0987548828125
+    },
+    "page_num": 1,
+    "reading_order": 16,
+    "children": null,
+    "table_data": null,
+    "confidence": null,
+    "manual_required": false,
+    "source_method": "ocr_blocks"
+  },
+  {
+    "type": "PARAGRAPH",
+    "text": "La adquisición de materiales de oficina es indispensable para el buen desarrollo de las actividades administrativas que el personal debe ejecutar dentro de la oficina de administración. Estos recursos son fundamentales para la correcta organización y gestión de los documentos, la realización de informes, la planificación de actividades, y la comunicación tanto interna como externa entre los miembros del equipo y otras entidades vinculadas a esta unidad",
+    "bbox": {
+      "x0": 80.93448638916016,
+      "y0": 675.7599487304688,
+      "x1": 549.1043090820312,
+      "y1": 730.5784912109375
+    },
+    "page_num": 1,
+    "reading_order": 17,
+    "children": null,
+    "table_data": null,
+    "confidence": null,
+    "manual_required": false,
+    "source_method": "ocr_blocks"
+  }
+]
+
+--- Section 6: CARACTERÍSTICAS Y CONDICIONES DE LA CONTRATACIÓN (V) ---
+=== ANCHOR B & C ===
+[
+  {
+    "type": "HEADING",
+    "text": "V. \nCARACTERÍSTICAS Y CONDICIONES DE LA CONTRATACIÓN (Obligatorio)",
+    "bbox": {
+      "x0": 78.8383560180664,
+      "y0": 731.5587158203125,
+      "x1": 453.68377685546875,
+      "y1": 749.7398071289062
+    },
+    "page_num": 1,
+    "reading_order": 18,
+    "children": null,
+    "table_data": null,
+    "confidence": null,
+    "manual_required": false,
+    "source_method": "ocr_blocks"
+  },
+  {
+    "type": "PARAGRAPH",
+    "text": "5.1 \nDescripción y cantidad de los bienes",
+    "bbox": {
+      "x0": 70.21192932128906,
+      "y0": 87.08247375488281,
+      "x1": 328.2562255859375,
+      "y1": 97.29747772216797
+    },
+    "page_num": 2,
+    "reading_order": 1,
+    "children": null,
+    "table_data": null,
+    "confidence": null,
+    "manual_required": false,
+    "source_method": "ocr_blocks"
+  },
+  {
+    "type": "PARAGRAPH",
+    "text": "Los bienes solicitados son los siguientes:",
+    "bbox": {
+      "x0": 98.4167251586914,
+      "y0": 110.16179656982422,
+      "x1": 279.64752197265625,
+      "y1": 120.785400390625
+    },
+    "page_num": 2,
+    "reading_order": 2,
+    "children": null,
+    "table_data": null,
+    "confidence": null,
+    "manual_required": false,
+    "source_method": "ocr_blocks"
+  },
+  {
+    "type": "PARAGRAPH",
+    "text": "; \nER \n: \n: \nUnidad de ltem \nDescripción del bien \nCantidad  medida",
+    "bbox": {
+      "x0": 104.11769104003906,
+      "y0": 134.84461975097656,
+      "x1": 485.78240966796875,
+      "y1": 150.09751892089844
+    },
+    "page_num": 2,
+    "reading_order": 3,
+    "children": null,
+    "table_data": null,
+    "confidence": null,
+    "manual_required": false,
+    "source_method": "ocr_blocks"
+  },
+  {
+    "type": "PARAGRAPH",
+    "text": "01 \nPAPEL BOND \n30 \nPAQUETES\n02 \nTONER HP \n01 \nUNIDAD\n03 \nTONER HP 85A \n02 \nUNIDAD\n5.2 \nCaracterísticas técnicas*",
+    "bbox": {
+      "x0": 70.21192932128906,
+      "y0": 157.8825225830078,
+      "x1": 489.8487548828125,
+      "y1": 203.8853759765625
+    },
+    "page_num": 2,
+    "reading_order": 4,
+    "children": null,
+    "table_data": null,
+    "confidence": null,
+    "manual_required": false,
+    "source_method": "ocr_blocks"
+  },
+  {
+    "type": "PARAGRAPH",
+    "text": "Ítem | Descripción del bien \nCaracterísticas técnicas",
+    "bbox": {
+      "x0": 80.41366577148438,
+      "y0": 214.9755096435547,
+      "x1": 426.37176513671875,
+      "y1": 229.27651977539062
+    },
+    "page_num": 2,
+    "reading_order": 5,
+    "children": null,
+    "table_data": null,
+    "confidence": null,
+    "manual_required": false,
+    "source_method": "ocr_blocks"
+  },
+  {
+    "type": "PARAGRAPH",
+    "text": "1 | TONERPARA IMPRESORA HP 85A \nCOLONESRO",
+    "bbox": {
+      "x0": 86.11463165283203,
+      "y0": 232.12710571289062,
+      "x1": 389.94036865234375,
+      "y1": 251.33131408691406
+    },
+    "page_num": 2,
+    "reading_order": 6,
+    "children": null,
+    "table_data": null,
+    "confidence": null,
+    "manual_required": false,
+    "source_method": "ocr_blocks"
+  },
+  {
+    "type": "PARAGRAPH",
+    "text": "IMPRESORA: HP LaserJetP1102w",
+    "bbox": {
+      "x0": 324.3551025390625,
+      "y0": 248.14108276367188,
+      "x1": 466.2783508300781,
+      "y1": 259.17327880859375
+    },
+    "page_num": 2,
+    "reading_order": 7,
+    "children": null,
+    "table_data": null,
+    "confidence": null,
+    "manual_required": false,
+    "source_method": "ocr_blocks"
+  },
+  {
+    "type": "PARAGRAPH",
+    "text": "2 \nPAPEL BOND \nTAMANO: A4",
+    "bbox": {
+      "x0": 85.81459045410156,
+      "y0": 261.9410705566406,
+      "x1": 373.86322021484375,
+      "y1": 272.9732666015625
+    },
+    "page_num": 2,
+    "reading_order": 8,
+    "children": null,
+    "table_data": null,
+    "confidence": null,
+    "manual_required": false,
+    "source_method": "ocr_blocks"
+  },
+  {
+    "type": "PARAGRAPH",
+    "text": "GRAMO: 759",
+    "bbox": {
+      "x0": 324.0550842285156,
+      "y0": 277.5411071777344,
+      "x1": 378.0639953613281,
+      "y1": 288.57330322265625
+    },
+    "page_num": 2,
+    "reading_order": 9,
+    "children": null,
+    "table_data": null,
+    "confidence": null,
+    "manual_required": false,
+    "source_method": "ocr_blocks"
+  },
+  {
+    "type": "PARAGRAPH",
+    "text": "3 \nTONER PARA IMPRESORA \nIMPRESORA: HP LASER MFP432FDN",
+    "bbox": {
+      "x0": 85.81459045410156,
+      "y0": 291.3410949707031,
+      "x1": 483.08203125,
+      "y1": 302.373291015625
+    },
+    "page_num": 2,
+    "reading_order": 10,
+    "children": null,
+    "table_data": null,
+    "confidence": null,
+    "manual_required": false,
+    "source_method": "ocr_blocks"
+  },
+  {
+    "type": "PARAGRAPH",
+    "text": "COLOR: N° EGRO",
+    "bbox": {
+      "x0": 324.0550842285156,
+      "y0": 306.9410705566406,
+      "x1": 394.5662536621094,
+      "y1": 317.9732666015625
+    },
+    "page_num": 2,
+    "reading_order": 11,
+    "children": null,
+    "table_data": null,
+    "confidence": null,
+    "manual_required": false,
+    "source_method": "ocr_blocks"
+  },
+  {
+    "type": "PARAGRAPH",
+    "text": "MODELO: MFP432FDN",
+    "bbox": {
+      "x0": 318.9541931152344,
+      "y0": 321.3410949707031,
+      "x1": 415.5689697265625,
+      "y1": 332.373291015625
+    },
+    "page_num": 2,
+    "reading_order": 12,
+    "children": null,
+    "table_data": null,
+    "confidence": null,
+    "manual_required": false,
+    "source_method": "ocr_blocks"
+  },
+  {
+    "type": "PARAGRAPH",
+    "text": "5.3 \nCondiciones de operación",
+    "bbox": {
+      "x0": 69.91188049316406,
+      "y0": 346.58251953125,
+      "x1": 221.93545532226562,
+      "y1": 356.7975158691406
+    },
+    "page_num": 2,
+    "reading_order": 13,
+    "children": null,
+    "table_data": null,
+    "confidence": null,
+    "manual_required": false,
+    "source_method": "ocr_blocks"
+  },
+  {
+    "type": "PARAGRAPH",
+    "text": "5.4 \nSistemas de entrega y/o modalidades de pago",
+    "bbox": {
+      "x0": 69.56083679199219,
+      "y0": 369.6824035644531,
+      "x1": 315.9610900878906,
+      "y1": 381.12884521484375
+    },
+    "page_num": 2,
+    "reading_order": 14,
+    "children": null,
+    "table_data": null,
+    "confidence": null,
+    "manual_required": false,
+    "source_method": "ocr_blocks"
+  },
+  {
+    "type": "PARAGRAPH",
+    "text": "5.5 \nRequisitos según  leyes, reglamentos técnicos,  normas metrológicas y/o sanitarias, reglamentos y demás normas.",
+    "bbox": {
+      "x0": 69.61183166503906,
+      "y0": 393.08251953125,
+      "x1": 536.190185546875,
+      "y1": 414.6095886230469
+    },
+    "page_num": 2,
+    "reading_order": 15,
+    "children": null,
+    "table_data": null,
+    "confidence": null,
+    "manual_required": false,
+    "source_method": "ocr_blocks"
+  },
+  {
+    "type": "PARAGRAPH",
+    "text": "5.6 \nImpacto ambiental",
+    "bbox": {
+      "x0": 69.26122283935547,
+      "y0": 427.6030578613281,
+      "x1": 266.9278564453125,
+      "y1": 438.3973083496094
+    },
+    "page_num": 2,
+    "reading_order": 16,
+    "children": null,
+    "table_data": null,
+    "confidence": null,
+    "manual_required": false,
+    "source_method": "ocr_blocks"
+  },
+  {
+    "type": "PARAGRAPH",
+    "text": "5.7 \nCondiciones de operación",
+    "bbox": {
+      "x0": 69.26122283935547,
+      "y0": 450.403076171875,
+      "x1": 303.83050537109375,
+      "y1": 461.3818054199219
+    },
+    "page_num": 2,
+    "reading_order": 17,
+    "children": null,
+    "table_data": null,
+    "confidence": null,
+    "manual_required": false,
+    "source_method": "ocr_blocks"
+  },
+  {
+    "type": "PARAGRAPH",
+    "text": "5.8 \nEmbalaje y rotulado",
+    "bbox": {
+      "x0": 69.31178283691406,
+      "y0": 473.1825256347656,
+      "x1": 273.8307189941406,
+      "y1": 483.39752197265625
+    },
+    "page_num": 2,
+    "reading_order": 18,
+    "children": null,
+    "table_data": null,
+    "confidence": null,
+    "manual_required": false,
+    "source_method": "ocr_blocks"
+  },
+  {
+    "type": "PARAGRAPH",
+    "text": "5.9 \nModalidad de ejecución",
+    "bbox": {
+      "x0": 68.96116638183594,
+      "y0": 496.3030700683594,
+      "x1": 291.5285339355469,
+      "y1": 507.2218017578125
+    },
+    "page_num": 2,
+    "reading_order": 19,
+    "children": null,
+    "table_data": null,
+    "confidence": null,
+    "manual_required": false,
+    "source_method": "ocr_blocks"
+  },
+  {
+    "type": "PARAGRAPH",
+    "text": "5.10 Transporte",
+    "bbox": {
+      "x0": 68.95853424072266,
+      "y0": 519.0823974609375,
+      "x1": 231.230224609375,
+      "y1": 530.270263671875
+    },
+    "page_num": 2,
+    "reading_order": 20,
+    "children": null,
+    "table_data": null,
+    "confidence": null,
+    "manual_required": false,
+    "source_method": "ocr_blocks"
+  },
+  {
+    "type": "PARAGRAPH",
+    "text": "Seguros",
+    "bbox": {
+      "x0": 96.865478515625,
+      "y0": 542.1824340820312,
+      "x1": 218.92156982421875,
+      "y1": 553.0072021484375
+    },
+    "page_num": 2,
+    "reading_order": 21,
+    "children": null,
+    "table_data": null,
+    "confidence": null,
+    "manual_required": false,
+    "source_method": "ocr_blocks"
+  },
+  {
+    "type": "PARAGRAPH",
+    "text": "osa12\nN° S",
+    "bbox": {
+      "x0": 22.66705894470215,
+      "y0": 563.3790283203125,
+      "x1": 87.31427001953125,
+      "y1": 602.9524536132812
+    },
+    "page_num": 2,
+    "reading_order": 22,
+    "children": null,
+    "table_data": null,
+    "confidence": null,
+    "manual_required": false,
+    "source_method": "ocr_blocks"
+  },
+  {
+    "type": "PARAGRAPH",
+    "text": "garantía comercial",
+    "bbox": {
+      "x0": 96.91647338867188,
+      "y0": 564.9617919921875,
+      "x1": 186.23463439941406,
+      "y1": 575.5853881835938
+    },
+    "page_num": 2,
+    "reading_order": 23,
+    "children": null,
+    "table_data": null,
+    "confidence": null,
+    "manual_required": false,
+    "source_method": "ocr_blocks"
+  },
+  {
+    "type": "PARAGRAPH",
+    "text": "Disponibilidad de servicios y repuestos",
+    "bbox": {
+      "x0": 96.86328125,
+      "y0": 588.0823974609375,
+      "x1": 366.2497253417969,
+      "y1": 599.9129028320312
+    },
+    "page_num": 2,
+    "reading_order": 24,
+    "children": null,
+    "table_data": null,
+    "confidence": null,
+    "manual_required": false,
+    "source_method": "ocr_blocks"
+  },
+  {
+    "type": "PARAGRAPH",
+    "text": "5.14",
+    "bbox": {
+      "x0": 68.71167755126953,
+      "y0": 610.8825073242188,
+      "x1": 87.3148422241211,
+      "y1": 621.0975341796875
+    },
+    "page_num": 2,
+    "reading_order": 25,
+    "children": null,
+    "table_data": null,
+    "confidence": null,
+    "manual_required": false,
+    "source_method": "ocr_blocks"
+  },
+  {
+    "type": "PARAGRAPH",
+    "text": "Muestras",
+    "bbox": {
+      "x0": 96.56542205810547,
+      "y0": 611.1824340820312,
+      "x1": 222.22207641601562,
+      "y1": 622.0252075195312
+    },
+    "page_num": 2,
+    "reading_order": 26,
+    "children": null,
+    "table_data": null,
+    "confidence": null,
+    "manual_required": false,
+    "source_method": "ocr_blocks"
+  },
+  {
+    "type": "PARAGRAPH",
+    "text": "Acondicionamientos, montaje o instalación",
+    "bbox": {
+      "x0": 95.96532440185547,
+      "y0": 633.6824340820312,
+      "x1": 383.9468688964844,
+      "y1": 645.336669921875
+    },
+    "page_num": 2,
+    "reading_order": 27,
+    "children": null,
+    "table_data": null,
+    "confidence": null,
+    "manual_required": false,
+    "source_method": "ocr_blocks"
+  },
+  {
+    "type": "PARAGRAPH",
+    "text": "5.15",
+    "bbox": {
+      "x0": 68.25787353515625,
+      "y0": 633.7023315429688,
+      "x1": 87.01579284667969,
+      "y1": 643.8049926757812
+    },
+    "page_num": 2,
+    "reading_order": 28,
+    "children": null,
+    "table_data": null,
+    "confidence": null,
+    "manual_required": false,
+    "source_method": "ocr_blocks"
+  },
+  {
+    "type": "PARAGRAPH",
+    "text": "5.16",
+    "bbox": {
+      "x0": 68.41162872314453,
+      "y0": 656.1824951171875,
+      "x1": 87.0147933959961,
+      "y1": 666.3975219726562
+    },
+    "page_num": 2,
+    "reading_order": 29,
+    "children": null,
+    "table_data": null,
+    "confidence": null,
+    "manual_required": false,
+    "source_method": "ocr_blocks"
+  },
+  {
+    "type": "PARAGRAPH",
+    "text": "Prestaciones accesorias a la prestación principal \n5.16.1 \nMantenimiento preventivo\n5.16.2 \nSoporte técnico\n5.16.3 Capacitación y/o entrenamiento",
+    "bbox": {
+      "x0": 77.35997009277344,
+      "y0": 656.5031127929688,
+      "x1": 417.8734130859375,
+      "y1": 701.3877563476562
+    },
+    "page_num": 2,
+    "reading_order": 30,
+    "children": null,
+    "table_data": null,
+    "confidence": null,
+    "manual_required": false,
+    "source_method": "ocr_blocks"
+  }
+]
+
+--- Section 7: CRONOGRAMA DE ENTREGA (VI) ---
+
+--- Section 8: REQUISITOS Y RECURSOS DEL PROVEEDOR (VII) ---
+
+--- Section 9: LUGAR Y PLAZO DE LA PRESTACIÓN (VIII) ---
+
+--- Section 10: X. (I) ---
+
+--- Section 11: FORMA DE PAGO (X) ---
+
+--- Section 12: CONSIDERACIONES PARA LA EJECUCIÓN CONTRACTUAL (XI) ---
+=== ANCHOR D ===
+[
+  {
+    "type": "HEADING",
+    "text": "XI. CONSIDERACIONES PARA LA EJECUCIÓN CONTRACTUAL (obligatorio)",
+    "bbox": {
+      "x0": 69.22100830078125,
+      "y0": 340.4808349609375,
+      "x1": 431.6307067871094,
+      "y1": 354.45648193359375
+    },
+    "page_num": 4,
+    "reading_order": 8,
+    "children": null,
+    "table_data": null,
+    "confidence": null,
+    "manual_required": false,
+    "source_method": "ocr_blocks"
+  },
+  {
+    "type": "PARAGRAPH",
+    "text": "10.1. \nConfidencialidad",
+    "bbox": {
+      "x0": 75.53397369384766,
+      "y0": 370.2393798828125,
+      "x1": 267.2594909667969,
+      "y1": 381.60302734375
+    },
+    "page_num": 4,
+    "reading_order": 9,
+    "children": null,
+    "table_data": null,
+    "confidence": null,
+    "manual_required": false,
+    "source_method": "ocr_blocks"
+  },
+  {
+    "type": "PARAGRAPH",
+    "text": "El/La PROVEEDOR no deberá divulgar, revelar, entregar o poner a disposición de terceros, dentro o fuera de la entidad, salvo autorización expresa de la misma, la información proporcionada por esta, para la prestación del servicio y en general toda la información a la que tenga acceso o la que pudiera producir con ocasión del servicio que presta, durante y después de concluida la vigencia del presente documento. Dicha información puede consistir en fotografías, informes, material video gráfico, documentos y otros similares.",
+    "bbox": {
+      "x0": 92.594482421875,
+      "y0": 393.3365173339844,
+      "x1": 536.9243774414062,
+      "y1": 462.3243103027344
+    },
+    "page_num": 4,
+    "reading_order": 10,
+    "children": null,
+    "table_data": null,
+    "confidence": null,
+    "manual_required": false,
+    "source_method": "ocr_blocks"
+  },
+  {
+    "type": "PARAGRAPH",
+    "text": "10.2. \nGarantías",
+    "bbox": {
+      "x0": 74.92144775390625,
+      "y0": 472.423583984375,
+      "x1": 176.58755493164062,
+      "y1": 485.28948974609375
+    },
+    "page_num": 4,
+    "reading_order": 11,
+    "children": null,
+    "table_data": null,
+    "confidence": null,
+    "manual_required": false,
+    "source_method": "ocr_blocks"
+  },
+  {
+    "type": "PARAGRAPH",
+    "text": "N° o corresponde a Contratos Menores",
+    "bbox": {
+      "x0": 60.523712158203125,
+      "y0": 496.50347900390625,
+      "x1": 226.94976806640625,
+      "y1": 508.2900695800781
+    },
+    "page_num": 4,
+    "reading_order": 12,
+    "children": null,
+    "table_data": null,
+    "confidence": null,
+    "manual_required": false,
+    "source_method": "ocr_blocks"
+  },
+  {
+    "type": "PARAGRAPH",
+    "text": "10.3. \nCláusula anticorrupción y antisoborno.\nEL PROVEDOR, declara y garantiza no haber, directa o indirectamente, o tratándose de una persona jurídica a través de sus socios, integrantes de los órganos de administración, apoderados,",
+    "bbox": {
+      "x0": 74.62360382080078,
+      "y0": 519.6007080078125,
+      "x1": 535.7257080078125,
+      "y1": 556.4310913085938
+    },
+    "page_num": 4,
+    "reading_order": 13,
+    "children": null,
+    "table_data": null,
+    "confidence": null,
+    "manual_required": false,
+    "source_method": "ocr_blocks"
+  },
+  {
+    "type": "PARAGRAPH",
+    "text": "representantes legales, funcionarios, asesores o personas vinculadas a las que se refiere el artículo del Reglamento de la Ley General de Contrataciones Publicas, ofrecido, negociado o efectuado, cualquier pago o, en general, cualquier beneficio o incentivo ilegal en relación con el contrato.",
+    "bbox": {
+      "x0": 91.71903228759766,
+      "y0": 554.7378540039062,
+      "x1": 535.7019653320312,
+      "y1": 590.23486328125
+    },
+    "page_num": 4,
+    "reading_order": 14,
+    "children": null,
+    "table_data": null,
+    "confidence": null,
+    "manual_required": false,
+    "source_method": "ocr_blocks"
+  },
+  {
+    "type": "PARAGRAPH",
+    "text": "AN El/la proveedor/a acepta expresamente que él/ella, su(s) socio(s)a(s), o su(s) representantes(s) no",
+    "bbox": {
+      "x0": 71.55767822265625,
+      "y0": 592.3157348632812,
+      "x1": 535.4683837890625,
+      "y1": 615.5808715820312
+    },
+    "page_num": 4,
+    "reading_order": 15,
+    "children": null,
+    "table_data": null,
+    "confidence": null,
+    "manual_required": false,
+    "source_method": "ocr_blocks"
+  },
+  {
+    "type": "PARAGRAPH",
+    "text": "- Mlevará(n) a cabo acciones que están prohibidas por las leyes y otras normas de anticorrupción, así",
+    "bbox": {
+      "x0": 77.0029067993164,
+      "y0": 606.921142578125,
+      "x1": 535.435791015625,
+      "y1": 626.062744140625
+    },
+    "page_num": 4,
+    "reading_order": 16,
+    "children": null,
+    "table_data": null,
+    "confidence": null,
+    "manual_required": false,
+    "source_method": "ocr_blocks"
+  },
+  {
+    "type": "PARAGRAPH",
+    "text": "¡también se obliga(n) a no efectuar algún pago, ni ofrecer o transferir algún valor, o cualquier beneficio",
+    "bbox": {
+      "x0": 86.61927032470703,
+      "y0": 622.4883422851562,
+      "x1": 535.415283203125,
+      "y1": 636.2517700195312
+    },
+    "page_num": 4,
+    "reading_order": 17,
+    "children": null,
+    "table_data": null,
+    "confidence": null,
+    "manual_required": false,
+    "source_method": "ocr_blocks"
+  },
+  {
+    "type": "PARAGRAPH",
+    "text": "O incentivo, directa o indirectamente, a un funcionario(a) \n- empleado/a gubernamental o cualquier tercero/a relacionado/a con el servicio aquí establecido de manera que pudiese violar las leyes u otras",
+    "bbox": {
+      "x0": 91.11974334716797,
+      "y0": 634.2077026367188,
+      "x1": 535.7134399414062,
+      "y1": 658.8429565429688
+    },
+    "page_num": 4,
+    "reading_order": 18,
+    "children": null,
+    "table_data": null,
+    "confidence": null,
+    "manual_required": false,
+    "source_method": "ocr_blocks"
+  },
+  {
+    "type": "PARAGRAPH",
+    "text": "normas anticorrupción, sin restricción alguna. Asimismo, el/la proveedor/a acepta conducirse, durante la ejecución de la prestación con honestidad, probidad, veracidad e integridad y de no cometer actos ilegales o de corrupción, directa o indirectamente, o a través de sus socios(as), accionistas, participantes, integrantes de los órganos de administración, apoderados/as, representantes legales, funcionarios(as), asesores/as y personas vinculadas, en concordancia a lo establecido en el artículo",
+    "bbox": {
+      "x0": 90.51860809326172,
+      "y0": 657.6463012695312,
+      "x1": 535.2808227539062,
+      "y1": 716.6085205078125
+    },
+    "page_num": 4,
+    "reading_order": 19,
+    "children": null,
+    "table_data": null,
+    "confidence": null,
+    "manual_required": false,
+    "source_method": "ocr_blocks"
+  },
+  {
+    "type": "PARAGRAPH",
+    "text": "N° 30 de la Ley N° 32069 Ley General de Contrataciones Publicas. El/la proveedor/a, socios/as, o su(s) representante(s) se compromete(n)  a comunicar a las autoridades competentes, de manera",
+    "bbox": {
+      "x0": 90.81918334960938,
+      "y0": 714.27734375,
+      "x1": 534.6934814453125,
+      "y1": 739.3170166015625
+    },
+    "page_num": 4,
+    "reading_order": 20,
+    "children": null,
+    "table_data": null,
+    "confidence": null,
+    "manual_required": false,
+    "source_method": "ocr_blocks"
+  },
+  {
+    "type": "PARAGRAPH",
+    "text": "3 En caso de que el plazo obtenido como lt d d l li ió d l j",
+    "bbox": {
+      "x0": 88.10761260986328,
+      "y0": 755.7550659179688,
+      "x1": 373.9375305175781,
+      "y1": 767.3148193359375
+    },
+    "page_num": 4,
+    "reading_order": 21,
+    "children": null,
+    "table_data": null,
+    "confidence": null,
+    "manual_required": false,
+    "source_method": "ocr_blocks"
+  },
+  {
+    "type": "PARAGRAPH",
+    "text": "directa y oportuna, cualquier acto o conducta ilícita o corrupta de la que tuviera conocimiento; además, de adoptar medidas técnicas, organizativas y/o de personal apropiadas para evitar los referidos actos",
+    "bbox": {
+      "x0": 104.98214721679688,
+      "y0": 81.38252258300781,
+      "x1": 551.0057373046875,
+      "y1": 102.99748992919922
+    },
+    "page_num": 5,
+    "reading_order": 1,
+    "children": null,
+    "table_data": null,
+    "confidence": null,
+    "manual_required": false,
+    "source_method": "ocr_blocks"
+  },
+  {
+    "type": "PARAGRAPH",
+    "text": "- prácticas. El incumplimiento de las mencionadas clausulas, durante la ejecución contractual, da derecho a que esta entidad resuelva automáticamente el contrato contenido en una orden de compra",
+    "bbox": {
+      "x0": 104.98214721679688,
+      "y0": 104.48249816894531,
+      "x1": 550.8880004882812,
+      "y1": 126.39751434326172
+    },
+    "page_num": 5,
+    "reading_order": 2,
+    "children": null,
+    "table_data": null,
+    "confidence": null,
+    "manual_required": false,
+    "source_method": "ocr_blocks"
+  },
+  {
+    "type": "PARAGRAPH",
+    "text": "u orden de servicio y de pleno derecho, bastando la sola comunicación a el/la proveedor/a, o su(s) representante(s) informando el hecho y que se ha producido dicha resolución, sin perjuicio de las acciones civiles, penales y administrativas a que hubiere lugar.",
+    "bbox": {
+      "x0": 104.68219757080078,
+      "y0": 127.58247375488281,
+      "x1": 551.0067749023438,
+      "y1": 160.8975067138672
+    },
+    "page_num": 5,
+    "reading_order": 3,
+    "children": null,
+    "table_data": null,
+    "confidence": null,
+    "manual_required": false,
+    "source_method": "ocr_blocks"
+  },
+  {
+    "type": "PARAGRAPH",
+    "text": "10.4. \nSolución de controversias",
+    "bbox": {
+      "x0": 87.28516387939453,
+      "y0": 172.49969482421875,
+      "x1": 268.56817626953125,
+      "y1": 184.34909057617188
+    },
+    "page_num": 5,
+    "reading_order": 4,
+    "children": null,
+    "table_data": null,
+    "confidence": null,
+    "manual_required": false,
+    "source_method": "ocr_blocks"
+  },
+  {
+    "type": "PARAGRAPH",
+    "text": "Las controversias que surjan entre las partes durante la ejecución del contrato se resuelven mediante conciliación según el acuerdo de las partes.",
+    "bbox": {
+      "x0": 104.68219757080078,
+      "y0": 196.8825225830078,
+      "x1": 550.705322265625,
+      "y1": 218.79747009277344
+    },
+    "page_num": 5,
+    "reading_order": 5,
+    "children": null,
+    "table_data": null,
+    "confidence": null,
+    "manual_required": false,
+    "source_method": "ocr_blocks"
+  },
+  {
+    "type": "PARAGRAPH",
+    "text": "Todas las controversias que surjan entre las partes sobre la validez, nulidad, interpretación, ejecución, terminación o eficacia de los contratos menores se resuelven mediante conciliación (artículo. 330.1",
+    "bbox": {
+      "x0": 104.38225555419922,
+      "y0": 231.68251037597656,
+      "x1": 550.1055908203125,
+      "y1": 253.6854248046875
+    },
+    "page_num": 5,
+    "reading_order": 6,
+    "children": null,
+    "table_data": null,
+    "confidence": null,
+    "manual_required": false,
+    "source_method": "ocr_blocks"
+  },
+  {
+    "type": "PARAGRAPH",
+    "text": "Decreto Supremo N° 009-2025-EF).",
+    "bbox": {
+      "x0": 104.98214721679688,
+      "y0": 254.78248596191406,
+      "x1": 263.45428466796875,
+      "y1": 264.99749755859375
+    },
+    "page_num": 5,
+    "reading_order": 7,
+    "children": null,
+    "table_data": null,
+    "confidence": null,
+    "manual_required": false,
+    "source_method": "ocr_blocks"
+  },
+  {
+    "type": "PARAGRAPH",
+    "text": "10.5. \nResolución de contrato por incumplimiento",
+    "bbox": {
+      "x0": 86.98521423339844,
+      "y0": 277.56182861328125,
+      "x1": 349.7379455566406,
+      "y1": 288.1854248046875
+    },
+    "page_num": 5,
+    "reading_order": 8,
+    "children": null,
+    "table_data": null,
+    "confidence": null,
+    "manual_required": false,
+    "source_method": "ocr_blocks"
+  },
+  {
+    "type": "PARAGRAPH",
+    "text": "Cualquiera de las partes puede resolver el contrato, de conformidad con el numeral 68.1 del artículo\n68 de la Ley N° 32069, Ley General de Contrataciones Públicas.",
+    "bbox": {
+      "x0": 104.38225555419922,
+      "y0": 300.6825256347656,
+      "x1": 550.7069702148438,
+      "y1": 322.6854248046875
+    },
+    "page_num": 5,
+    "reading_order": 9,
+    "children": null,
+    "table_data": null,
+    "confidence": null,
+    "manual_required": false,
+    "source_method": "ocr_blocks"
+  },
+  {
+    "type": "PARAGRAPH",
+    "text": "De encontrarse en alguno de los supuestos de resolución del contrato, LAS PARTES proceden de acuerdo con lo establecido en el artículo 122 del Reglamento de la Ley N° 32069, Ley General de\nContrataciones Públicas, aprobado por Decreto Supremo N° 009-2025-EF. Por ende, cualquiera de las partes puede resolver, total o parcialmente, el contrato en los siguientes supuestos:",
+    "bbox": {
+      "x0": 104.38225555419922,
+      "y0": 335.16180419921875,
+      "x1": 550.7066650390625,
+      "y1": 380.58538818359375
+    },
+    "page_num": 5,
+    "reading_order": 10,
+    "children": null,
+    "table_data": null,
+    "confidence": null,
+    "manual_required": false,
+    "source_method": "ocr_blocks"
+  },
+  {
+    "type": "PARAGRAPH",
+    "text": "Se puede resolver la contratación, en los siguientes casos:",
+    "bbox": {
+      "x0": 104.38225555419922,
+      "y0": 393.08251953125,
+      "x1": 364.73870849609375,
+      "y1": 403.2975158691406
+    },
+    "page_num": 5,
+    "reading_order": 11,
+    "children": null,
+    "table_data": null,
+    "confidence": null,
+    "manual_required": false,
+    "source_method": "ocr_blocks"
+  },
+  {
+    "type": "LIST_ITEM",
+    "text": "a) \nPor incumplimiento de alguna de LAS PARTES de las obligaciones asumidas en los términos\nde referencia, para lo cual la parte perjudicada con el incumplimiento deberá notificar a la otra\nparte comunicando la causal invocada.",
+    "bbox": {
+      "x0": 122.37919616699219,
+      "y0": 415.86181640625,
+      "x1": 550.8818969726562,
+      "y1": 449.58538818359375
+    },
+    "page_num": 5,
+    "reading_order": 12,
+    "children": null,
+    "table_data": null,
+    "confidence": null,
+    "manual_required": false,
+    "source_method": "ocr_blocks"
+  },
+  {
+    "type": "LIST_ITEM",
+    "text": "b) \nPor incumplimiento del requerimiento de presentar la Declaración Jurada de Intereses\nconforme el numeral 11.5 del artículo 11 del Reglamento del Decreto de Urgencia 020-2019",
+    "bbox": {
+      "x0": 122.37919616699219,
+      "y0": 462.0617980957031,
+      "x1": 550.889892578125,
+      "y1": 483.99749755859375
+    },
+    "page_num": 5,
+    "reading_order": 13,
+    "children": null,
+    "table_data": null,
+    "confidence": null,
+    "manual_required": false,
+    "source_method": "ocr_blocks"
+  },
+  {
+    "type": "PARAGRAPH",
+    "text": "O la presentación de la Declaración Jurada de Interés con información inexacta o falsa, solo en el caso que el servicio sea prestado por persona natural con obligación de presentar declaración jurada de intereses de acuerdo con lo señalado por el área usuaria.",
+    "bbox": {
+      "x0": 140.37612915039062,
+      "y0": 485.16180419921875,
+      "x1": 551.1871337890625,
+      "y1": 518.7974853515625
+    },
+    "page_num": 5,
+    "reading_order": 14,
+    "children": null,
+    "table_data": null,
+    "confidence": null,
+    "manual_required": false,
+    "source_method": "ocr_blocks"
+  },
+  {
+    "type": "LIST_ITEM",
+    "text": "c) \nLa Dirección Regional Agraria Amazonas puede resolver la contratación cuando la penalidad\naplicada excede el 10% del monto contractual.",
+    "bbox": {
+      "x0": 122.37919616699219,
+      "y0": 531.6824951171875,
+      "x1": 550.4063110351562,
+      "y1": 553.6854248046875
+    },
+    "page_num": 5,
+    "reading_order": 15,
+    "children": null,
+    "table_data": null,
+    "confidence": null,
+    "manual_required": false,
+    "source_method": "ocr_blocks"
+  },
+  {
+    "type": "LIST_ITEM",
+    "text": "d) \nDe corresponder a servicios profesionales de asesoría, servicios de consultoría y servicios\nlegales: la presentación con información inexacta o falsa de la Declaración Jurada de\nProhibiciones e Incompatibilidades a que se hace referencia en la Ley de prevención y\nmitigación del conflicto de intereses en el acceso y salida de personal del servicio público.\nAsimismo, en caso se incumpla con los impedimentos señalados en el artículo 5 de dicha ley\nse aplicará la inhabilitación por cinco años para contratar o prestar servicios al Estado, bajo\ncualquier modalidad.",
+    "bbox": {
+      "x0": 122.37919616699219,
+      "y0": 566.1618041992188,
+      "x1": 551.1891479492188,
+      "y1": 646.0853881835938
+    },
+    "page_num": 5,
+    "reading_order": 16,
+    "children": null,
+    "table_data": null,
+    "confidence": null,
+    "manual_required": false,
+    "source_method": "ocr_blocks"
+  },
+  {
+    "type": "LIST_ITEM",
+    "text": "e) \nParalización o reducción injustificada de la ejecución de la prestación, pese a haber sido\nrequerido para corregir tal situación.",
+    "bbox": {
+      "x0": 122.37919616699219,
+      "y0": 658.5824584960938,
+      "x1": 551.0068969726562,
+      "y1": 680.197509765625
+    },
+    "page_num": 5,
+    "reading_order": 17,
+    "children": null,
+    "table_data": null,
+    "confidence": null,
+    "manual_required": false,
+    "source_method": "ocr_blocks"
+  },
+  {
+    "type": "LIST_ITEM",
+    "text": "f) \nPor mutuo acuerdo entre el proveedor y la Dirección Regional Agraria Amazonas, previa\nsolicitud el área usuaria.",
+    "bbox": {
+      "x0": 122.07923889160156,
+      "y0": 693.0824584960938,
+      "x1": 551.0699462890625,
+      "y1": 715.0853881835938
+    },
+    "page_num": 5,
+    "reading_order": 18,
+    "children": null,
+    "table_data": null,
+    "confidence": null,
+    "manual_required": false,
+    "source_method": "ocr_blocks"
+  },
+  {
+    "type": "LIST_ITEM",
+    "text": "g) \nPor caso fortuito o fuerza mayor, que imposibilite a la Dirección Regional Agraria Amazonas\nde manera definitiva continuar con la contratación.",
+    "bbox": {
+      "x0": 122.37919616699219,
+      "y0": 727.5824584960938,
+      "x1": 551.0048828125,
+      "y1": 749.5853881835938
+    },
+    "page_num": 5,
+    "reading_order": 19,
+    "children": null,
+    "table_data": null,
+    "confidence": null,
+    "manual_required": false,
+    "source_method": "ocr_blocks"
+  },
+  {
+    "type": "PARAGRAPH",
+    "text": "10.6. \nGestión de riesgos",
+    "bbox": {
+      "x0": 71.69999694824219,
+      "y0": 99.35128021240234,
+      "x1": 216.89865112304688,
+      "y1": 109.97360229492188
+    },
+    "page_num": 6,
+    "reading_order": 1,
+    "children": null,
+    "table_data": null,
+    "confidence": null,
+    "manual_required": false,
+    "source_method": "ocr_blocks"
+  },
+  {
+    "type": "PARAGRAPH",
+    "text": "Durante la vigencia del presente contrato, ambas partes —la Entidad Contratante y el Proveedor— acuerdan aplicar un enfoque de gestión de riesgos en todas las etapas del proceso de adquisición de bienes. Esta gestión tiene por finalidad identificar de manera oportuna los factores que puedan afectar el cumplimiento eficiente del contrato y, a su vez, generar acciones preventivas y correctivas que aseguren el logro de los objetivos contractuales y la adecuada utilización de los recursos públicos.",
+    "bbox": {
+      "x0": 89.4000015258789,
+      "y0": 118.60453796386719,
+      "x1": 533.7821655273438,
+      "y1": 179.91683959960938
+    },
+    "page_num": 6,
+    "reading_order": 2,
+    "children": null,
+    "table_data": null,
+    "confidence": null,
+    "manual_required": false,
+    "source_method": "ocr_blocks"
+  },
+  {
+    "type": "PARAGRAPH",
+    "text": "En virtud de ello, dentro de los primeros quince días calendario contados desde la suscripción del contrato, ambas partes llevarán a cabo un proceso conjunto de identificación y análisis de los principales riesgos asociados a la adquisición, transporte, entrega y recepción de los bienes. Como resultado de este ejercicio, se elaborará un registro que incluirá los riesgos identificados, su nivel de criticidad y posibles consecuencias.",
+    "bbox": {
+      "x0": 90.0,
+      "y0": 190.73680114746094,
+      "x1": 533.400390625,
+      "y1": 248.55697631835938
+    },
+    "page_num": 6,
+    "reading_order": 3,
+    "children": null,
+    "table_data": null,
+    "confidence": null,
+    "manual_required": false,
+    "source_method": "ocr_blocks"
+  },
+  {
+    "type": "PARAGRAPH",
+    "text": "Con base en dicho registro, el Proveedor presentará un plan de gestión de riesgos que contenga las medidas propuestas para prevenir, mitigar o enfrentar cada uno de los riesgos señalados. Este plan deberá ser revisado y validado por la Entidad Contratante en un plazo no mayor de diez días hábiles.\nLas medidas allí contenidas serán de aplicación obligatoria y formarán parte integral de la ejecución contractual.",
+    "bbox": {
+      "x0": 90.2499771118164,
+      "y0": 259.7492370605469,
+      "x1": 533.7010498046875,
+      "y1": 318.1485595703125
+    },
+    "page_num": 6,
+    "reading_order": 4,
+    "children": null,
+    "table_data": null,
+    "confidence": null,
+    "manual_required": false,
+    "source_method": "ocr_blocks"
+  },
+  {
+    "type": "PARAGRAPH",
+    "text": "Durante el desarrollo del contrato, el plan de gestión de riesgos será objeto de seguimiento y revisión periódica. La frecuencia de dicha revisión será, como mínimo, trimestral o, en su defecto, cada vez que se produzca un evento que altere significativamente el entorno o condiciones del contrato.\nCualquier nuevo riesgo identificado deberá ser reportado de inmediato por el Proveedor, proponiéndose las medidas pertinentes para su tratamiento.",
+    "bbox": {
+      "x0": 90.5999984741211,
+      "y0": 329.6822509765625,
+      "x1": 535.8883056640625,
+      "y1": 386.92828369140625
+    },
+    "page_num": 6,
+    "reading_order": 5,
+    "children": null,
+    "table_data": null,
+    "confidence": null,
+    "manual_required": false,
+    "source_method": "ocr_blocks"
+  },
+  {
+    "type": "PARAGRAPH",
+    "text": "Finalmente, el incumplimiento injustificado de las medidas previstas en el plan de gestión de riesgos por parte del Proveedor será considerado una infracción a las obligaciones contractuales, y podrá dar lugar a la aplicación de las penalidades correspondientes o, de ser el caso, a la resolución del contrato, sin perjuicio de otras acciones legales que resulten aplicables.",
+    "bbox": {
+      "x0": 90.9000015258789,
+      "y0": 398.3533020019531,
+      "x1": 534.8994750976562,
+      "y1": 444.5213623046875
+    },
+    "page_num": 6,
+    "reading_order": 6,
+    "children": null,
+    "table_data": null,
+    "confidence": null,
+    "manual_required": false,
+    "source_method": "ocr_blocks"
+  },
+  {
+    "type": "PARAGRAPH",
+    "text": "10.7. \nCláusula de cumplimiento",
+    "bbox": {
+      "x0": 73.5,
+      "y0": 456.58770751953125,
+      "x1": 308.10198974609375,
+      "y1": 467.61859130859375
+    },
+    "page_num": 6,
+    "reading_order": 7,
+    "children": null,
+    "table_data": null,
+    "confidence": null,
+    "manual_required": false,
+    "source_method": "ocr_blocks"
+  },
+  {
+    "type": "PARAGRAPH",
+    "text": "Son causales de resolución de contrato la presentación con información inexacta o falsa de la\nDeclaración Jurada de Prohibiciones e Incompatibilidades a que se hace referencia en la Ley N° 31564, Ley de prevención y mitigación del conflicto de intereses en el acceso y salida de personal del servicio público. Asimismo, en caso se incumpla con los impedimentos señalados en el artículo 5 de dicha ley se aplicará la inhabilitación por cinco años para contratar o prestar servicios al Estado, bajo cualquier modalidad.",
+    "bbox": {
+      "x0": 90.9000015258789,
+      "y0": 479.34356689453125,
+      "x1": 534.900146484375,
+      "y1": 548.2210693359375
+    },
+    "page_num": 6,
+    "reading_order": 8,
+    "children": null,
+    "table_data": null,
+    "confidence": null,
+    "manual_required": false,
+    "source_method": "ocr_blocks"
+  },
+  {
+    "type": "LIST_ITEM",
+    "text": "3403. \nMedidas de control durante la ejecución contractual",
+    "bbox": {
+      "x0": 54.29999923706055,
+      "y0": 555.5653076171875,
+      "x1": 378.4972839355469,
+      "y1": 572.7244262695312
+    },
+    "page_num": 6,
+    "reading_order": 9,
+    "children": null,
+    "table_data": null,
+    "confidence": null,
+    "manual_required": false,
+    "source_method": "ocr_blocks"
+  },
+  {
+    "type": "PARAGRAPH",
+    "text": "[En función a la naturaleza de los servicios y la necesidad, determinar las medidas de control (visitas de supervisión, inspección, entre otros), a ser realizadas durante la ejecución del contrato, es decir, durante el desarrollo del servicio. Las medidas de control están orientadas a verificar el cumplimiento de las condiciones establecidas en el contrato.",
+    "bbox": {
+      "x0": 91.19999694824219,
+      "y0": 582.8518676757812,
+      "x1": 536.1166381835938,
+      "y1": 628.6113891601562
+    },
+    "page_num": 6,
+    "reading_order": 10,
+    "children": null,
+    "table_data": null,
+    "confidence": null,
+    "manual_required": false,
+    "source_method": "ocr_blocks"
+  },
+  {
+    "type": "PARAGRAPH",
+    "text": "",
+    "bbox": {
+      "x0": 8.723999977111816,
+      "y0": 583.4351806640625,
+      "x1": 14.17199993133545,
+      "y1": 588.5308227539062
+    },
+    "page_num": 6,
+    "reading_order": 11,
+    "children": null,
+    "table_data": null,
+    "confidence": null,
+    "manual_required": false,
+    "source_method": "ocr_blocks"
+  },
+  {
+    "type": "PARAGRAPH",
+    "text": "Asimismo, indicar si estas serán programadas o inopinadas, cuántas serán como mínimo, quién las",
+    "bbox": {
+      "x0": 91.19999694824219,
+      "y0": 640.14501953125,
+      "x1": 535.2002563476562,
+      "y1": 651.5844116210938
+    },
+    "page_num": 6,
+    "reading_order": 12,
+    "children": null,
+    "table_data": null,
+    "confidence": null,
+    "manual_required": false,
+    "source_method": "ocr_blocks"
+  },
+  {
+    "type": "PARAGRAPH",
+    "text": "realizará (personal de la Entidad y/o a través de terceros), dónde se realizará, cuándo se realizará\n(en caso de ser programadas) y cuál será el alcance de las mismas (si se utilizará alguna normativa para su realización, entre otros).",
+    "bbox": {
+      "x0": 91.5,
+      "y0": 651.8643188476562,
+      "x1": 535.567138671875,
+      "y1": 685.6045532226562
+    },
+    "page_num": 6,
+    "reading_order": 13,
+    "children": null,
+    "table_data": null,
+    "confidence": null,
+    "manual_required": false,
+    "source_method": "ocr_blocks"
+  },
+  {
+    "type": "PARAGRAPH",
+    "text": "Asimismo, considerar aspectos relativos al desarrollo de las medidas de control, para lo cual indicar con claridad:",
+    "bbox": {
+      "x0": 91.19999694824219,
+      "y0": 697.4588623046875,
+      "x1": 535.8007202148438,
+      "y1": 719.7125854492188
+    },
+    "page_num": 6,
+    "reading_order": 14,
+    "children": null,
+    "table_data": null,
+    "confidence": null,
+    "manual_required": false,
+    "source_method": "ocr_blocks"
+  },
+  {
+    "type": "PARAGRAPH",
+    "text": "- Áreas que coordinarán con el PROVEEDOR: Señalar las áreas o unidades orgánicas con las que el PROVEEDOR coordinará sus actividades.",
+    "bbox": {
+      "x0": 109.5,
+      "y0": 719.5733642578125,
+      "x1": 535.1995849609375,
+      "y1": 743.58544921875
+    },
+    "page_num": 6,
+    "reading_order": 15,
+    "children": null,
+    "table_data": null,
+    "confidence": null,
+    "manual_required": false,
+    "source_method": "ocr_blocks"
+  },
+  {
+    "type": "PARAGRAPH",
+    "text": "- Áreas responsables de las medidas de control: Señalar el área o unidad orgánica responsable de las medidas de control previstas durante el desarrollo del servicio y/o en otro momento",
+    "bbox": {
+      "x0": 109.80000305175781,
+      "y0": 743.2705078125,
+      "x1": 535.3833618164062,
+      "y1": 766.9826049804688
+    },
+    "page_num": 6,
+    "reading_order": 16,
+    "children": null,
+    "table_data": null,
+    "confidence": null,
+    "manual_required": false,
+    "source_method": "ocr_blocks"
+  },
+  {
+    "type": "PARAGRAPH",
+    "text": "- Área que brindará la conformidad: Señalar al área o unidad orgánica responsable de emitir la conformidad (área usuaria)]",
+    "bbox": {
+      "x0": 122.42080688476562,
+      "y0": 81.55830383300781,
+      "x1": 550.2935180664062,
+      "y1": 105.48541259765625
+    },
+    "page_num": 7,
+    "reading_order": 1,
+    "children": null,
+    "table_data": null,
+    "confidence": null,
+    "manual_required": false,
+    "source_method": "ocr_blocks"
+  },
+  {
+    "type": "PARAGRAPH",
+    "text": "10.9. \nRecursos y facilidades para proveer por la Entidad",
+    "bbox": {
+      "x0": 87.01478576660156,
+      "y0": 118.28248596191406,
+      "x1": 467.06585693359375,
+      "y1": 128.4974822998047
+    },
+    "page_num": 7,
+    "reading_order": 2,
+    "children": null,
+    "table_data": null,
+    "confidence": null,
+    "manual_required": false,
+    "source_method": "ocr_blocks"
+  },
+  {
+    "type": "PARAGRAPH",
+    "text": "10.10. \nResponsabilidad por vicios ocultos",
+    "bbox": {
+      "x0": 87.01478576660156,
+      "y0": 139.7996826171875,
+      "x1": 366.664306640625,
+      "y1": 151.64907836914062
+    },
+    "page_num": 7,
+    "reading_order": 3,
+    "children": null,
+    "table_data": null,
+    "confidence": null,
+    "manual_required": false,
+    "source_method": "ocr_blocks"
+  },
+  {
+    "type": "PARAGRAPH",
+    "text": "La recepción conforme de la prestación por parte de LA ENTIDAD no enerva su derecho a reclamar posteriormente por defectos o vicios ocultos, conforme a lo dispuesto por los artículos 69 de la Ley",
+    "bbox": {
+      "x0": 104.4177474975586,
+      "y0": 164.16180419921875,
+      "x1": 551.0780639648438,
+      "y1": 186.09751892089844
+    },
+    "page_num": 7,
+    "reading_order": 4,
+    "children": null,
+    "table_data": null,
+    "confidence": null,
+    "manual_required": false,
+    "source_method": "ocr_blocks"
+  },
+  {
+    "type": "PARAGRAPH",
+    "text": "N° 32069, Ley General de Contrataciones Públicas y el artículo 144 de su Reglamento.",
+    "bbox": {
+      "x0": 104.4177474975586,
+      "y0": 187.26177978515625,
+      "x1": 490.8853759765625,
+      "y1": 197.8853759765625
+    },
+    "page_num": 7,
+    "reading_order": 5,
+    "children": null,
+    "table_data": null,
+    "confidence": null,
+    "manual_required": false,
+    "source_method": "ocr_blocks"
+  },
+  {
+    "type": "PARAGRAPH",
+    "text": "El/La PROVEEDOR es el responsable por la calidad ofrecida y por los vicios ocultos del servicio ofertado por un plazo no menor de un (01) año, contado a partir de la conformidad otorgada por la",
+    "bbox": {
+      "x0": 104.11769104003906,
+      "y0": 210.36181640625,
+      "x1": 550.2933959960938,
+      "y1": 232.6854248046875
+    },
+    "page_num": 7,
+    "reading_order": 6,
+    "children": null,
+    "table_data": null,
+    "confidence": null,
+    "manual_required": false,
+    "source_method": "ocr_blocks"
+  },
+  {
+    "type": "PARAGRAPH",
+    "text": "Entidad).",
+    "bbox": {
+      "x0": 104.34015655517578,
+      "y0": 233.7822723388672,
+      "x1": 142.82591247558594,
+      "y1": 244.3041229248047
+    },
+    "page_num": 7,
+    "reading_order": 7,
+    "children": null,
+    "table_data": null,
+    "confidence": null,
+    "manual_required": false,
+    "source_method": "ocr_blocks"
+  },
+  {
+    "type": "PARAGRAPH",
+    "text": "10.11. \nDeclaración Jurada de Intereses",
+    "bbox": {
+      "x0": 86.71473693847656,
+      "y0": 255.5997314453125,
+      "x1": 351.6617126464844,
+      "y1": 267.4491271972656
+    },
+    "page_num": 7,
+    "reading_order": 8,
+    "children": null,
+    "table_data": null,
+    "confidence": null,
+    "manual_required": false,
+    "source_method": "ocr_blocks"
+  },
+  {
+    "type": "PARAGRAPH",
+    "text": "Son causales de resolución de contrato el incumplimiento del requerimiento de presentar la\nDeclaración Jurada de intereses conforme el numeral 11.5 del artículo 11 del Reglamento del Decreto de Urgencia N° 020-2019, Decreto de Urgencia que establece la obligatoriedad de la presentación de la declaración jurada de intereses en el sector público o la presentación de la declaración Jurada de\nIntereses con información inexacta o falsa.",
+    "bbox": {
+      "x0": 103.8176498413086,
+      "y0": 279.9825134277344,
+      "x1": 550.4788208007812,
+      "y1": 337.08538818359375
+    },
+    "page_num": 7,
+    "reading_order": 9,
+    "children": null,
+    "table_data": null,
+    "confidence": null,
+    "manual_required": false,
+    "source_method": "ocr_blocks"
+  },
+  {
+    "type": "PARAGRAPH",
+    "text": "10.12. \nOtras obligaciones de la Entidad",
+    "bbox": {
+      "x0": 83.71422576904297,
+      "y0": 348.5997009277344,
+      "x1": 380.05096435546875,
+      "y1": 360.4490966796875
+    },
+    "page_num": 7,
+    "reading_order": 10,
+    "children": null,
+    "table_data": null,
+    "confidence": null,
+    "manual_required": false,
+    "source_method": "ocr_blocks"
+  },
+  {
+    "type": "PARAGRAPH",
+    "text": "10.13. \nMedidas de control durante la ejecución contractual",
+    "bbox": {
+      "x0": 83.71422576904297,
+      "y0": 371.39971923828125,
+      "x1": 473.0657043457031,
+      "y1": 383.2491149902344
+    },
+    "page_num": 7,
+    "reading_order": 11,
+    "children": null,
+    "table_data": null,
+    "confidence": null,
+    "manual_required": false,
+    "source_method": "ocr_blocks"
+  }
+]
+
+--- Section 13: PENALIDADES (XII) ---
+=== ANCHOR E ===
+[
+  {
+    "type": "HEADING",
+    "text": "XII. PENALIDADES (obligatorio)",
+    "bbox": {
+      "x0": 79.81356811523438,
+      "y0": 402.0617980957031,
+      "x1": 228.3408660888672,
+      "y1": 412.6853942871094
+    },
+    "page_num": 7,
+    "reading_order": 12,
+    "children": null,
+    "table_data": null,
+    "confidence": null,
+    "manual_required": false,
+    "source_method": "ocr_blocks"
+  },
+  {
+    "type": "PARAGRAPH",
+    "text": "13.1. Penalidad",
+    "bbox": {
+      "x0": 101.417236328125,
+      "y0": 420.0617980957031,
+      "x1": 231.94146728515625,
+      "y1": 430.6853942871094
+    },
+    "page_num": 7,
+    "reading_order": 13,
+    "children": null,
+    "table_data": null,
+    "confidence": null,
+    "manual_required": false,
+    "source_method": "ocr_blocks"
+  },
+  {
+    "type": "PARAGRAPH",
+    "text": "Si EL PROVEEDOR incurre en retraso injustificado en la ejecución de las prestaciones objeto del",
+    "bbox": {
+      "x0": 89.41519927978516,
+      "y0": 443.16180419921875,
+      "x1": 549.9931030273438,
+      "y1": 453.785400390625
+    },
+    "page_num": 7,
+    "reading_order": 14,
+    "children": null,
+    "table_data": null,
+    "confidence": null,
+    "manual_required": false,
+    "source_method": "ocr_blocks"
+  },
+  {
+    "type": "PARAGRAPH",
+    "text": "contrato, LA ENTIDAD le aplica automáticamente una penalidad por mora por cada día de atraso, de",
+    "bbox": {
+      "x0": 89.11514282226562,
+      "y0": 456.66180419921875,
+      "x1": 550.2935791015625,
+      "y1": 467.285400390625
+    },
+    "page_num": 7,
+    "reading_order": 15,
+    "children": null,
+    "table_data": null,
+    "confidence": null,
+    "manual_required": false,
+    "source_method": "ocr_blocks"
+  },
+  {
+    "type": "PARAGRAPH",
+    "text": "acuerdo con la siguiente fórmula:",
+    "bbox": {
+      "x0": 89.41519927978516,
+      "y0": 469.86181640625,
+      "x1": 236.1414031982422,
+      "y1": 480.48541259765625
+    },
+    "page_num": 7,
+    "reading_order": 16,
+    "children": null,
+    "table_data": null,
+    "confidence": null,
+    "manual_required": false,
+    "source_method": "ocr_blocks"
+  },
+  {
+    "type": "FORMULA_OR_LAYOUT_BLOCK",
+    "text": "0.10 x monto\nPenalidad Diaria =",
+    "bbox": {
+      "x0": 185.7315673828125,
+      "y0": 483.08251953125,
+      "x1": 394.2677001953125,
+      "y1": 504.1853942871094
+    },
+    "page_num": 7,
+    "reading_order": 17,
+    "children": null,
+    "table_data": null,
+    "confidence": null,
+    "manual_required": false,
+    "source_method": "ocr_blocks"
+  },
+  {
+    "type": "PARAGRAPH",
+    "text": "F x plazo",
+    "bbox": {
+      "x0": 345.8812255859375,
+      "y0": 504.0822448730469,
+      "x1": 385.56878662109375,
+      "y1": 514.61376953125
+    },
+    "page_num": 7,
+    "reading_order": 18,
+    "children": null,
+    "table_data": null,
+    "confidence": null,
+    "manual_required": false,
+    "source_method": "ocr_blocks"
+  },
+  {
+    "type": "PARAGRAPH",
+    "text": "Donde:",
+    "bbox": {
+      "x0": 89.71524810791016,
+      "y0": 525.0824584960938,
+      "x1": 120.01950073242188,
+      "y1": 535.2974853515625
+    },
+    "page_num": 7,
+    "reading_order": 19,
+    "children": null,
+    "table_data": null,
+    "confidence": null,
+    "manual_required": false,
+    "source_method": "ocr_blocks"
+  },
+  {
+    "type": "PARAGRAPH",
+    "text": "F =0.40",
+    "bbox": {
+      "x0": 89.63765716552734,
+      "y0": 545.4822387695312,
+      "x1": 125.124267578125,
+      "y1": 555.9801635742188
+    },
+    "page_num": 7,
+    "reading_order": 20,
+    "children": null,
+    "table_data": null,
+    "confidence": null,
+    "manual_required": false,
+    "source_method": "ocr_blocks"
+  },
+  {
+    "type": "PARAGRAPH",
+    "text": "El retraso se justifica a través de la solicitud de ampliación de plazo debidamente aprobado. Adicionalmente, se considera justificado el retraso y en consecuencia no se aplica penalidad, cuando EL PROVEEDOR acredite, de modo objetivamente sustentado, que el mayor tiempo transcurrido no le resulta imputable. En este último caso la calificación del retraso como justificado por parte de LA ENTIDAD no da lugar al pago de gastos generales ni costos directos de ningún tipo, conforme al numeral 120.4 del artículo 120 del\nReglamento de la Ley N° 32069, Ley General de Contrataciones Públicas, aprobado por Decreto Supremo",
+    "bbox": {
+      "x0": 72.01223754882812,
+      "y0": 565.86181640625,
+      "x1": 550.2936401367188,
+      "y1": 634.5611572265625
+    },
+    "page_num": 7,
+    "reading_order": 21,
+    "children": null,
+    "table_data": null,
+    "confidence": null,
+    "manual_required": false,
+    "source_method": "ocr_blocks"
+  },
+  {
+    "type": "PARAGRAPH",
+    "text": "N° 009-2025-EF.",
+    "bbox": {
+      "x0": 72.31229400634766,
+      "y0": 635.4617919921875,
+      "x1": 146.12588500976562,
+      "y1": 646.0853881835938
+    },
+    "page_num": 7,
+    "reading_order": 22,
+    "children": null,
+    "table_data": null,
+    "confidence": null,
+    "manual_required": false,
+    "source_method": "ocr_blocks"
+  },
+  {
+    "type": "PARAGRAPH",
+    "text": "Las penalidades se deducen de los pagos a cuenta, pagos parciales o del pago final, según corresponda; o si fuera necesario, se cobra del monto resultante de la ejecución de la garantía de fiel cumplimiento.",
+    "bbox": {
+      "x0": 72.01223754882812,
+      "y0": 658.2411499023438,
+      "x1": 550.2935180664062,
+      "y1": 680.6732788085938
+    },
+    "page_num": 7,
+    "reading_order": 23,
+    "children": null,
+    "table_data": null,
+    "confidence": null,
+    "manual_required": false,
+    "source_method": "ocr_blocks"
+  },
+  {
+    "type": "PARAGRAPH",
+    "text": "Cuando se llegue a cubrir el monto máximo de la aplicación de la penalidad por mora y otras penalidades, de ser el caso, LA ENTIDAD puede resolver el contrato por incumplimiento.",
+    "bbox": {
+      "x0": 72.01223754882812,
+      "y0": 692.4411010742188,
+      "x1": 549.695068359375,
+      "y1": 715.1732788085938
+    },
+    "page_num": 7,
+    "reading_order": 24,
+    "children": null,
+    "table_data": null,
+    "confidence": null,
+    "manual_required": false,
+    "source_method": "ocr_blocks"
+  },
+  {
+    "type": "PARAGRAPH",
+    "text": "13.2. Otras penalidades \n(De acuerdo al tipo de contratación el área usuaria podrá establecer otras penalidades diferentes a la mora, las cuales deberá ser objetivas, razonables y proporcionales con el objeto",
+    "bbox": {
+      "x0": 101.71728515625,
+      "y0": 726.9411010742188,
+      "x1": 550.5952758789062,
+      "y1": 760.9854125976562
+    },
+    "page_num": 7,
+    "reading_order": 25,
+    "children": null,
+    "table_data": null,
+    "confidence": null,
+    "manual_required": false,
+    "source_method": "ocr_blocks"
+  },
+  {
+    "type": "PARAGRAPH",
+    "text": "de la contratación, por lo que se deberá precisar el listado de las situaciones, condiciones, el procedimiento de verificación de las ocurrencias y los montos o porcentajes a aplicar).",
+    "bbox": {
+      "x0": 113.92842102050781,
+      "y0": 83.01587677001953,
+      "x1": 532.8193359375,
+      "y1": 110.20095825195312
+    },
+    "page_num": 8,
+    "reading_order": 1,
+    "children": null,
+    "table_data": null,
+    "confidence": null,
+    "manual_required": false,
+    "source_method": "ocr_blocks"
+  },
+  {
+    "type": "PARAGRAPH",
+    "text": "N° Descripción de la | Monto  de  la | Acreditación de la penalidad \nPenalidad \nPenalidad",
+    "bbox": {
+      "x0": 120.24708557128906,
+      "y0": 118.47022247314453,
+      "x1": 527.109619140625,
+      "y1": 144.99679565429688
+    },
+    "page_num": 8,
+    "reading_order": 2,
+    "children": null,
+    "table_data": null,
+    "confidence": null,
+    "manual_required": false,
+    "source_method": "ocr_blocks"
+  }
+]
+
+--- Section 14: OTRAS CARACTERÍSTICAS QUE SEAN RELEVANTES PARA LA CONTRATACIÓN (XIII) ---
+=== ANCHOR B & C ===
+[
+  {
+    "type": "HEADING",
+    "text": "XIII. OTRAS CARACTERÍSTICAS QUE SEAN RELEVANTES PARA LA CONTRATACIÓN",
+    "bbox": {
+      "x0": 65.69999694824219,
+      "y0": 171.69419860839844,
+      "x1": 476.8160400390625,
+      "y1": 187.21913146972656
+    },
+    "page_num": 8,
+    "reading_order": 3,
+    "children": null,
+    "table_data": null,
+    "confidence": null,
+    "manual_required": false,
+    "source_method": "ocr_blocks"
+  },
+  {
+    "type": "PARAGRAPH",
+    "text": "Esta contratación corresponde a la necesidad del área usuaria quien suscribe y se ratifica no estar dividiendo la contratación (FRACCIONANDO), para evadir la aplicación de un procedimiento de selección mayor a las\n08 UIT. Asimismo, se ha verificado que el presente requerimiento N° O SE ENCUENTRA PROGRAMADO en el PAC; en caso de tratarse de una necesidad imprevista se procederá con lo dispuesto en el artículo 50” de",
+    "bbox": {
+      "x0": 57.599998474121094,
+      "y0": 189.81622314453125,
+      "x1": 533.4003295898438,
+      "y1": 237.77357482910156
+    },
+    "page_num": 8,
+    "reading_order": 4,
+    "children": null,
+    "table_data": null,
+    "confidence": null,
+    "manual_required": false,
+    "source_method": "ocr_blocks"
+  },
+  {
+    "type": "PARAGRAPH",
+    "text": "la Ley N° 32069 y artículo 45* de su reglamento.",
+    "bbox": {
+      "x0": 58.20000076293945,
+      "y0": 237.2933349609375,
+      "x1": 271.6790466308594,
+      "y1": 248.73275756835938
+    },
+    "page_num": 8,
+    "reading_order": 5,
+    "children": null,
+    "table_data": null,
+    "confidence": null,
+    "manual_required": false,
+    "source_method": "ocr_blocks"
+  },
+  {
+    "type": "PARAGRAPH",
+    "text": "Se ha verificado que el objeto de contratación no se encuentra en el Listado de Bienes y Servicios Comunes\n(https://www.gob.pe/8194-consultar-el-listado-de-bienes-y-servicios-comunes-lbsc), así como en la relación de  las  fichas  de  homologación \n(https://central.perucompras.gob.pe/homologacion/relacion-fichashomologacion-aprobadas.php).",
+    "bbox": {
+      "x0": 57.900001525878906,
+      "y0": 259.4078369140625,
+      "x1": 534.2398681640625,
+      "y1": 306.2379455566406
+    },
+    "page_num": 8,
+    "reading_order": 6,
+    "children": null,
+    "table_data": null,
+    "confidence": null,
+    "manual_required": false,
+    "source_method": "ocr_blocks"
+  },
+  {
+    "type": "PARAGRAPH",
+    "text": "En todo lo no previsto expresamente en el presente termino de referencia, resulta aplicable la Ley General de Contrataciones Públicas - Ley N° 32069 y su Reglamento aprobado por Decreto Supremo N° 009-2025-",
+    "bbox": {
+      "x0": 58.20000076293945,
+      "y0": 317.0216369628906,
+      "x1": 534.0020751953125,
+      "y1": 341.0853576660156
+    },
+    "page_num": 8,
+    "reading_order": 7,
+    "children": null,
+    "table_data": null,
+    "confidence": null,
+    "manual_required": false,
+    "source_method": "ocr_blocks"
+  },
+  {
+    "type": "PARAGRAPH",
+    "text": "EF.",
+    "bbox": {
+      "x0": 58.79999923706055,
+      "y0": 341.7428894042969,
+      "x1": 73.55923461914062,
+      "y1": 351.9566650390625
+    },
+    "page_num": 8,
+    "reading_order": 8,
+    "children": null,
+    "table_data": null,
+    "confidence": null,
+    "manual_required": false,
+    "source_method": "ocr_blocks"
+  },
+  {
+    "type": "PARAGRAPH",
+    "text": "GOBIERNO REGIONAL AMAZO",
+    "bbox": {
+      "x0": 240.53453063964844,
+      "y0": 388.899169921875,
+      "x1": 352.8830261230469,
+      "y1": 398.7851257324219
+    },
+    "page_num": 8,
+    "reading_order": 9,
+    "children": null,
+    "table_data": null,
+    "confidence": null,
+    "manual_required": false,
+    "source_method": "ocr_blocks"
+  },
+  {
+    "type": "PARAGRAPH",
+    "text": "DIRECCIÓN REGIONAL AGHARIA",
+    "bbox": {
+      "x0": 262.99786376953125,
+      "y0": 396.4806823730469,
+      "x1": 346.6125793457031,
+      "y1": 405.0029296875
+    },
+    "page_num": 8,
+    "reading_order": 10,
+    "children": null,
+    "table_data": null,
+    "confidence": null,
+    "manual_required": false,
+    "source_method": "ocr_blocks"
+  }
+]
+
+Regression test completed.

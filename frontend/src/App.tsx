@@ -18,14 +18,12 @@ function App() {
           <Routes>
             <Route path="/login" element={<LoginPage />} />
             
-            <Route element={<ProtectedRoute />}>
-              <Route path="/" element={<Layout />}>
-                <Route index element={<Navigate to="/cases" replace />} />
-                <Route path="cases" element={<CasesList />} />
-                <Route path="cases/:id" element={<CaseDetail />} />
-                <Route path="settings" element={<SettingsPage />} />
-                <Route path="monitoring" element={<MonitoringDashboard />} />
-              </Route>
+            <Route path="/" element={<ProtectedRoute><Layout /></ProtectedRoute>}>
+              <Route index element={<Navigate to="/cases" replace />} />
+              <Route path="cases" element={<CasesList />} />
+              <Route path="cases/:id" element={<CaseDetail />} />
+              <Route path="settings" element={<SettingsPage />} />
+              <Route path="monitoring" element={<MonitoringDashboard />} />
             </Route>
             
           </Routes>

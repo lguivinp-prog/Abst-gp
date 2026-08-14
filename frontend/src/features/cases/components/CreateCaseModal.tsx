@@ -62,7 +62,7 @@ export function CreateCaseModal({ isOpen, onClose, onSubmit }: CreateCaseModalPr
         backgroundColor: 'white', padding: '2rem', borderRadius: '8px',
         width: '100%', maxWidth: '500px', boxShadow: '0 4px 6px rgba(0,0,0,0.1)'
       }}>
-        <h2 style={{ fontSize: '1.25rem', fontWeight: 'bold', marginBottom: '1.5rem' }}>Nuevo Caso</h2>
+        <h2 style={{ fontSize: '1.25rem', fontWeight: 'bold', marginBottom: '1.5rem' }}>Nuevo Expediente</h2>
         
         {error && (
           <div style={{ backgroundColor: '#fee2e2', color: '#b91c1c', padding: '0.75rem', borderRadius: '4px', marginBottom: '1rem' }}>
@@ -86,27 +86,24 @@ export function CreateCaseModal({ isOpen, onClose, onSubmit }: CreateCaseModalPr
           
           <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
             <label style={{ fontSize: '0.875rem', fontWeight: 500 }}>Tipo de Contrato *</label>
-            <input
-              type="text"
+            <select
               name="contract_type"
-              list="contract-types"
               value={contractType}
               onChange={(e) => setContractType(e.target.value)}
-              style={{ padding: '0.75rem', border: '1px solid #ddd', borderRadius: '4px' }}
+              style={{ padding: '0.75rem', border: '1px solid #ddd', borderRadius: '4px', backgroundColor: 'white' }}
               disabled={isSubmitting}
-            />
-            <datalist id="contract-types">
+            >
               <option value="bienes">Bienes</option>
               <option value="servicios">Servicios</option>
-              <option value="obras">Obras</option>
-              <option value="Standard">Standard</option>
-            </datalist>
+              <option value="obras">Obra</option>
+              <option value="consultoria_obras">Consultoría de Obra</option>
+            </select>
           </div>
 
           <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '1rem', marginTop: '1rem' }}>
             <Button type="button" variant="ghost" onClick={onClose} disabled={isSubmitting}>Cancelar</Button>
             <Button type="submit" variant="primary" disabled={isSubmitting || !title.trim()}>
-              {isSubmitting ? 'Creando...' : 'Crear Caso'}
+              {isSubmitting ? 'Creando...' : 'Crear Expediente'}
             </Button>
           </div>
         </form>
