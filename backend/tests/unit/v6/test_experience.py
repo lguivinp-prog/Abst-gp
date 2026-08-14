@@ -6,7 +6,8 @@ from app.models.v6.supplier_offer import SupplierOffer
 from app.models.v6.supplier_profile import SupplierProfile
 from app.models.v6.experience_requirement import ExperienceRequirement
 from app.models.v6.experience_evidence import ExperienceEvidence
-from app.models.domain import CaseFile, Supplier
+from app.models.domain import CaseFile
+from app.models.v6 import Supplier
 from sqlalchemy.orm import Session
 
 def test_experience_flow(db_session: Session):

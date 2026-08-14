@@ -19,6 +19,9 @@ class GeneratedOutput(Base):
     accuracy_gate_result = Column(String(50), nullable=False)
     source_snapshot = Column(JSONB, nullable=False)
     status = Column(String(50), nullable=False, default="GENERATED") # GENERATED, UNDER_REVIEW, APPROVED, EXPORTED, REJECTED
+    version_number = Column(Integer, nullable=False, default=1)
+    html_output = Column(Text, nullable=True)
+    plain_text_output = Column(Text, nullable=True)
     
     case = relationship("CaseFile")
     template = relationship("OutputTemplate")

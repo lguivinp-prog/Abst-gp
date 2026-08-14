@@ -83,7 +83,7 @@ def process_run_v1(run_id: str):
             try:
                 # Calculate baseline snapshot
                 from app.services.ocr.checksum import calculate_baseline_hash
-                from app.models.domain import GeneratedOutput
+                from app.models.v6.generated_output import GeneratedOutput
                 
                 sections = db.query(ParsedSection).filter(ParsedSection.case_id == doc.case_id).all()
                 generated_out = db.query(GeneratedOutput).filter(GeneratedOutput.case_id == doc.case_id).order_by(GeneratedOutput.id.desc()).first()

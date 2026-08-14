@@ -1,7 +1,7 @@
 from sqlalchemy import Column, Integer, String, Boolean, DateTime, ForeignKey
 from sqlalchemy.dialects.postgresql import JSONB
 from datetime import datetime
-from app.db.base_class import Base
+from app.models.base import Base
 
 class TenantConfiguration(Base):
     __tablename__ = "tenant_configurations"

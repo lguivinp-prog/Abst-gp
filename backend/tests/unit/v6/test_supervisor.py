@@ -4,7 +4,7 @@ from app.models.v6.case_operational_snapshot import CaseOperationalSnapshot
 from app.models.domain import AuditLog, CaseFile
 from app.models.v6.supplier_profile import SupplierProfile
 from app.models.v6.supplier_offer import SupplierOffer
-from app.models.domain import Supplier
+from app.models.v6 import Supplier
 from sqlalchemy.orm import Session
 
 def test_case_risk_engine(db_session: Session):

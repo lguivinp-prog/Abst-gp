@@ -20,9 +20,9 @@ from app.models.domain import (
     UploadedDocument,
     ParsedSection,
     QuotationExtraction,
-    FinalConditionComparison,
-    GeneratedOutput
+    FinalConditionComparison
 )
+from app.models.v6.generated_output import GeneratedOutput
 
 from app.models.domain import User, AuditLog
 from app.api.auth import get_current_user, get_current_active_user, verify_case_access, require_role

@@ -47,26 +47,21 @@ def upgrade() -> None:
     op.create_index(op.f('ix_output_templates_id'), 'output_templates', ['id'], unique=False)
 
     # 3. generated_outputs
-    op.create_table(
-        'generated_outputs',
-        sa.Column('id', sa.Integer(), nullable=False),
-        sa.Column('case_id', sa.Integer(), nullable=False),
-        sa.Column('template_id', sa.Integer(), nullable=False),
-        sa.Column('content_rendered', sa.Text(), nullable=False),
-        sa.Column('generation_hash', sa.String(), nullable=False),
-        sa.Column('generated_by', sa.Integer(), nullable=True),
-        sa.Column('generated_at', sa.DateTime(timezone=True), server_default=sa.text('now()'), nullable=True),
-        sa.Column('template_version', sa.String(length=20), nullable=False),
-        sa.Column('accuracy_gate_result', sa.String(length=50), nullable=False),
-        sa.Column('source_snapshot', postgresql.JSONB(astext_type=sa.Text()), nullable=False),
-        sa.Column('status', sa.String(length=50), server_default='GENERATED', nullable=False),
-        sa.ForeignKeyConstraint(['case_id'], ['case_files.id'], ondelete='CASCADE'),
-        sa.ForeignKeyConstraint(['generated_by'], ['users.id'], ondelete='SET NULL'),
-        sa.ForeignKeyConstraint(['template_id'], ['output_templates.id'], ondelete='RESTRICT'),
-        sa.PrimaryKeyConstraint('id')
-    )
+    op.add_column('generated_outputs', sa.Column('template_id', sa.Integer(), nullable=True))
+    op.add_column('generated_outputs', sa.Column('content_rendered', sa.Text(), nullable=True))
+    op.add_column('generated_outputs', sa.Column('generation_hash', sa.String(), nullable=True))
+    op.add_column('generated_outputs', sa.Column('generated_by', sa.Integer(), nullable=True))
+    op.add_column('generated_outputs', sa.Column('generated_at', sa.DateTime(timezone=True), server_default=sa.text('now()'), nullable=True))
+    op.add_column('generated_outputs', sa.Column('template_version', sa.String(length=20), nullable=True))
+    op.add_column('generated_outputs', sa.Column('accuracy_gate_result', sa.String(length=50), nullable=True))
+    op.add_column('generated_outputs', sa.Column('source_snapshot', postgresql.JSONB(astext_type=sa.Text()), nullable=True))
+    op.add_column('generated_outputs', sa.Column('status', sa.String(length=50), server_default='GENERATED', nullable=False))
+    
+    op.create_foreign_key(None, 'generated_outputs', 'users', ['generated_by'], ['id'], ondelete='SET NULL')
+    op.create_foreign_key(None, 'generated_outputs', 'output_templates', ['template_id'], ['id'], ondelete='RESTRICT')
+    
+    # case_id index was already created in initial_models, or maybe not. initial_models only created index for id.
     op.create_index(op.f('ix_generated_outputs_case_id'), 'generated_outputs', ['case_id'], unique=False)
-    op.create_index(op.f('ix_generated_outputs_id'), 'generated_outputs', ['id'], unique=False)
 
 def downgrade() -> None:
     op.drop_table('generated_outputs')

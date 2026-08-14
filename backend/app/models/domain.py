@@ -278,15 +278,6 @@ class FinalConditionComparison(Base):
     final_value = Column(String, nullable=True)
     status = Column(String, nullable=False) # Coincide, Reemplazado, Revisión Manual
 
-class GeneratedOutput(Base):
-    __tablename__ = "generated_outputs"
-    id = Column(Integer, primary_key=True, index=True)
-    case_id = Column(Integer, ForeignKey("case_files.id"))
-    version_number = Column(Integer, nullable=False, default=1)
-    html_output = Column(Text, nullable=True)
-    plain_text_output = Column(Text, nullable=True)
-    created_by = Column(Integer, ForeignKey("users.id"))
-    created_at = Column(DateTime(timezone=True), server_default=func.now())
 
 class AuditLog(Base):
     __tablename__ = "audit_logs"

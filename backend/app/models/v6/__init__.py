@@ -17,6 +17,12 @@ from .generated_output import GeneratedOutput
 from .prompt_registry import PromptRegistry
 from .ai_interaction_log import AIInteractionLog
 from .document_chunk import DocumentChunk
+from .calculation_trace import CalculationTrace
+from .case_operational_snapshot import CaseOperationalSnapshot
+from .document_quality import DocumentQualityAssessment, DocumentQualityThresholdConfig
+from .experience_requirement import ExperienceRequirement
+from .telemetry import InstitutionalTelemetryEvent
+from .tenant_config import TenantConfiguration, TenantConfigurationHistory
 
 __all__ = [
     "CaseRequirementMatrix", "Supplier", "SupplierOffer", "RequirementEvidence", 
@@ -24,5 +30,8 @@ __all__ = [
     "OfferEvaluation", "CaseWorkflow", "ExperienceEvidence", "ExperienceEvaluation",
     "SupplierSelectionAttempt", "SupplierSelectionFinal", "OrderPreparationProfile",
     "OutputTemplate", "GeneratedOutput", "PromptRegistry", "AIInteractionLog",
-    "DocumentChunk"
+    "DocumentChunk", "CalculationTrace", "CaseOperationalSnapshot",
+    "DocumentQualityAssessment", "DocumentQualityThresholdConfig",
+    "ExperienceRequirement", "InstitutionalTelemetryEvent",
+    "TenantConfiguration", "TenantConfigurationHistory"
 ]

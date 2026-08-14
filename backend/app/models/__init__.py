@@ -1,10 +1,15 @@
 from .base import Base
 from .domain import (
     User, SystemSettings, CaseFile, UploadedDocument, ParsedSection,
-    QuotationExtraction, FinalConditionComparison, GeneratedOutput,
+    QuotationExtraction, FinalConditionComparison,
     AuditLog, ValidationDocumentCase, OCRProcessingRun,
-    ProcessingJob, ProcessingMetrics, WorkerHeartbeat
+    ProcessingJob, ProcessingMetrics, WorkerHeartbeat,
+    Tenant, UserTenantQuarantine, ComparisonRun,
+    RequirementItem, ComparisonResult, RolloutTenantAssignment,
+    BootstrapLedger
 )
+
+from .v6.generated_output import GeneratedOutput
 
 __all__ = [
     "Base",
@@ -21,5 +26,12 @@ __all__ = [
     "OCRProcessingRun",
     "ProcessingJob",
     "ProcessingMetrics",
-    "WorkerHeartbeat"
+    "WorkerHeartbeat",
+    "Tenant",
+    "UserTenantQuarantine",
+    "ComparisonRun",
+    "RequirementItem",
+    "ComparisonResult",
+    "RolloutTenantAssignment",
+    "BootstrapLedger"
 ]
