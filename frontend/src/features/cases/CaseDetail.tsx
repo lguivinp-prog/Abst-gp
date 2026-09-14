@@ -21,7 +21,8 @@ import { AppError } from '../../api/apiError';
 const CaseDetail: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  
+
+  const [activeTab, setActiveTab] = useState('resumen');
   const [activeJobId, setActiveJobId] = useState<string | null>(null);
   const [editingSection, setEditingSection] = useState<Section | null>(null);
   const [actionError, setActionError] = useState<string | null>(null);
@@ -137,9 +138,9 @@ const CaseDetail: React.FC = () => {
     <div className="case-detail-container p-6 max-w-7xl mx-auto">
       <div className="detail-header mb-6 flex items-center justify-between">
         <div className="flex items-center gap-4">
-          <Button 
-            variant="ghost" 
-            leftIcon={<ArrowLeft size={18} />} 
+          <Button
+            variant="ghost"
+            leftIcon={<ArrowLeft size={18} />}
             onClick={() => navigate('/cases')}
           >
             Volver
@@ -160,129 +161,169 @@ const CaseDetail: React.FC = () => {
         </div>
       )}
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-        {(caseData.status === 'CREATED' || caseData.status === 'draft' || caseData.status === 'ERROR') && !activeJobId ? (
-          <div className="flex flex-col gap-4">
-            {caseData.status === 'ERROR' && (
-              <div className="p-4 bg-red-50 border-l-4 border-red-500 text-red-800 rounded">
-                <h3 className="font-bold mb-2">Error al procesar requerimiento</h3>
-                {caseData.last_processing_error ? (
-                  <pre className="text-sm overflow-auto max-h-32 bg-red-100 p-2 rounded">{caseData.last_processing_error}</pre>
-                ) : (
-                  <p className="text-sm">Ocurrió un error inesperado al procesar el archivo. Puede reintentar la carga.</p>
-                )}
-              </div>
-            )}
-            <RequirementUpload caseId={caseData.id.toString()} onUploadSuccess={handleUploadSuccess} />
-          </div>
-        ) : (
-          <Card>
-             <CardHeader><CardTitle>1. Requerimiento</CardTitle></CardHeader>
-             <CardContent>
-               <Badge variant="success">Completado</Badge>
-             </CardContent>
-          </Card>
-        )}
-
-        {caseData.status === 'PROCESSING_REQUIREMENT' || activeJobId ? (
-          <div className="col-span-1 md:col-span-2">
-            <ProcessingStatus 
-              jobId={activeJobId || ''} 
-              onComplete={handleProcessComplete} 
-              onRetry={handleProcessRetry}
-            />
-          </div>
-        ) : null}
-
-        {caseData.status === 'COMPARING' || caseData.status === 'READY_GENERATE' || caseData.status === 'COMPLETED' ? (
-          <Card>
-             <CardHeader><CardTitle>2. Cotización</CardTitle></CardHeader>
-             <CardContent><Badge variant="success">Cotización Procesada</Badge></CardContent>
-          </Card>
-        ) : (caseData.status !== 'CREATED' && caseData.status !== 'draft' && caseData.status !== 'PROCESSING_REQUIREMENT' && !activeJobId && (
-          <QuotationUpload 
-            caseId={caseData.id.toString()} 
-            onUploadSuccess={refresh} 
-            disabled={caseData.status !== 'WAITING_QUOTATION'} 
-          />
+      <div className="v6-workspace-tabs flex border-b border-gray-200 mb-6 overflow-x-auto">
+        {[
+          { id: 'resumen', label: 'Resumen' },
+          { id: 'requerimiento', label: 'Requerimiento' },
+          { id: 'documentos', label: 'Documentos' },
+          { id: 'proveedores', label: 'Proveedores' },
+          { id: 'ofertas', label: 'Ofertas' },
+          { id: 'validaciones', label: 'Validaciones' },
+          { id: 'evaluacion', label: 'Evaluación' },
+          { id: 'seleccion', label: 'Selección' },
+          { id: 'resultado', label: 'Resultado' },
+          { id: 'ia', label: 'Asistente IA' },
+          { id: 'historial', label: 'Historial' },
+        ].map((tab) => (
+          <button
+            key={tab.id}
+            onClick={() => setActiveTab(tab.id)}
+            className={`whitespace-nowrap py-2 px-4 border-b-2 font-medium text-sm transition-colors ${
+              activeTab === tab.id
+                ? 'border-blue-500 text-blue-600'
+                : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+            }`}
+          >
+            {tab.label}
+          </button>
         ))}
-
-        {caseData.status !== 'CREATED' && caseData.status !== 'draft' && caseData.status !== 'PROCESSING_REQUIREMENT' && !activeJobId && (
-          <OutputGenerator 
-            caseId={caseData.id.toString()}
-            caseStatus={caseData.status}
-            disabled={caseData.status !== 'READY_GENERATE' && caseData.status !== 'COMPLETED' || comparisonFlow.status !== 'completed' || comparisonFlow.comparisons.length === 0}
-            onGenerateSuccess={refresh}
-          />
-        )}
       </div>
 
-      {(caseData.status === 'COMPARING' || caseData.status === 'READY_GENERATE' || caseData.status === 'COMPLETED') && (
-        <Card className="mt-6">
-          <CardHeader>
-            <CardTitle className="text-lg">Inteligencia Documental: Comparación</CardTitle>
-          </CardHeader>
-          <CardContent>
-            {comparisonFlow.status === 'idle' && (
-              <div className="text-center p-6 bg-gray-50 rounded-lg">
-                <p className="text-gray-600 mb-4">La cotización ha sido procesada. Listo para comparar condiciones.</p>
-                <Button 
-                  onClick={comparisonFlow.executeComparison} 
-                  disabled={comparisonFlow.isExecuting}
-                >
-                  Ejecutar Comparación
-                </Button>
+      <div className="v6-workspace-content">
+        {activeTab === 'resumen' ? (
+          <>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+              {(caseData.status === 'CREATED' || caseData.status === 'draft' || caseData.status === 'ERROR') && !activeJobId ? (
+                <div className="flex flex-col gap-4">
+                  {caseData.status === 'ERROR' && (
+                    <div className="p-4 bg-red-50 border-l-4 border-red-500 text-red-800 rounded">
+                      <h3 className="font-bold mb-2">Error al procesar requerimiento</h3>
+                      {caseData.last_processing_error ? (
+                        <pre className="text-sm overflow-auto max-h-32 bg-red-100 p-2 rounded">{caseData.last_processing_error}</pre>
+                      ) : (
+                        <p className="text-sm">Ocurrió un error inesperado al procesar el archivo. Puede reintentar la carga.</p>
+                      )}
+                    </div>
+                  )}
+                  <RequirementUpload caseId={caseData.id.toString()} onUploadSuccess={handleUploadSuccess} />
+                </div>
+              ) : (
+                <Card>
+                   <CardHeader><CardTitle>1. Requerimiento</CardTitle></CardHeader>
+                   <CardContent>
+                     <Badge variant="success">Completado</Badge>
+                   </CardContent>
+                </Card>
+              )}
+
+              {caseData.status === 'PROCESSING_REQUIREMENT' || activeJobId ? (
+                <div className="col-span-1 md:col-span-2">
+                  <ProcessingStatus
+                    jobId={activeJobId || ''}
+                    onComplete={handleProcessComplete}
+                    onRetry={handleProcessRetry}
+                  />
+                </div>
+              ) : null}
+
+              {caseData.status === 'COMPARING' || caseData.status === 'READY_GENERATE' || caseData.status === 'COMPLETED' ? (
+                <Card>
+                   <CardHeader><CardTitle>2. Cotización</CardTitle></CardHeader>
+                   <CardContent><Badge variant="success">Cotización Procesada</Badge></CardContent>
+                </Card>
+              ) : (caseData.status !== 'CREATED' && caseData.status !== 'draft' && caseData.status !== 'PROCESSING_REQUIREMENT' && !activeJobId && (
+                <QuotationUpload
+                  caseId={caseData.id.toString()}
+                  onUploadSuccess={refresh}
+                  disabled={caseData.status !== 'WAITING_QUOTATION'}
+                />
+              ))}
+
+              {caseData.status !== 'CREATED' && caseData.status !== 'draft' && caseData.status !== 'PROCESSING_REQUIREMENT' && !activeJobId && (
+                <OutputGenerator
+                  caseId={caseData.id.toString()}
+                  caseStatus={caseData.status}
+                  disabled={caseData.status !== 'READY_GENERATE' && caseData.status !== 'COMPLETED' || comparisonFlow.status !== 'completed' || comparisonFlow.comparisons.length === 0}
+                  onGenerateSuccess={refresh}
+                />
+              )}
+            </div>
+
+            {(caseData.status === 'COMPARING' || caseData.status === 'READY_GENERATE' || caseData.status === 'COMPLETED') && (
+              <Card className="mt-6">
+                <CardHeader>
+                  <CardTitle className="text-lg">Inteligencia Documental: Comparación</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  {comparisonFlow.status === 'idle' && (
+                    <div className="text-center p-6 bg-gray-50 rounded-lg">
+                      <p className="text-gray-600 mb-4">La cotización ha sido procesada. Listo para comparar condiciones.</p>
+                      <Button
+                        onClick={comparisonFlow.executeComparison}
+                        disabled={comparisonFlow.isExecuting}
+                      >
+                        Ejecutar Comparación
+                      </Button>
+                    </div>
+                  )}
+
+                  {comparisonFlow.status === 'running' && (
+                    <div className="flex flex-col justify-center items-center p-8 bg-blue-50 text-blue-800 rounded-lg">
+                      <div className="spinner mb-4 border-blue-500"></div>
+                      <p className="font-semibold">Comparando condiciones...</p>
+                      <p className="text-sm mt-2 opacity-80">Por favor espere, esto puede tomar unos segundos.</p>
+                    </div>
+                  )}
+
+                  {comparisonFlow.status === 'uncertain' && (
+                    <div className="bg-yellow-50 text-yellow-800 p-4 rounded-md border border-yellow-200">
+                      <p className="font-medium mb-2">Se perdió la comunicación durante la comparación.</p>
+                      <p className="text-sm">El servidor podría haber completado la operación. Verificaremos el estado del expediente antes de permitir otro intento.</p>
+                      <Button variant="outline" size="sm" className="mt-4" onClick={() => { refresh(); comparisonFlow.refreshResults(); }}>
+                        Verificar Estado
+                      </Button>
+                    </div>
+                  )}
+
+                  {comparisonFlow.error && comparisonFlow.status !== 'uncertain' && (
+                    <div className="bg-red-50 text-red-800 p-4 rounded-md border border-red-200 mt-4">
+                      <h3 className="font-bold mb-2">Error en la comparación</h3>
+                      <p>{comparisonFlow.error.message}</p>
+                      <Button variant="outline" size="sm" className="mt-4" onClick={comparisonFlow.executeComparison}>
+                        Reintentar
+                      </Button>
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            )}
+
+            {comparisonFlow.status === 'completed' && comparisonFlow.comparisons.length > 0 && (
+              <div className="mt-6">
+                <ComparisonTable comparisons={comparisonFlow.comparisons} />
               </div>
             )}
 
-            {comparisonFlow.status === 'running' && (
-              <div className="flex flex-col justify-center items-center p-8 bg-blue-50 text-blue-800 rounded-lg">
-                <div className="spinner mb-4 border-blue-500"></div>
-                <p className="font-semibold">Comparando condiciones...</p>
-                <p className="text-sm mt-2 opacity-80">Por favor espere, esto puede tomar unos segundos.</p>
-              </div>
+            {caseData.status === 'REVIEW_SECTIONS' && !activeJobId && (
+              <DoublePaneReview
+                caseId={caseData.id.toString()}
+                sections={sections}
+                onEditSection={handleEditSection}
+                onSaveSection={handleSaveSection}
+                onConfirmSections={handleConfirmSections}
+                editingSection={editingSection}
+                onCancelEdit={() => setEditingSection(null)}
+              />
             )}
-
-            {comparisonFlow.status === 'uncertain' && (
-              <div className="bg-yellow-50 text-yellow-800 p-4 rounded-md border border-yellow-200">
-                <p className="font-medium mb-2">Se perdió la comunicación durante la comparación.</p>
-                <p className="text-sm">El servidor podría haber completado la operación. Verificaremos el estado del expediente antes de permitir otro intento.</p>
-                <Button variant="outline" size="sm" className="mt-4" onClick={() => { refresh(); comparisonFlow.refreshResults(); }}>
-                  Verificar Estado
-                </Button>
-              </div>
-            )}
-
-            {comparisonFlow.error && comparisonFlow.status !== 'uncertain' && (
-              <div className="bg-red-50 text-red-800 p-4 rounded-md border border-red-200 mt-4">
-                <h3 className="font-bold mb-2">Error en la comparación</h3>
-                <p>{comparisonFlow.error.message}</p>
-                <Button variant="outline" size="sm" className="mt-4" onClick={comparisonFlow.executeComparison}>
-                  Reintentar
-                </Button>
-              </div>
-            )}
-          </CardContent>
-        </Card>
-      )}
-
-      {comparisonFlow.status === 'completed' && comparisonFlow.comparisons.length > 0 && (
-        <div className="mt-6">
-          <ComparisonTable comparisons={comparisonFlow.comparisons} />
-        </div>
-      )}
-
-      {caseData.status === 'REVIEW_SECTIONS' && !activeJobId && (
-        <DoublePaneReview
-          caseId={caseData.id.toString()}
-          sections={sections}
-          onEditSection={handleEditSection}
-          onSaveSection={handleSaveSection}
-          onConfirmSections={handleConfirmSections}
-          editingSection={editingSection}
-          onCancelEdit={() => setEditingSection(null)}
-        />
-      )}
+          </>
+        ) : (
+          <div className="text-center p-12 bg-gray-50 border border-dashed border-gray-300 rounded-lg">
+            <p className="text-gray-500 text-lg">
+              Módulo disponible en la arquitectura V6. Integración funcional pendiente de la siguiente fase.
+            </p>
+          </div>
+        )}
+      </div>
     </div>
   );
 };

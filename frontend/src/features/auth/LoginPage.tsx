@@ -51,7 +51,7 @@ export default function LoginPage() {
     <div className="login-container">
       <div className="login-card">
         <div className="login-header">
-          <h1>Abst-gp V5.0</h1>
+          <h1>ABST-GP</h1>
           <p>Inicia sesión para continuar</p>
         </div>
         

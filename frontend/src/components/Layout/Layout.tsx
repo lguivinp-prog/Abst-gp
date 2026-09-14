@@ -6,7 +6,7 @@ import './Layout.css';
 
 const Layout: React.FC = () => {
   const location = useLocation();
-  const { user } = useAuth();
+  const { user, logout } = useAuth();
   const isAdmin = user?.role === 'ADMIN';
 
   const getBreadcrumb = () => {
@@ -30,35 +30,45 @@ const Layout: React.FC = () => {
           <div className="logo-icon">
             <FileText size={24} color="#ffffff" />
           </div>
-          <h2>Abst-gp</h2>
+          <h2>ABST-GP</h2>
         </div>
-        
+
         <nav className="sidebar-nav">
-          <Link 
-            to="/cases" 
+          <Link
+            to="/cases"
             className={`nav-item ${location.pathname.includes('/cases') ? 'active' : ''}`}
           >
             <LayoutDashboard size={20} />
             <span>Expedientes</span>
           </Link>
+          <div className="nav-item disabled" title="Próximamente en V6">
+            <FileText size={20} />
+            <span>Supervisión (Próximamente)</span>
+          </div>
           {isAdmin && (
-            <Link 
-              to="/monitoring" 
+            <Link
+              to="/monitoring"
               className={`nav-item ${location.pathname.includes('/monitoring') ? 'active' : ''}`}
             >
               <Activity size={20} />
               <span>Monitoreo SRE</span>
             </Link>
           )}
-          <Link 
-            to="/settings" 
+          {isAdmin && (
+            <div className="nav-item disabled" title="Próximamente en V6">
+              <Settings size={20} />
+              <span>Administración (Próximamente)</span>
+            </div>
+          )}
+          <Link
+            to="/settings"
             className={`nav-item ${location.pathname.includes('/settings') ? 'active' : ''}`}
           >
             <Settings size={20} />
             <span>Configuración</span>
           </Link>
         </nav>
-        
+
         <div className="sidebar-footer">
           <div className="user-profile">
             <div className="avatar">{user?.username ? user.username.charAt(0).toUpperCase() : '?'}</div>
@@ -67,6 +77,12 @@ const Layout: React.FC = () => {
               <span className="user-role">{user?.role || 'None'}</span>
             </div>
           </div>
+          <button
+            className="logout-button mt-2 text-sm text-red-500 hover:text-red-700 font-medium"
+            onClick={logout}
+          >
+            Cerrar sesión
+          </button>
         </div>
       </aside>
 
