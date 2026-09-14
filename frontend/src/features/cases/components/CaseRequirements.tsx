@@ -211,7 +211,7 @@ export const CaseRequirements: React.FC<CaseRequirementsProps> = ({ caseId }) =>
               <div className="case-requirements__form-grid">
                 <div className="case-requirements__field">
                   <label className="case-requirements__label">Tipo de requerimiento</label>
-                  <inpu
+                  <input
                     type="text"
                     className="case-requirements__input"
                     value={addForm.requirement_type}
@@ -222,7 +222,7 @@ export const CaseRequirements: React.FC<CaseRequirementsProps> = ({ caseId }) =>
                 </div>
                 <div className="case-requirements__field">
                   <label className="case-requirements__label">Obligatoriedad</label>
-                  <selec
+                  <select
                     className="case-requirements__input"
                     value={addForm.mandatory ? 'true' : 'false'}
                     onChange={e => setAddForm({...addForm, mandatory: e.target.value === 'true'})}
@@ -245,7 +245,7 @@ export const CaseRequirements: React.FC<CaseRequirementsProps> = ({ caseId }) =>
               </div>
               <div className="case-requirements__field">
                 <label className="case-requirements__label">Valor / Umbral (Opcional)</label>
-                <inpu
+                <input
                   type="text"
                   className="case-requirements__input"
                   value={addForm.value || ''}
@@ -285,7 +285,7 @@ export const CaseRequirements: React.FC<CaseRequirementsProps> = ({ caseId }) =>
                   <div className="case-requirements__form-grid">
                     <div className="case-requirements__field">
                       <label className="case-requirements__label">Estado</label>
-                      <selec
+                      <select
                         className="case-requirements__input"
                         value={editForm.status}
                         onChange={e => {
@@ -304,7 +304,7 @@ export const CaseRequirements: React.FC<CaseRequirementsProps> = ({ caseId }) =>
                     </div>
                     <div className="case-requirements__field">
                       <label className="case-requirements__label">Motivo del Cambio (Obligatorio)</label>
-                      <inpu
+                      <input
                         type="text"
                         className="case-requirements__input"
                         value={editForm.reason}
@@ -326,7 +326,7 @@ export const CaseRequirements: React.FC<CaseRequirementsProps> = ({ caseId }) =>
                   </div>
                   <div className="case-requirements__field">
                     <label className="case-requirements__label">Valor / Umbral</label>
-                    <inpu
+                    <input
                       type="text"
                       className="case-requirements__input"
                       value={editForm.value || ''}

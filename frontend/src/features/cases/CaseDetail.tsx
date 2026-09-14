@@ -7,6 +7,7 @@ import { Badge } from '../../components/ui/Badge';
 import { CaseWorkspaceNav } from './components/CaseWorkspaceNav';
 import { CaseSummary } from './components/CaseSummary';
 import { CaseRequirements } from './components/CaseRequirements';
+import { CaseDocuments } from './components/CaseDocuments';
 import { useComparisonFlow } from './hooks/useComparisonFlow';
 import { useCaseDetails } from './hooks/useCaseDetails';
 import { casesService } from '../../api/cases.service';
@@ -186,6 +187,8 @@ const CaseDetail: React.FC = () => {
             />
           ) : activeTab === 'requerimiento' ? (
             <CaseRequirements caseId={id || ''} />
+          ) : activeTab === 'documentos' ? (
+            <CaseDocuments caseId={id || ''} />
           ) : (
             <div className="case-detail-placeholder">
               <p className="case-detail-placeholder-text">

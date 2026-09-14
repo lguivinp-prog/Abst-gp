@@ -699,3 +699,138 @@
   font-weight: 600;
   color: #2d3748;
 }
+
+/* --- DOCUMENTOS MODULE (V6) --- */
+
+.case-documents {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.case-documents__header {
+  display: flex;
+  flex-direction: column;
+}
+
+.case-documents__title {
+  font-size: 1.125rem;
+  font-weight: 600;
+  color: #1a202c;
+  margin-bottom: 0.25rem;
+}
+
+.case-documents__loading {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  flex-direction: column;
+  padding: 3rem;
+  gap: 1rem;
+  color: #4a5568;
+}
+
+.case-documents__error {
+  background-color: #fff5f5;
+  border: 1px solid #feb2b2;
+  border-radius: 0.5rem;
+  padding: 1rem;
+  color: #c53030;
+}
+
+.case-documents__empty {
+  text-align: center;
+  padding: 3rem;
+  color: #718096;
+  background-color: #f7fafc;
+  border-radius: 0.5rem;
+  border: 1px dashed #e2e8f0;
+}
+
+.case-documents__list {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 1rem;
+}
+
+.case-documents__item {
+  display: flex;
+  flex-direction: column;
+  background-color: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 0.5rem;
+  padding: 1.25rem;
+  box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+  transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.case-documents__item:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+}
+
+.case-documents__icon-wrapper {
+  color: #3182ce;
+  margin-bottom: 1rem;
+}
+
+.case-documents__info {
+  flex-grow: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  margin-bottom: 1rem;
+}
+
+.case-documents__filename {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: #2d3748;
+  margin: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.case-documents__meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  font-size: 0.75rem;
+}
+
+.case-documents__date {
+  color: #718096;
+}
+
+.case-documents__status-badge {
+  background-color: #edf2f7;
+  color: #4a5568;
+  padding: 0.125rem 0.375rem;
+  border-radius: 0.25rem;
+  font-weight: 500;
+}
+
+.case-documents__status {
+  padding-top: 1rem;
+  border-top: 1px solid #edf2f7;
+  margin-top: auto;
+}
+
+.case-documents__status-ready {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  color: #38a169;
+  font-size: 0.875rem;
+  font-weight: 500;
+}
+
+.case-documents__status-pending {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  color: #d69e2e;
+  font-size: 0.875rem;
+  font-weight: 500;
+}

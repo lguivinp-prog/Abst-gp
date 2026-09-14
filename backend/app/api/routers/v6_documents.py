@@ -1,72 +1,49 @@
-from fastapi import APIRouter, Depends, HTTPException, UploadFile, File
+from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
-from app.api.deps import get_db, get_current_user
-from app.services.v6.engines.document_quality_analyzer import DocumentQualityAnalyzer
-from app.models.domain import AuditLog
-import uuid
-import os
+from typing import List, Optional
+from datetime import datetime
+
+from app.core.database import get_db
+from app.api.auth import verify_case_access
+from app.models.domain import CaseFile, UploadedDocument
+from pydantic import BaseModel, ConfigDict
 
 router = APIRouter()
 
-# Mock function for PDF Metrics extraction
-def mock_extract_pdf_metrics(filepath: str):
-    return {
-        "dpi": 140, # Deliberately low to trigger warning
-        "blur_score": 50.0, # Deliberately low to trigger exception
-        "rotation_degrees": 2.0,
-        "contrast_ratio": 5.0,
-        "empty_pages": False
-    }
+class DocumentResponse(BaseModel):
+    id: int
+    case_id: int
+    original_filename: str
+    processing_status: Optional[str] = None
+    created_at: Optional[datetime] = None
+    document_type: Optional[str] = None
+    extraction_ready: bool
 
-@router.post("/upload")
-async def upload_document(file: UploadFile = File(...), db: Session = Depends(get_db)):
-    # 1. Save to Temp Storage
-    temp_id = str(uuid.uuid4())
-    temp_path = f"/tmp/abast_uploads/{temp_id}.pdf"
-    os.makedirs("/tmp/abast_uploads", exist_ok=True)
-    
-    # Simulating file write
-    # with open(temp_path, "wb") as buffer:
-    #    buffer.write(await file.read())
-        
-    # 2. Analyze Quality
-    analyzer = DocumentQualityAnalyzer(db)
-    metrics = mock_extract_pdf_metrics(temp_path)
-    
-    # Mock document ID
-    doc_id = 999 
-    
-    assessment = analyzer.analyze(document_id=doc_id, mock_pdf_metrics=metrics)
-    db.add(assessment)
-    
-    # Audit Exception
-    if assessment.quality_status == "QUALITY_EXCEPTION_REQUIRED":
-        audit = AuditLog(
-            user_id=1, tenant_id="t1", 
-            action="DOCUMENT_QUALITY_EXCEPTION", 
-            entity_type="DocumentQualityAssessment", 
-            entity_id=str(doc_id), 
-            details=str(assessment.issues), 
-            status="WARNING"
-        )
-        db.add(audit)
-    
-    db.commit()
-    
-    # 3. Decision Gate
-    if assessment.quality_status == "QUALITY_BLOCKED":
-        # Do not persist, return Error
-        if os.path.exists(temp_path):
-            os.remove(temp_path)
-        raise HTTPException(status_code=400, detail={"msg": "Document Quality Blocked", "issues": assessment.issues})
-        
-    # If Good, Warning or Exception Required -> Persist document and start OCR
-    # (Mock persistence here)
-    # trigger_ocr_task.delay(doc_id)
-    
-    return {
-        "document_id": doc_id,
-        "quality_status": assessment.quality_status,
-        "issues": assessment.issues,
-        "msg": "Document accepted for processing (Exception/Warning may apply)"
-    }
+    model_config = ConfigDict(from_attributes=True)
+
+@router.get("/cases/{case_id}/documents", response_model=List[DocumentResponse])
+def get_case_documents(
+    case_id: int,
+    case: CaseFile = Depends(verify_case_access),
+    db: Session = Depends(get_db)
+):
+    docs = (
+        db.query(UploadedDocument)
+        .filter(UploadedDocument.case_id == case_id)
+        .order_by(UploadedDocument.created_at.desc())
+        .all()
+    )
+
+    response = []
+    for doc in docs:
+        response.append(DocumentResponse(
+            id=doc.id,
+            case_id=doc.case_id,
+            original_filename=doc.original_filename,
+            processing_status=doc.processing_status,
+            created_at=doc.created_at,
+            document_type=doc.document_type,
+            extraction_ready=bool(doc.text_extracted)
+        ))
+
+    return response
