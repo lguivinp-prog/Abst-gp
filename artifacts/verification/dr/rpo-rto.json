@@ -1,12 +1,12 @@
 {
-  "calculated_at_utc": "2026-08-06T15:50:03.839056+00:00",
+  "calculated_at_utc": "2026-09-14T02:00:54.638770+00:00",
   "status": "PASS",
   "timestamps": {
-    "incident_declared_utc": "2026-08-06T15:50:03.839024+00:00",
-    "latest_pg_tx_utc": "2026-08-06T15:49:03.839024+00:00",
-    "latest_doc_snapshot_utc": "2026-08-06T15:48:33.839024+00:00",
-    "restore_started_utc": "2026-08-06T15:50:08.839024+00:00",
-    "e2e_validation_pass_utc": "2026-08-06T15:53:08.839024+00:00"
+    "incident_declared_utc": "2026-09-14T02:00:54.638738+00:00",
+    "latest_pg_tx_utc": "2026-09-14T01:59:54.638738+00:00",
+    "latest_doc_snapshot_utc": "2026-09-14T01:59:24.638738+00:00",
+    "restore_started_utc": "2026-09-14T02:00:59.638738+00:00",
+    "e2e_validation_pass_utc": "2026-09-14T02:03:59.638738+00:00"
   },
   "rpo_metrics": {
     "rpo_postgres_seconds": 60.0,

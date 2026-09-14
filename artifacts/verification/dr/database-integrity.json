@@ -1,8 +1,8 @@
 {
-  "timestamp_utc": "2026-08-06T15:50:03.845815+00:00",
+  "timestamp_utc": "2026-09-14T02:00:54.644934+00:00",
   "status": "PASS",
-  "database_version": "PostgreSQL 16.14 on x86_64-pc-linux-musl, compiled by gcc (Alpine 15.2.0) 15.2.0, 64-bit",
-  "alembic_version": "c4d5e6f7a8b9",
+  "database_version": "PostgreSQL 16.15 on x86_64-pc-linux-musl, compiled by gcc (Alpine 15.2.0) 15.2.0, 64-bit",
+  "alembic_version": "1daa48c477ee",
   "tables_inventory": {
     "tenants": 2,
     "users": 2,
@@ -11,7 +11,7 @@
     "processing_jobs": 0,
     "processing_metrics": 0,
     "worker_heartbeats": 0,
-    "audit_logs": 2,
+    "audit_logs": 0,
     "parsed_sections": 0,
     "quotation_extractions": 0,
     "comparison_runs": 0,
