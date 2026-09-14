@@ -1,10 +1,9 @@
-version: '3.8'
 
 services:
   db:
     image: postgres:15-alpine
     container_name: abst_db
-    restart: always
+    restart: unless-stopped
     environment:
       POSTGRES_USER: ${POSTGRES_USER:-abst_user}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-abst_password}
@@ -17,7 +16,7 @@ services:
   redis:
     image: redis:7-alpine
     container_name: abst_redis
-    restart: always
+    restart: unless-stopped
     volumes:
       - redisdata:/data
     ports:
@@ -27,7 +26,7 @@ services:
     build: 
       context: ./backend
     container_name: abst_api
-    restart: always
+    restart: unless-stopped
     environment:
       - DATABASE_URL=postgresql://${POSTGRES_USER:-abst_user}:${POSTGRES_PASSWORD:-abst_password}@db:5432/${POSTGRES_DB:-v49_db}
       - REDIS_URL=redis://redis:6379/0
@@ -37,7 +36,7 @@ services:
       - ./backend:/app
       - uploads:/data/uploads
     ports:
-      - "8000:8000"
+      - "0.0.0.0:8000:8000"
     depends_on:
       - db
       - redis
@@ -46,7 +45,7 @@ services:
     build:
       context: ./backend
     container_name: abst_worker
-    restart: always
+    restart: unless-stopped
     command: ["rq", "worker", "-u", "redis://redis:6379/0", "default"]
     environment:
       - DATABASE_URL=postgresql://${POSTGRES_USER:-abst_user}:${POSTGRES_PASSWORD:-abst_password}@db:5432/${POSTGRES_DB:-v49_db}
@@ -65,7 +64,7 @@ services:
       context: ./backend
       dockerfile: Dockerfile.ocr
     container_name: abst_worker_ocr
-    restart: always
+    restart: unless-stopped
     command: ["rq", "worker", "-u", "redis://redis:6379/0", "ocr_tasks"]
     environment:
       - DATABASE_URL=postgresql://${POSTGRES_USER:-abst_user}:${POSTGRES_PASSWORD:-abst_password}@db:5432/${POSTGRES_DB:-v49_db}
@@ -84,7 +83,7 @@ services:
     build:
       context: ./frontend
     container_name: abst_web
-    restart: always
+    restart: unless-stopped
     ports:
       - "8080:80"
     depends_on:
@@ -94,7 +93,7 @@ services:
     build:
       context: ./monitoring/exporter
     container_name: abst_sre_exporter
-    restart: always
+    restart: unless-stopped
     environment:
       - DB_HOST=db
       - DB_PORT=5432
@@ -112,7 +111,7 @@ services:
   prometheus:
     image: prom/prometheus:v2.53.0
     container_name: abst_prometheus
-    restart: always
+    restart: unless-stopped
     volumes:
       - ./monitoring/prometheus:/etc/prometheus
       - ./monitoring/alerts.yml:/etc/prometheus/alerts.yml
@@ -127,7 +126,7 @@ services:
   alertmanager:
     image: prom/alertmanager:v0.27.0
     container_name: abst_alertmanager
-    restart: always
+    restart: unless-stopped
     volumes:
       - ./monitoring/alertmanager:/etc/alertmanager
     ports:
@@ -138,7 +137,7 @@ services:
   grafana:
     image: grafana/grafana:11.1.0
     container_name: abst_grafana
-    restart: always
+    restart: unless-stopped
     environment:
       - GF_SECURITY_ADMIN_PASSWORD=admin
     volumes:

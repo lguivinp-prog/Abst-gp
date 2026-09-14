@@ -46,16 +46,10 @@ app.include_router(v6_outputs.router, prefix="/api/v6", tags=["v6_outputs"])
 app.include_router(v6_ai.router, prefix="/api/v6/ai", tags=["v6_ai"])
 app.include_router(v6_health.router, prefix="/api/v6", tags=["v6_health"])
 
-from app.api.routers import auth_router, admin
+from app.api.routers import auth_router, admin, pilot
 app.include_router(auth_router.router, prefix="/auth", tags=["auth"])
 app.include_router(admin.router, prefix="/admin", tags=["admin"])
-
-@app.get("/")
-def read_root():
-    return {
-        "app": "Abst-gp",
-        "status": "running"
-    }
+app.include_router(pilot.router, prefix="/api/pilot", tags=["pilot"])
 
 from sqlalchemy import text
 
@@ -92,3 +86,9 @@ def get_prometheus_metrics():
         content=metrics_text,
         media_type="text/plain; version=0.0.4; charset=utf-8"
     )
+
+from fastapi.staticfiles import StaticFiles
+import os
+
+static_dir = os.path.join(os.path.dirname(__file__), "static")
+app.mount("/", StaticFiles(directory=static_dir, html=True), name="static")

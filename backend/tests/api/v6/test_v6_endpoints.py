@@ -15,7 +15,7 @@ def test_create_matrix_item_generates_audit(admin_client: TestClient, db_session
         "description": "Must have 16GB RAM",
         "mandatory": True
     }
-    response = admin_client.post(f"/api/v6/cases/{case.id}/matrix", json=payload)
+    response = admin_client.post(f"/api/v6/cases/{case.id}/requirements", json=payload)
     assert response.status_code == 200, response.text
     
     # 3. Verify AuditLog

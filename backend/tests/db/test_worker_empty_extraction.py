@@ -5,7 +5,11 @@ from app.worker.tasks import execute_v1_pipeline
 from app.services.extraction.exceptions import NoSectionsExtractedError
 
 @pytest.fixture
-def empty_extraction_case(db_session):
+def empty_extraction_case(db_session, tmp_path):
+    # Crear un archivo temporal real para pasar la validación de storage
+    fake_pdf = tmp_path / "fake.pdf"
+    fake_pdf.write_bytes(b"%PDF-1.4 dummy content")
+
     # Crear un caso
     case = CaseFile(
         title="Test Case",
@@ -20,7 +24,7 @@ def empty_extraction_case(db_session):
         case_id=case.id,
         document_type="requirement",
         original_filename="test.pdf",
-        stored_path="/fake/path.pdf",
+        stored_path=str(fake_pdf),
         mime_type="application/pdf"
     )
     db_session.add(doc)

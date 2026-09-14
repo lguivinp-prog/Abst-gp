@@ -10,6 +10,7 @@ from app.models.domain import CaseFile, UploadedDocument, ParsedSection, OCRProc
 from app.services.ocr.engine import process_pdf
 from app.services.ocr.cleaner import clean_ocr_text
 from app.services.extraction.section_detector import extract_sections
+from rq.timeouts import JobTimeoutException
 
 def process_run_v1(run_id: str):
     """
@@ -18,11 +19,11 @@ def process_run_v1(run_id: str):
     """
     job = get_current_job()
     db = SessionLocal()
-    
+
     try:
         import logging
         logger = logging.getLogger(__name__)
-        
+
         updated = db.query(OCRProcessingRun).filter(
             OCRProcessingRun.run_id == run_id,
             OCRProcessingRun.status.in_(['QUEUED', 'DISPATCHING'])
@@ -32,19 +33,19 @@ def process_run_v1(run_id: str):
             "heartbeat_at": datetime.utcnow()
         })
         db.commit()
-        
+
         if updated == 0:
             run = db.query(OCRProcessingRun).filter(OCRProcessingRun.run_id == run_id).first()
             if run and run.status in ('RUNNING', 'COMPLETED', 'FAILED'):
                 logger.info(f"Run {run_id} is already {run.status}. Skipping duplicate execution.")
                 return
             raise ValueError(f"Run {run_id} is not QUEUED or DISPATCHING (status: {run.status if run else 'None'})")
-            
+
         run = db.query(OCRProcessingRun).filter(OCRProcessingRun.run_id == run_id).first()
         doc = db.query(UploadedDocument).filter(UploadedDocument.id == run.uploaded_document_id).first()
-        
+
         stop_event = threading.Event()
-        
+
         def heartbeat_worker():
             interval = int(os.environ.get("OCR_RUN_HEARTBEAT_INTERVAL_SECONDS", 15))
             while not stop_event.is_set():
@@ -57,11 +58,11 @@ def process_run_v1(run_id: str):
                     db_hb.close()
                 except Exception:
                     pass
-                time.sleep(interval)
-                
+                stop_event.wait(interval)
+
         hb_thread = threading.Thread(target=heartbeat_worker, daemon=True)
         hb_thread.start()
-        
+
         try:
             # Execute legacy pipeline
             job_id = job.id if job else run.rq_job_id
@@ -70,27 +71,27 @@ def process_run_v1(run_id: str):
         finally:
             stop_event.set()
             hb_thread.join(timeout=2)
-        
+
         # Mark Completed
         run = db.query(OCRProcessingRun).filter(OCRProcessingRun.run_id == run_id).first()
         run.status = 'COMPLETED'
         run.finished_at = datetime.utcnow()
         run.quality_status = 'APPROVED'
         db.commit()
-        
+
         # If this is PRIMARY v1 in a validation case, we must create SHADOW v2
         if run.execution_role == 'PRIMARY' and run.engine == 'v1' and run.validation_case_id:
             try:
                 # Calculate baseline snapshot
                 from app.services.ocr.checksum import calculate_baseline_hash
                 from app.models.v6.generated_output import GeneratedOutput
-                
+
                 sections = db.query(ParsedSection).filter(ParsedSection.case_id == doc.case_id).all()
                 generated_out = db.query(GeneratedOutput).filter(GeneratedOutput.case_id == doc.case_id).order_by(GeneratedOutput.id.desc()).first()
                 html = generated_out.html_output if generated_out else ""
-                
+
                 baseline_hash = calculate_baseline_hash(sections, html, "")
-                
+
                 # Update run metadata with baseline info
                 meta = dict(run.metadata_ or {})
                 meta["baseline"] = {
@@ -100,7 +101,7 @@ def process_run_v1(run_id: str):
                 }
                 run.metadata_ = meta
                 db.commit()
-                
+
                 # Now, strictly after BASELINE_READY, create SHADOW
                 shadow_dedup = hashlib.sha256(f"{run.validation_case_id}:SHADOW:v2:1".encode()).hexdigest()
                 shadow_run = OCRProcessingRun(
@@ -126,7 +127,7 @@ def process_run_v1(run_id: str):
                 run.metadata_ = meta
                 db.commit()
                 # Do NOT create SHADOW
-            
+
     except Exception as e:
         db.rollback()
         run = db.query(OCRProcessingRun).filter(OCRProcessingRun.run_id == run_id).first()
@@ -137,6 +138,16 @@ def process_run_v1(run_id: str):
             run.finished_at = datetime.utcnow()
             db.commit()
         raise e
+    except JobTimeoutException as e:
+        db.rollback()
+        run = db.query(OCRProcessingRun).filter(OCRProcessingRun.run_id == run_id).first()
+        if run:
+            run.status = 'FAILED'
+            run.failure_code = 'TIMEOUT'
+            run.failure_detail = 'El proceso de OCR excedió el tiempo máximo permitido.'
+            run.finished_at = datetime.utcnow()
+            db.commit()
+        raise
     finally:
         db.close()
 
@@ -154,7 +165,7 @@ def execute_v1_pipeline(case_id: int, file_path: str, job_id: str, fallback_used
                 UploadedDocument.case_id == case_id,
                 UploadedDocument.document_type == "requirement"
             ).order_by(UploadedDocument.id.desc()).first()
-            
+
         if doc:
             doc.processing_status = "started"
             if fallback_used:
@@ -171,7 +182,7 @@ def execute_v1_pipeline(case_id: int, file_path: str, job_id: str, fallback_used
         from app.storage.workspace import materialize_document
         with materialize_document(file_path) as local_temp_path:
             ocr_result = process_pdf(local_temp_path)
-        
+
         if job:
             job.meta['progress'] = 50
             job.meta['status_message'] = "Limpiando texto extraído..."
@@ -180,14 +191,14 @@ def execute_v1_pipeline(case_id: int, file_path: str, job_id: str, fallback_used
         # 3. Clean OCR text and Extract Sections via DocumentExtractionAgent
         from app.services.extraction.document_extraction_agent import DocumentExtractionAgent
         from app.services.extraction.exceptions import NoSectionsExtractedError
-        
+
         agent = DocumentExtractionAgent()
         db_case = db.query(CaseFile).filter(CaseFile.id == case_id).first()
-        
+
         extracted_sections = agent.process(ocr_result.pages_text, db_case.contract_type, ocr_result.structured_document)
         if not extracted_sections:
             raise NoSectionsExtractedError("No se detectaron secciones estructurales válidas en el documento (V1).")
-        
+
         # 4. Save extracted data to document
         if doc:
             doc.text_extracted = ocr_result.text
@@ -205,6 +216,11 @@ def execute_v1_pipeline(case_id: int, file_path: str, job_id: str, fallback_used
             job.meta['status_message'] = "Detectando y limpiando secciones..."
             job.save_meta()
 
+        # Clean up existing sections for THIS DOCUMENT to prevent accumulation on re-processing
+        if doc:
+            db.query(ParsedSection).filter(ParsedSection.document_id == doc.id).delete()
+            db.flush()
+
         has_warnings = False
         for sec_data in extracted_sections:
             sec_has_warnings = any(w.get("code") in ("MANUAL_REQUIRED", "LOW_CONFIDENCE_TABLE", "LOW_CONFIDENCE_TITLE") for w in sec_data.warnings_json)
@@ -214,7 +230,7 @@ def execute_v1_pipeline(case_id: int, file_path: str, job_id: str, fallback_used
             # Ensure schema_version is explicitly preserved in the persistence layer
             meta = sec_data.metadata or {}
             meta["schema_version"] = 1
-                
+
             sec = ParsedSection(
                 case_id=case_id,
                 document_id=doc.id,
@@ -233,47 +249,114 @@ def execute_v1_pipeline(case_id: int, file_path: str, job_id: str, fallback_used
                 review_status="pending_review" if sec_has_warnings else "validated"
             )
             db.add(sec)
-        
+            db.flush() # Need the section ID to link tables
+
+            # Map tables from Pydantic objects to DB models
+            from app.models.v6.structured_tables import StructuredTable, StructuredRow, StructuredCell
+            for block_index, b in enumerate(getattr(sec_data, 'structured_blocks', [])):
+                if b.type == "TABLE" and b.table_data:
+                    # Parse bounding box if present
+                    bbox_str = None
+                    if b.bbox:
+                        bbox_str = f"{b.bbox.x0},{b.bbox.y0},{b.bbox.x1},{b.bbox.y1}"
+
+                    st = StructuredTable(
+                        section_id=sec.id,
+                        page_num=b.page_num,
+                        order_index=block_index,
+                        row_count=b.table_data.row_count,
+                        col_count=b.table_data.col_count,
+                        bbox=bbox_str
+                    )
+                    db.add(st)
+                    db.flush()
+
+                    for r_idx, row in enumerate(b.table_data.rows):
+                        sr = StructuredRow(
+                            table_id=st.id,
+                            row_index=r_idx,
+                            is_header=(r_idx == 0) # Basic heuristic: first row is header
+                        )
+                        db.add(sr)
+                        db.flush()
+
+                        for c_idx, cell in enumerate(row.cells):
+                            sc = StructuredCell(
+                                row_id=sr.id,
+                                col_index=c_idx,
+                                content=cell.text,
+                                original_content=cell.text,
+                                col_span=getattr(cell, 'col_span', 1),
+                                row_span=getattr(cell, 'row_span', 1)
+                            )
+                            db.add(sc)
+
         # 7. Update Case Status and Doc Status
         db_case.status = "REVIEW_SECTIONS"
         if doc:
             doc.processing_status = "review_required" if has_warnings else "finished"
-        
+
         if job:
             job.meta['progress'] = 100
             job.meta['status_message'] = "Procesado - Pendiente Revisión" if has_warnings else "Completado"
             job.save_meta()
-            
+
         db.commit()
-        
+
     except Exception as e:
         db.rollback()
         error_msg = str(e)
-        
+
         doc = db.query(UploadedDocument).filter(UploadedDocument.processing_job_id == job_id).first()
         if not doc:
             doc = db.query(UploadedDocument).filter(
                 UploadedDocument.case_id == case_id,
                 UploadedDocument.document_type == "requirement"
             ).order_by(UploadedDocument.id.desc()).first()
-            
+
         if doc:
             doc.processing_status = "failed"
             doc.processing_error = error_msg
             doc.ocr_status = "FAILED"
-            
+
         db_case = db.query(CaseFile).filter(CaseFile.id == case_id).first()
         if db_case:
             db_case.status = "ERROR"
-            
+
         if job:
             job.meta['progress'] = 100
             job.meta['status_message'] = f"Error: {error_msg}"
             job.save_meta()
-            
+
         db.commit()
         raise
-        
+    except JobTimeoutException as e:
+        db.rollback()
+        error_msg = "El proceso de OCR excedió el tiempo máximo permitido."
+
+        doc = db.query(UploadedDocument).filter(UploadedDocument.processing_job_id == job_id).first()
+        if not doc:
+            doc = db.query(UploadedDocument).filter(
+                UploadedDocument.case_id == case_id,
+                UploadedDocument.document_type == "requirement"
+            ).order_by(UploadedDocument.id.desc()).first()
+
+        if doc:
+            doc.processing_status = "failed"
+            doc.processing_error = error_msg
+            doc.ocr_status = "FAILED"
+
+        db_case = db.query(CaseFile).filter(CaseFile.id == case_id).first()
+        if db_case:
+            db_case.status = "ERROR"
+
+        if job:
+            job.meta['progress'] = 100
+            job.meta['status_message'] = f"Error: {error_msg}"
+            job.save_meta()
+
+        db.commit()
+        raise
     finally:
         db.close()
 
@@ -284,10 +367,10 @@ def process_requirement_task(case_id: int, file_path: str):
     Delegates routing to the ExtractionOrchestrator.
     """
     from app.services.extraction_engine.orchestrator import ExtractionOrchestrator
-    
+
     job = get_current_job()
     job_id = job.id if job else "unknown"
-    
+
     ExtractionOrchestrator.coordinate_extraction(case_id, file_path, job_id)
 
 def ocr_shadow_task(case_id: int, file_path: str):
@@ -303,7 +386,7 @@ def cleanup_abandoned_uploads_task():
     """
     from app.storage.factory import get_storage
     from datetime import timedelta
-    
+
     db = SessionLocal()
     storage = get_storage()
     try:
@@ -312,14 +395,14 @@ def cleanup_abandoned_uploads_task():
             UploadedDocument.processing_status == "UPLOADING",
             UploadedDocument.created_at < threshold
         ).all()
-        
+
         for doc in abandoned_docs:
             doc.processing_status = "EXPIRED"
             try:
                 storage.delete(doc.stored_path)
             except Exception as e:
                 logging.warning(f"Failed to delete abandoned object {doc.stored_path}: {str(e)}")
-                
+
         db.commit()
     except Exception as e:
         db.rollback()

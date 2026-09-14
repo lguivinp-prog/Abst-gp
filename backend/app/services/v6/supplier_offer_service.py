@@ -1,3 +1,4 @@
+import json
 from sqlalchemy.orm import Session
 from app.models.v6.supplier_offer import SupplierOffer
 from app.models.domain import AuditLog
@@ -41,10 +42,17 @@ class SupplierOfferService:
             
         evidence = OfferEvidence(
             supplier_offer_id=offer.id,
-            evidence_type=evidence_type,
-            file_path=file_path,
-            extracted_data=extracted_data
-        )
+            document_type=evidence_type,
+            fragment=json.dumps(
+                {
+                    "file_path": file_path,
+                    "extracted_data": extracted_data
+        },
+        ensure_ascii=False,
+        sort_keys=True,
+        default=str
+    )
+)
         db.add(evidence)
         db.commit()
         db.refresh(evidence)

@@ -1,15 +1,21 @@
-import pytest
+﻿import pytest
 from app.services.v6.engines.case_risk_engine import CaseRiskEngine
 from app.models.v6.case_operational_snapshot import CaseOperationalSnapshot
-from app.models.domain import AuditLog, CaseFile
+from app.models.domain import AuditLog, CaseFile, Tenant
 from app.models.v6.supplier_profile import SupplierProfile
 from app.models.v6.supplier_offer import SupplierOffer
 from app.models.v6 import Supplier
 from sqlalchemy.orm import Session
 
 def test_case_risk_engine(db_session: Session):
-    # Setup
-    case = CaseFile(name="Risk Case", type="BIENES", tenant_id="t1")
+        # Setup
+    tenant = db_session.get(Tenant, "t1")
+    if tenant is None:
+        tenant = Tenant(id="t1", name="Risk Tenant")
+        db_session.add(tenant)
+        db_session.flush()
+
+    case = CaseFile(title="Risk Case", contract_type="BIENES", tenant_id="t1")
     supplier = Supplier(ruc="20000", business_name="S1", tenant_id="t1")
     db_session.add_all([case, supplier])
     db_session.commit()

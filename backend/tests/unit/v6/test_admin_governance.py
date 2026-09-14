@@ -1,23 +1,56 @@
+import uuid
 import pytest
 from app.services.v6.governance.admin_service import AdminGovernanceService
 from app.services.v6.telemetry.telemetry_worker import InstitutionalTelemetryWorker
-from app.models.domain import AuditLog, User
+from app.models.domain import AuditLog, User, Tenant
 from app.models.v6.tenant_config import TenantConfiguration
 from sqlalchemy.orm import Session
 from fastapi import HTTPException
 
 def test_admin_governance_service_update(db_session: Session):
+    tenant_id = f"tenant_governance_{uuid.uuid4().hex}"
+    tenant = db_session.query(Tenant).filter(Tenant.id == tenant_id).first()
+    if not tenant:
+        tenant = Tenant(
+            id=tenant_id,
+            name="Tenant B",
+        )
+        db_session.add(tenant)
+
+    user = db_session.query(User).filter(User.id == 5).first()
+    if not user:
+        user = User(
+            id=5,
+            username="governance_admin",
+            password_hash="h",
+            role="ADMIN",
+            is_active=True,
+            tenant_id=tenant_id,
+            tenant_resolution_status="RESOLVED",
+        )
+        db_session.add(user)
+
+    db_session.commit()
+
     service = AdminGovernanceService(db_session)
-    
+
     # Enable telemetry opt-in
     updates = {"telemetry_opt_in": True, "min_dpi_threshold": 300}
-    config = service.update_configuration(user_id=5, tenant_id="tenantB", updates=updates)
+    config = service.update_configuration(user_id=5, tenant_id=tenant_id, updates=updates)
     
     assert config.telemetry_opt_in is True
     assert config.min_dpi_threshold == 300
     
     # Verify AuditLog injected TELEMETRY_OPT_IN_GRANTED
-    audit = db_session.query(AuditLog).filter_by(action="TELEMETRY_OPT_IN_GRANTED").first()
+    audit = (
+    db_session.query(AuditLog)
+    .filter_by(
+        action="TELEMETRY_OPT_IN_GRANTED",
+        tenant_id=tenant_id,
+        user_id=5,
+    )
+    .first()
+)
     assert audit is not None
     assert audit.user_id == 5
 

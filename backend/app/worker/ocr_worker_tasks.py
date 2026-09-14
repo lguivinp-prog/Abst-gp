@@ -102,7 +102,7 @@ def process_run_v2(run_id: str):
                     db_hb.close()
                 except Exception:
                     pass
-                time.sleep(interval)
+                stop_event.wait(interval)
                 
         hb_thread = threading.Thread(target=heartbeat_worker, daemon=True)
         hb_thread.start()

@@ -1,4 +1,4 @@
-from app.services.v6.ai.context_builder import CaseContextBuilder
+﻿from app.services.v6.ai.context_builder import CaseContextBuilder
 from app.models.domain import CaseFile
 from app.models.v6.case_requirement_matrix import CaseRequirementMatrix
 from app.models.v6.supplier_offer import SupplierOffer
@@ -6,11 +6,11 @@ from sqlalchemy.orm import Session
 import pytest
 
 def test_context_builder_retrieves_clean_data(db_session: Session):
-    case = CaseFile(name="AI Case", type="BIENES", tenant_id="mega_tenant")
+    case = CaseFile(title="AI Case", contract_type="BIENES", tenant_id="mega_tenant")
     db_session.add(case)
     db_session.commit()
     
-    req = CaseRequirementMatrix(case_id=case.id, type="TECHNICAL", description="RAM", value="16GB", weight=1.0)
+    req = CaseRequirementMatrix(case_id=case.id, requirement_type="TECHNICAL", description="RAM", value="16GB")
     db_session.add(req)
     
     offer = SupplierOffer(case_id=case.id, supplier_id=1, status="PENDING")

@@ -21,6 +21,7 @@ def extract_tables_from_pdf(pdf_path: str) -> List[Dict[str, Any]]:
                     })
         doc.close()
     except Exception as e:
-        print(f"Error extrayendo tablas: {e}")
+        import logging
+        logging.getLogger(__name__).exception("Error extrayendo tablas")
         
     return tables_data

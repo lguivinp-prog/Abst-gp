@@ -1,0 +1,223 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Piloto OCR</title>
+    <style>
+        body { font-family: sans-serif; margin: 20px; background: #f5f5f5; }
+        .card { background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); margin-bottom: 20px; }
+        input, button { padding: 8px; margin: 5px 0; }
+        table { border-collapse: collapse; width: 100%; margin-bottom: 10px; }
+        td, th { border: 1px solid #ccc; padding: 6px; }
+        .doc-item { cursor: pointer; padding: 10px; border-bottom: 1px solid #eee; }
+        .doc-item:hover { background: #f9f9f9; }
+        .hidden { display: none; }
+        .status-btn { margin-right: 10px; cursor: pointer; }
+    </style>
+</head>
+<body>
+
+<div id="login-section" class="card">
+    <h2>Ingreso Piloto</h2>
+    <input type="email" id="email" placeholder="correo@institucion.gob.pe"><br>
+    <input type="password" id="password" placeholder="Contraseña"><br>
+    <button onclick="login()">Ingresar</button>
+    <div id="login-error" style="color:red"></div>
+</div>
+
+<div id="app-section" class="hidden">
+    <div class="card">
+        <h2>Subir Documento</h2>
+        <input type="file" id="file-input" accept="application/pdf">
+        <button onclick="uploadDocument()" id="upload-btn">Subir y Procesar</button>
+        <span id="upload-status" style="margin-left: 10px; font-weight: bold; color: blue;"></span>
+    </div>
+
+    <div style="display: flex; gap: 20px;">
+        <div class="card" style="flex: 1;">
+            <h2>Documentos</h2>
+            <div id="doc-list"></div>
+        </div>
+
+        <div class="card" style="flex: 2; overflow: auto; max-height: 80vh;">
+            <h2>Vista de Documento</h2>
+            <div id="doc-view">Selecciona un documento para ver sus tablas.</div>
+        </div>
+    </div>
+</div>
+
+<script>
+let token = null;
+
+async function login() {
+    const email = document.getElementById('email').value;
+    const password = document.getElementById('password').value;
+    const params = new URLSearchParams();
+    params.append('username', email);
+    params.append('password', password);
+
+    try {
+        const res = await fetch('/auth/token', { method: 'POST', body: params });
+        if (!res.ok) throw new Error("Credenciales inválidas");
+        const data = await res.json();
+        token = data.access_token;
+        document.getElementById('login-section').classList.add('hidden');
+        document.getElementById('app-section').classList.remove('hidden');
+        loadDocuments();
+        setInterval(loadDocuments, 5000);
+    } catch(e) {
+        document.getElementById('login-error').innerText = e.message;
+    }
+}
+
+async function uploadDocument() {
+    const fileInput = document.getElementById('file-input');
+    if (!fileInput.files.length) return;
+    const file = fileInput.files[0];
+
+    const status = document.getElementById('upload-status');
+    status.innerText = "Creando caso...";
+
+    try {
+        // 1. Create Case
+        const caseRes = await fetch('/cases/', {
+            method: 'POST',
+            headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+            body: JSON.stringify({ title: 'Piloto Upload', contract_type: 'BIENES' })
+        });
+        const caseData = await caseRes.json();
+
+        // 2. Upload
+        status.innerText = "Subiendo y procesando...";
+        const formData = new FormData();
+        formData.append('file', file);
+
+        await fetch(`/cases/${caseData.id}/requirement/upload`, {
+            method: 'POST',
+            headers: { 'Authorization': `Bearer ${token}` },
+            body: formData
+        });
+
+        status.innerText = "¡Subido con éxito!";
+        setTimeout(() => status.innerText = "", 3000);
+        fileInput.value = "";
+        loadDocuments();
+    } catch(e) {
+        status.innerText = "Error: " + e.message;
+    }
+}
+
+async function loadDocuments() {
+    if (!token) return;
+    const res = await fetch('/api/pilot/documents', {
+        headers: { 'Authorization': `Bearer ${token}` }
+    });
+    const docs = await res.json();
+
+    const list = document.getElementById('doc-list');
+    list.innerHTML = "";
+    docs.forEach(d => {
+        let estadoLabel = d.estado;
+        if (d.estado === 'started' || d.estado === 'processing') {
+            const docDate = new Date(d.fecha);
+            const now = new Date();
+            if ((now - docDate) > 5 * 60 * 1000) {
+                estadoLabel = 'failed (timeout)';
+            }
+        }
+
+        const div = document.createElement('div');
+        div.className = 'doc-item';
+        div.innerHTML = `<strong>${d.id} - ${d.nombre}</strong><br><small>Estado: <span style="color: ${estadoLabel.includes('fail') || estadoLabel.includes('error') ? 'red' : 'black'}">${estadoLabel}</span></small><br><small>${new Date(d.fecha).toLocaleString()}</small>`;
+        div.onclick = () => viewDocument(d.id);
+        list.appendChild(div);
+    });
+}
+
+async function viewDocument(id) {
+    const view = document.getElementById('doc-view');
+    view.innerHTML = "Cargando...";
+    const res = await fetch(`/api/pilot/documents/${id}`, {
+        headers: { 'Authorization': `Bearer ${token}` }
+    });
+    const doc = await res.json();
+
+    let html = `<h3>${doc.nombre}</h3>`;
+    doc.secciones.forEach(sec => {
+        if(sec.tables && sec.tables.length > 0) {
+            html += `<div style="margin-bottom: 30px; border-top: 2px solid #ccc; padding-top: 10px;">`;
+            const safeTitle = sec.title ? sec.title.replace(/</g, '&lt;').replace(/>/g, '&gt;') : 'Sección sin título';
+            html += `<h4>${safeTitle}</h4>`;
+
+            sec.tables.forEach(t => {
+                html += `<div style="background: #fdfdfd; border: 1px solid #ddd; padding: 10px; margin-bottom: 15px;">`;
+                html += `<div><strong>Tabla #${t.id}</strong> - Estado actual: ${t.status}</div>`;
+                html += `<div style="margin-top: 5px; margin-bottom: 10px;">
+                    <button class="status-btn" style="background: #cfc;" onclick="reviewTable(${t.id}, true)">✔️ Correcta</button>
+                    <button class="status-btn" style="background: #fcc;" onclick="reviewTable(${t.id}, false)">❌ Incorrecta</button>
+                </div>`;
+
+                // Calculate completely empty columns
+                let maxCols = 0;
+                t.rows.forEach(r => {
+                    if (r.cells.length > maxCols) maxCols = r.cells.length;
+                });
+
+                let emptyCols = new Set();
+                for (let i = 0; i < maxCols; i++) {
+                    let isEmpty = true;
+                    for (let r of t.rows) {
+                        if (r.cells[i] && r.cells[i].content && r.cells[i].content.trim() !== '') {
+                            isEmpty = false;
+                            break;
+                        }
+                    }
+                    if (isEmpty) emptyCols.add(i);
+                }
+
+                html += `<table>`;
+                t.rows.forEach(r => {
+                    html += `<tr>`;
+                    r.cells.forEach((c, idx) => {
+                        if (emptyCols.has(idx)) return;
+                        const tag = r.is_header ? 'th' : 'td';
+                        const safeContent = c.content ? c.content.replace(/</g, '&lt;').replace(/>/g, '&gt;') : '';
+                        const rowSpan = c.row_span || 1;
+                        const colSpan = c.col_span || 1;
+                        html += `<${tag} rowspan="${rowSpan}" colspan="${colSpan}">${safeContent}</${tag}>`;
+                    });
+                    html += `</tr>`;
+                });
+                html += `</table>`;
+                html += `</div>`;
+            });
+
+            const safeSecContent = sec.content ? sec.content.replace(/</g, '&lt;').replace(/>/g, '&gt;') : '';
+            html += `<h5>Texto original de la sección:</h5><pre style="white-space: pre-wrap; font-size: 12px; color: #555;">${safeSecContent}</pre>`;
+            html += `</div>`;
+        }
+    });
+
+    if(html === `<h3>${doc.nombre}</h3>`) {
+        html += "<p>El documento no tiene tablas estructuradas o sigue procesándose.</p>";
+    }
+
+    view.innerHTML = html;
+}
+
+async function reviewTable(id, isOk) {
+    await fetch(`/api/pilot/tables/${id}/review`, {
+        method: 'POST',
+        headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ ok: isOk })
+    });
+    alert(`Tabla marcada como ${isOk ? 'Correcta' : 'Incorrecta'}`);
+    // Refresh doc
+    const currentDocId = document.querySelector('#doc-view h3').innerText;
+    // We could parse ID but just reloading docs and keeping current view would be better.
+    // User will see changes next time they click.
+}
+</script>
+
+</body>
+</html>

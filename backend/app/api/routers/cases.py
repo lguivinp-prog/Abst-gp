@@ -23,6 +23,8 @@ from app.models.domain import (
     FinalConditionComparison
 )
 from app.models.v6.generated_output import GeneratedOutput
+from app.models.v6.output_template import OutputTemplate
+import hashlib
 
 from app.models.domain import User, AuditLog
 from app.api.auth import get_current_user, get_current_active_user, verify_case_access, require_role
@@ -114,11 +116,11 @@ def assign_case(
     ).first()
     if not target_user:
         raise NotFoundException("Target user not found")
-        
+
     db_case.assigned_to_user_id = assign_req.assigned_to_user_id
     db_case.assigned_by_user_id = current_user.id
     db_case.assigned_at = datetime.now(timezone.utc)
-    
+
     audit = AuditLog(
         user_id=current_user.id,
         tenant_id=current_user.tenant_id,
@@ -129,7 +131,7 @@ def assign_case(
         status="SUCCESS"
     )
     db.add(audit)
-    
+
     try:
         import sqlalchemy.exc
         db.flush()
@@ -137,7 +139,7 @@ def assign_case(
     except sqlalchemy.exc.SQLAlchemyError as e:
         db.rollback()
         raise HTTPException(status_code=500, detail="Transaction failed")
-        
+
     db.refresh(db_case)
     return db_case
 
@@ -183,7 +185,7 @@ def upload_requirement(
 
     storage = get_storage()
     file_id = f"{uuid.uuid4()}.pdf"
-    
+
     file.file.seek(0)
     file_path = storage.put(
         tenant_id=current_user.tenant_id,
@@ -240,12 +242,18 @@ def get_requirement_document_content(
         .order_by(UploadedDocument.id.desc())
         .first()
     )
-    
+
     if not doc:
         raise NotFoundException("Requirement document not found for this case")
-        
+
     storage = get_storage()
-    if not storage.exists(doc.stored_path):
+
+    uploads_dir = os.path.realpath(settings.UPLOADS_DIR)
+    target_path = os.path.realpath(doc.stored_path)
+
+    is_safe = target_path.startswith(uploads_dir + os.sep)
+
+    if not is_safe or not storage.exists(doc.stored_path):
         # Registrar falla silenciosamente sin exponer ruta interna
         audit = AuditLog(
             user_id=current_user.id,
@@ -272,9 +280,9 @@ def get_requirement_document_content(
     )
     db.add(audit)
     db.commit()
-    
+
     safe_filename = f"requirement-{case_id}.pdf"
-    
+
     return FileResponse(
         path=doc.stored_path,
         media_type="application/pdf",
@@ -436,7 +444,7 @@ def update_section(
             status_code=404,
             detail="Section not found"
         )
-    
+
     if current_user.role != "ADMIN":
         case = db.query(CaseFile).filter(CaseFile.id == section.case_id).first()
         if not case or case.assigned_to_user_id != current_user.id:
@@ -457,12 +465,12 @@ def update_section(
 def has_unresolved_review(section: ParsedSection) -> bool:
     if section.review_status == "pending_review":
         return True
-    
+
     # If a section was marked as MANUAL_REQUIRED or LOW_CONFIDENCE but hasn't been human-validated
     if section.review_status != "validated" and section.warnings_json:
         if any(w.get("code") in ("MANUAL_REQUIRED", "LOW_CONFIDENCE_TABLE", "LOW_CONFIDENCE_TITLE") for w in section.warnings_json):
             return True
-            
+
     return False
 
 @router.post(
@@ -510,7 +518,7 @@ def upload_quotation(
         storage = get_storage()
         file_ext = Path(file.filename or "quotation.pdf").suffix or ".pdf"
         saved_filename = f"quotation_{case_id}_{uuid.uuid4().hex}{file_ext}"
-        
+
         file.file.seek(0)
         saved_path = storage.put(
             tenant_id=current_user.tenant_id,
@@ -697,9 +705,9 @@ def run_comparison_endpoint(
     quotation_data = quotation.raw_json or {}
 
     from app.api.routing import TenantRouter
-    
+
     route_info = TenantRouter.get_tenant_routing(locked_case.tenant_id, db)
-    
+
     if route_info["engine"] == "v2":
         # Note: V2 Engine logic would be invoked here.
         pass
@@ -717,7 +725,7 @@ def run_comparison_endpoint(
                     **result
                 )
             )
-            
+
         # Flush to catch any insertion errors before committing
         db.flush()
 
@@ -839,18 +847,48 @@ def generate_html_endpoint(
     )
 
 
-    output = GeneratedOutput(
-        case_id=case_id,
-        html_output=html,
-        plain_text_output=plain,
-        version_number=version
+        # V6 compatibility: GeneratedOutput requires a provisioned active template.
+    # OutputTemplate provisioning belongs to bootstrap/seed, not this endpoint.
+    template = (
+        db.query(OutputTemplate)
+        .filter(
+            OutputTemplate.type == "CONDICIONES",
+            OutputTemplate.version == "1.0",
+            OutputTemplate.entity_name == "Abast-gp",
+            OutputTemplate.status == "ACTIVE",
+        )
+        .first()
     )
 
+    if not template:
+        raise HTTPException(
+            status_code=500,
+            detail="Mandatory active output template CONDICIONES/1.0 is not configured",
+        )
+
+    content_hash = hashlib.sha256(html.encode("utf-8")).hexdigest()
+
+    output = GeneratedOutput(
+        case_id=case_id,
+        template_id=template.id,
+        content_rendered=html,
+        generation_hash=content_hash,
+        generated_by=None,
+        template_version=template.version,
+        accuracy_gate_result="LEGACY_COMPAT",
+        source_snapshot={
+            "sections": section_data,
+            "comparisons": comparison_data,
+        },
+        status="GENERATED",
+        html_output=html,
+        plain_text_output=plain,
+        version_number=version,
+    )
 
     db.add(output)
 
     db.commit()
-
 
     return {
         "message": "Generated",
@@ -871,7 +909,7 @@ def get_output(
     )
     if not last_output:
         raise HTTPException(status_code=404, detail="Output not found")
-        
+
     return {
         "html": last_output.html_output,
         "plain_text": last_output.plain_text_output,

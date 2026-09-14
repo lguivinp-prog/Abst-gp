@@ -27,7 +27,7 @@ def setup_security_data():
         user2 = User(id=2, username="op1", password_hash="x", role="OPERATOR", is_active=True, tenant_id="tenant1", tenant_resolution_status="RESOLVED")
         user3 = User(id=3, username="ro1", password_hash="x", role="READONLY", is_active=True, tenant_id="tenant1", tenant_resolution_status="RESOLVED")
         user4 = User(id=4, username="op2", password_hash="x", role="OPERATOR", is_active=True, tenant_id="tenant2", tenant_resolution_status="RESOLVED")
-        user5 = User(id=5, username="quar", password_hash="x", role="OPERATOR", is_active=False, tenant_id=None, tenant_resolution_status="QUARANTINED")
+        user5 = User(id=5, username="quar", password_hash="x", role="OPERATOR", is_active=False, tenant_id="tenant1", tenant_resolution_status="QUARANTINED")
         db.merge(user1)
         db.merge(user2)
         db.merge(user3)
@@ -163,7 +163,7 @@ def test_other_tenant(setup_security_data):
         assert response.status_code == 404
 
 def test_quarantine(setup_security_data):
-    mock_auth({"id": 5, "username": "quar", "role": "OPERATOR", "is_active": False, "tenant_id": None, "tenant_resolution_status": "QUARANTINED", "must_change_password": False, "password_hash": "x"})
+    mock_auth({"id": 5, "username": "quar", "role": "OPERATOR", "is_active": False, "tenant_id": "tenant1", "tenant_resolution_status": "QUARANTINED", "must_change_password": False, "password_hash": "x"})
     with TestClient(app) as client:
         response = client.get("/cases/1001/documents/requirement/content")
         assert response.status_code == 401

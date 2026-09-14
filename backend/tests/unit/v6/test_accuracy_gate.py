@@ -1,4 +1,4 @@
-from app.services.v6.engines.accuracy_gate import ContractAccuracyGate
+﻿from app.services.v6.engines.accuracy_gate import ContractAccuracyGate
 from app.models.v6.case_workflow import CaseWorkflow
 from app.models.v6.supplier_offer import SupplierOffer
 from app.models.v6.offer_evaluation import OfferEvaluation
@@ -6,7 +6,7 @@ from app.models.domain import CaseFile
 from sqlalchemy.orm import Session
 
 def test_accuracy_gate_fails_if_not_approved(db_session: Session):
-    case = CaseFile(name="Test", type="BIENES", tenant_id="mega_tenant")
+    case = CaseFile(title="Test", contract_type="BIENES", tenant_id="mega_tenant")
     db_session.add(case)
     db_session.commit()
     
@@ -18,7 +18,7 @@ def test_accuracy_gate_fails_if_not_approved(db_session: Session):
     assert result == "ACCURACY_FAILED"
 
 def test_accuracy_gate_fails_if_conflict_exists(db_session: Session):
-    case = CaseFile(name="Test 2", type="BIENES", tenant_id="mega_tenant")
+    case = CaseFile(title="Test 2", contract_type="BIENES", tenant_id="mega_tenant")
     db_session.add(case)
     db_session.commit()
     

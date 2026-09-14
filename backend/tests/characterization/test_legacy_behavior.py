@@ -34,10 +34,19 @@ def test_legacy_ocr_run_initialization(db_session: Session, setup_mega_tenant):
     db_session.add(doc)
     db_session.commit()
     
+    job = ProcessingJob(
+        document_id=doc.id,
+        worker_type="abst_worker",
+        status="pending"
+    )
+    db_session.add(job)
+    db_session.commit()
+
     run_id = uuid.uuid4()
     run = OCRProcessingRun(
         run_id=run_id,
         uploaded_document_id=doc.id,
+        processing_job_id=job.id,
         execution_role="PRIMARY",
         engine="v1",
         status="PENDING_DISPATCH",

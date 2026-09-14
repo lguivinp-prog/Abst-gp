@@ -35,7 +35,7 @@ class RequirementResponse(BaseModel):
     mandatory: bool
     status: str
     evidences: List[EvidenceResponse] = []
-    
+
     class Config:
         from_attributes = True
 
@@ -44,6 +44,12 @@ class RequirementUpdate(BaseModel):
     description: Optional[str] = None
     value: Optional[str] = None
     reason: str
+
+class RequirementCreate(BaseModel):
+    requirement_type: str
+    description: str
+    mandatory: bool = True
+    value: Optional[str] = None
 
 @router.post("/cases/{case_id}/requirements/extract", response_model=List[RequirementResponse])
 def extract_requirements(
@@ -56,9 +62,9 @@ def extract_requirements(
     doc = db.query(UploadedDocument).filter(UploadedDocument.id == req.document_id, UploadedDocument.case_id == case_id).first()
     if not doc:
         raise HTTPException(status_code=404, detail="Document not found")
-        
+
     text = doc.text_extracted or "Simulated OCR Text for Extraction"
-    
+
     return extraction_service.process_text_and_propose(
         db=db,
         case_id=case_id,
@@ -76,6 +82,41 @@ def get_requirements(
 ):
     return db.query(CaseRequirementMatrix).filter(CaseRequirementMatrix.case_id == case_id).all()
 
+@router.post("/cases/{case_id}/requirements", response_model=RequirementResponse)
+def create_requirement(
+    case_id: int,
+    req_data: RequirementCreate,
+    case: CaseFile = Depends(verify_case_access),
+    current_user: User = Depends(get_current_active_user),
+    db: Session = Depends(get_db)
+):
+    req = CaseRequirementMatrix(
+        case_id=case_id,
+        requirement_type=req_data.requirement_type,
+        description=req_data.description,
+        mandatory=req_data.mandatory,
+        value=req_data.value,
+        status="PENDING_REVIEW"
+    )
+    db.add(req)
+
+    audit = AuditLog(
+        user_id=current_user.id,
+        tenant_id=current_user.tenant_id,
+        action="CREATE_REQUIREMENT",
+        entity_type="CaseRequirementMatrix",
+        entity_id="", # will update after flush
+        details=json.dumps({"description": req_data.description}),
+        status="SUCCESS"
+    )
+    db.add(audit)
+    db.flush()
+    audit.entity_id = str(req.id)
+    db.commit()
+    db.refresh(req)
+
+    return req
+
 @router.put("/cases/{case_id}/requirements/{req_id}", response_model=RequirementResponse)
 def update_requirement(
     case_id: int,
@@ -89,24 +130,24 @@ def update_requirement(
         CaseRequirementMatrix.id == req_id,
         CaseRequirementMatrix.case_id == case_id
     ).first()
-    
+
     if not req:
         raise HTTPException(status_code=404, detail="Requirement not found")
-        
+
     old_status = req.status
-    
+
     if update_data.status not in ["VALIDATED", "MODIFIED_BY_USER", "OBSERVED", "REJECTED"]:
         raise HTTPException(status_code=400, detail="Invalid status")
-        
+
     req.status = update_data.status
     if update_data.description:
         req.description = update_data.description
     if update_data.value is not None:
         req.value = update_data.value
-        
+
     req.validated_by = current_user.id
     req.validated_at = datetime.now(timezone.utc)
-    
+
     audit = AuditLog(
         user_id=current_user.id,
         tenant_id=current_user.tenant_id,
@@ -125,5 +166,5 @@ def update_requirement(
     db.add(audit)
     db.commit()
     db.refresh(req)
-    
+
     return req

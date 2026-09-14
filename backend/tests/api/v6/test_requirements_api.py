@@ -30,7 +30,7 @@ def test_extract_requirements_generates_pending_proposals(admin_client: TestClie
     
     for req in data:
         assert req["status"] == "PENDING_REVIEW" # No auto-approval
-        assert req["evidences"] == [] # My mock API didn't join evidences in response yet, but let's check DB
+        assert len(req["evidences"]) > 0
         
         db_evidence = db_session.query(RequirementEvidence).filter(RequirementEvidence.requirement_id == req["id"]).first()
         assert db_evidence is not None

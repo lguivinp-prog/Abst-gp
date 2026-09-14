@@ -5,30 +5,37 @@ from app.schemas.document import BBox
 
 def test_table_split_by_empty_rows_and_spatial_distance():
     # Mocking fitz.Page and pdfplumber
+
     class MockRow:
         def __init__(self, bbox, cells):
             self.bbox = bbox
             self.cells = cells
 
     class MockTable:
-        def __init__(self, rows):
+        def __init__(self, rows, bbox):
             self.rows = rows
+            self.bbox = bbox
+
         def extract(self):
             return [r.cells for r in self.rows]
-
     # Create a table where the first two rows are close together (Table A)
     # Then an empty row
     # Then a row far away (Table B)
     # Then another row close to Table B
-    mock_table = MockTable(rows=[
-        MockRow((10, 10, 100, 20), ["H1", "H2", "H3"]), # Table A row 1
-        MockRow((10, 20, 100, 30), ["V1", "V2", "V3"]), # Table A row 2
-        MockRow((10, 30, 100, 40), ["", "", ""]),       # Empty row close to A
-        MockRow((10, 80, 100, 90), ["H4", "H5", "H6"]), # Table B row 1 (distance 80-40=40 > 15)
-        MockRow((10, 90, 100, 100), ["V4", "V5", "V6"]) # Table B row 2
-    ])
+    mock_table = MockTable(
+    rows=[
+        MockRow((10, 10, 100, 20), ["H1", "H2", "H3"]),
+        MockRow((10, 20, 100, 30), ["V1", "V2", "V3"]),
+        MockRow((10, 30, 100, 40), ["", "", ""]),
+        MockRow((10, 80, 100, 90), ["H4", "H5", "H6"]),
+        MockRow((10, 90, 100, 100), ["V4", "V5", "V6"]),
+    ],
+    bbox=(10, 10, 100, 100),
+    )
 
     mock_pdfplumber_page = MagicMock()
+    mock_pdfplumber_page.width = 500
+    mock_pdfplumber_page.height = 500
     mock_pdfplumber_page.crop.return_value.find_tables.return_value = [mock_table]
 
     mock_fitz_page = MagicMock()

@@ -50,6 +50,7 @@ def case_file(db_session: Session):
 def another_tenant_case(db_session: Session):
     tenant = Tenant(id="tenant_other", name="Other")
     db_session.merge(tenant)
+    db_session.flush()
     case = CaseFile(
         tenant_id="tenant_other",
         title="Other Case",
@@ -86,11 +87,25 @@ def test_initiate_and_complete_upload(v2_client, enable_v2_upload, auth_headers,
     user = db_session.query(User).filter_by(username="v2_user").first()
     app.dependency_overrides[get_current_user] = lambda: user
     
-    # Mock Storage
+        # Mock Storage
+    from io import BytesIO
     from app.storage.local import LocalStorageAdapter
+    import fitz
+
     mocker.patch.object(LocalStorageAdapter, 'generate_presigned_url', return_value="http://fake-url")
     mocker.patch.object(LocalStorageAdapter, 'exists', return_value=True)
     mocker.patch.object(LocalStorageAdapter, 'checksum', return_value="fakehash")
+
+    mock_doc = fitz.open()
+    mock_doc.new_page()
+    mock_pdf = mock_doc.tobytes()
+    mock_doc.close()
+
+    mocker.patch.object(
+        LocalStorageAdapter,
+        'get',
+        side_effect=lambda uri: BytesIO(mock_pdf)
+    )
 
     # 1. Initiate
     init_payload = {
@@ -124,10 +139,10 @@ def test_initiate_and_complete_upload(v2_client, enable_v2_upload, auth_headers,
     
     resp_complete = v2_client.post("/v2/documents/upload/complete", json=complete_payload, headers=auth_headers)
     assert resp_complete.status_code == 200, resp_complete.text
-    assert resp_complete.json()["status"] == "AVAILABLE"
+    assert resp_complete.json()["status"] == "QUEUED"
     
     db_session.refresh(doc)
-    assert doc.processing_status == "AVAILABLE"
+    assert doc.processing_status == "queued"
     
     app.dependency_overrides.clear()
 

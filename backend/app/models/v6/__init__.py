@@ -23,6 +23,7 @@ from .document_quality import DocumentQualityAssessment, DocumentQualityThreshol
 from .experience_requirement import ExperienceRequirement
 from .telemetry import InstitutionalTelemetryEvent
 from .tenant_config import TenantConfiguration, TenantConfigurationHistory
+from .structured_tables import StructuredTable, StructuredRow, StructuredCell
 
 __all__ = [
     "CaseRequirementMatrix", "Supplier", "SupplierOffer", "RequirementEvidence", 
@@ -33,5 +34,6 @@ __all__ = [
     "DocumentChunk", "CalculationTrace", "CaseOperationalSnapshot",
     "DocumentQualityAssessment", "DocumentQualityThresholdConfig",
     "ExperienceRequirement", "InstitutionalTelemetryEvent",
-    "TenantConfiguration", "TenantConfigurationHistory"
+    "TenantConfiguration", "TenantConfigurationHistory",
+    "StructuredTable", "StructuredRow", "StructuredCell"
 ]

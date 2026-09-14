@@ -7,7 +7,7 @@ def test_ai_ask_and_history(admin_client: TestClient, db_session: Session, setup
     # Seed prompts
     PromptSeedService.seed_prompts(db_session)
     
-    case = CaseFile(name="AI Chat Test", type="BIENES", tenant_id="mega_tenant")
+    case = CaseFile(title="AI Chat Test", contract_type="BIENES", tenant_id="mega_tenant")
     db_session.add(case)
     db_session.commit()
     

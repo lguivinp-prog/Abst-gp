@@ -1,4 +1,4 @@
-from fastapi.testclient import TestClient
+﻿from fastapi.testclient import TestClient
 from sqlalchemy.orm import Session
 from app.models.domain import CaseFile
 from app.models.v6.supplier import Supplier
@@ -14,12 +14,12 @@ def test_full_v6_end_to_end_flow(admin_client: TestClient, db_session: Session, 
     Steps: Case -> Reqs -> Supplier -> Validations -> Offer -> Evaluate -> Select -> Approve -> Output
     """
     # 1. Create CaseFile (Simulated as existing legacy domain)
-    case = CaseFile(name="E2E Servers", type="BIENES", tenant_id="mega_tenant")
+    case = CaseFile(title="E2E Servers", contract_type="BIENES", tenant_id="mega_tenant")
     db_session.add(case)
     db_session.commit()
     
     # 2. Extract Requirements (Simulate existing req)
-    req = CaseRequirementMatrix(case_id=case.id, type="TECHNICAL", description="RAM", value="16GB", weight=1.0)
+    req = CaseRequirementMatrix(case_id=case.id, requirement_type="TECHNICAL", description="RAM", value="16GB")
     db_session.add(req)
     db_session.commit()
     

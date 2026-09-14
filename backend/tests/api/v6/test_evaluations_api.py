@@ -1,4 +1,4 @@
-from fastapi.testclient import TestClient
+﻿from fastapi.testclient import TestClient
 from sqlalchemy.orm import Session
 from app.models.v6.supplier import Supplier
 from app.models.v6.supplier_offer import SupplierOffer
@@ -6,7 +6,7 @@ from app.models.v6.case_requirement_matrix import CaseRequirementMatrix
 from app.models.domain import CaseFile, AuditLog
 
 def test_evaluate_offer_creates_evaluations_and_audit(admin_client: TestClient, db_session: Session, setup_mega_tenant):
-    case = CaseFile(name="Laptop Purchase", type="BIENES", tenant_id="mega_tenant")
+    case = CaseFile(title="Laptop Purchase", contract_type="BIENES", tenant_id="mega_tenant")
     db_session.add(case)
     db_session.commit()
     
@@ -18,7 +18,7 @@ def test_evaluate_offer_creates_evaluations_and_audit(admin_client: TestClient, 
     db_session.add(offer)
     db_session.commit()
     
-    req = CaseRequirementMatrix(case_id=case.id, type="TECHNICAL", description="Plazo", value="10 dias", weight=1.0)
+    req = CaseRequirementMatrix(case_id=case.id, requirement_type="TECHNICAL", description="Plazo", value="10 dias")
     db_session.add(req)
     db_session.commit()
     
@@ -37,7 +37,7 @@ def test_evaluate_offer_creates_evaluations_and_audit(admin_client: TestClient, 
 
 def test_update_evaluation_resolves_status(admin_client: TestClient, db_session: Session, setup_mega_tenant):
     from app.models.v6.offer_evaluation import OfferEvaluation
-    case = CaseFile(name="Services", type="SERVICIOS", tenant_id="mega_tenant")
+    case = CaseFile(title="Services", contract_type="SERVICIOS", tenant_id="mega_tenant")
     db_session.add(case)
     supplier = Supplier(ruc="20123456790", business_name="Serv Corp", tenant_id="mega_tenant")
     db_session.add(supplier)
@@ -45,7 +45,7 @@ def test_update_evaluation_resolves_status(admin_client: TestClient, db_session:
     
     offer = SupplierOffer(case_id=case.id, supplier_id=supplier.id, evaluation_status="HAS_CONFLICTS")
     db_session.add(offer)
-    req = CaseRequirementMatrix(case_id=case.id, type="TECHNICAL", description="X", value="Y", weight=1.0)
+    req = CaseRequirementMatrix(case_id=case.id, requirement_type="TECHNICAL", description="X", value="Y")
     db_session.add(req)
     db_session.commit()
     

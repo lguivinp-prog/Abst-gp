@@ -10,6 +10,8 @@ class BBox(BaseModel):
 class StructuredCell(BaseModel):
     text: str
     bbox: Optional[BBox] = None
+    col_span: int = 1
+    row_span: int = 1
 
 class StructuredRow(BaseModel):
     cells: List[StructuredCell]

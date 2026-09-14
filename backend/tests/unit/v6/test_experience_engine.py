@@ -1,4 +1,4 @@
-from app.services.v6.evaluation.experience_engine import ExperienceEvaluationEngine
+﻿from app.services.v6.evaluation.experience_engine import ExperienceEvaluationEngine
 from app.models.v6.supplier_offer import SupplierOffer
 from app.models.v6.experience_evidence import ExperienceEvidence
 from app.models.domain import CaseFile
@@ -8,7 +8,7 @@ def test_experience_evaluation_engine_passed(db_session: Session):
     engine = ExperienceEvaluationEngine()
     
     # Mock data
-    case = CaseFile(name="Exp", tenant_id="mega_tenant", type="BIENES")
+    case = CaseFile(title="Exp", tenant_id="mega_tenant", contract_type="BIENES")
     db_session.add(case)
     db_session.commit()
     

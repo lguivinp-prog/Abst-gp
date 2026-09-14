@@ -1,4 +1,4 @@
-from app.services.v6.rag.chunking_service import DocumentChunkService
+﻿from app.services.v6.rag.chunking_service import DocumentChunkService
 from app.services.v6.rag.embedding_provider import MockEmbeddingProvider
 from app.services.v6.rag.vector_store import DeterministicVectorStore
 from app.services.v6.rag.retrieval_service import EvidenceRetrievalService
@@ -16,9 +16,9 @@ def test_chunking_service():
 
 def test_deterministic_retrieval_isolation(db_session: Session):
     # Setup Data
-    case_a = CaseFile(name="Case A", type="BIENES", tenant_id="tenant_a")
-    case_b = CaseFile(name="Case B", type="BIENES", tenant_id="tenant_a")
-    case_c = CaseFile(name="Case C", type="BIENES", tenant_id="tenant_b")
+    case_a = CaseFile(title="Case A", contract_type="BIENES", tenant_id="tenant_a")
+    case_b = CaseFile(title="Case B", contract_type="BIENES", tenant_id="tenant_a")
+    case_c = CaseFile(title="Case C", contract_type="BIENES", tenant_id="tenant_b")
     
     db_session.add_all([case_a, case_b, case_c])
     db_session.commit()

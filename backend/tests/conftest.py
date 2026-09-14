@@ -45,10 +45,10 @@ def setup_test_db_schema():
         conn.execute(text("INSERT INTO tenants (id, name, created_at) VALUES ('mega_tenant', 'Mega Tenant', NOW()) ON CONFLICT DO NOTHING"))
         conn.execute(text("INSERT INTO rollout_tenant_assignments (tenant_id, routing_mode, assignment_version) VALUES ('mega_tenant', 'FORCE_LEGACY', 'v1') ON CONFLICT DO NOTHING"))
         conn.execute(text("""
-            INSERT INTO users (id, username, password_hash, role, is_active, must_change_password, tenant_id)
+            INSERT INTO users (id, username, password_hash, role, is_active, must_change_password, tenant_id, tenant_resolution_status, failed_login_count)
             VALUES 
-            (1, 'operator', 'mock', 'OPERATOR', true, false, 'mega_tenant'),
-            (2, 'admin', 'mock', 'ADMIN', true, false, 'mega_tenant')
+            (1, 'operator', 'mock', 'OPERATOR', true, false, 'mega_tenant', 'RESOLVED', 0),
+            (2, 'admin', 'mock', 'ADMIN', true, false, 'mega_tenant', 'RESOLVED', 0)
             ON CONFLICT DO NOTHING
         """))
         conn.execute(text("SELECT setval('users_id_seq', (SELECT MAX(id) FROM users))"))
@@ -70,10 +70,10 @@ def db_session():
         conn.execute(text("INSERT INTO tenants (id, name, created_at) VALUES ('mega_tenant', 'Mega Tenant', NOW()) ON CONFLICT DO NOTHING"))
         conn.execute(text("INSERT INTO rollout_tenant_assignments (tenant_id, routing_mode, assignment_version) VALUES ('mega_tenant', 'FORCE_LEGACY', 'v1') ON CONFLICT DO NOTHING"))
         conn.execute(text("""
-            INSERT INTO users (id, username, password_hash, role, is_active, must_change_password, tenant_id)
+            INSERT INTO users (id, username, password_hash, role, is_active, must_change_password, tenant_id, tenant_resolution_status, failed_login_count)
             VALUES 
-            (1, 'operator', 'mock', 'OPERATOR', true, false, 'mega_tenant'),
-            (2, 'admin', 'mock', 'ADMIN', true, false, 'mega_tenant')
+            (1, 'operator', 'mock', 'OPERATOR', true, false, 'mega_tenant', 'RESOLVED', 0),
+            (2, 'admin', 'mock', 'ADMIN', true, false, 'mega_tenant', 'RESOLVED', 0)
             ON CONFLICT DO NOTHING
         """))
         conn.execute(text("SELECT setval('users_id_seq', (SELECT MAX(id) FROM users))"))
@@ -96,10 +96,11 @@ def db_session():
         
         # Insert mock users used by authz override
         conn.execute(text("""
-            INSERT INTO users (id, username, password_hash, role, is_active, must_change_password, tenant_id)
+            INSERT INTO users (id, username, password_hash, role, is_active, must_change_password, tenant_id, tenant_resolution_status, failed_login_count)
             VALUES 
-            (1, 'operator', 'mock', 'OPERATOR', true, false, 'mega_tenant'),
-            (2, 'admin', 'mock', 'ADMIN', true, false, 'mega_tenant')
+            (1, 'operator', 'mock', 'OPERATOR', true, false, 'mega_tenant', 'RESOLVED', 0),
+            (2, 'admin', 'mock', 'ADMIN', true, false, 'mega_tenant', 'RESOLVED', 0)
+            ON CONFLICT DO NOTHING
         """))
         conn.execute(text("SELECT setval('users_id_seq', (SELECT MAX(id) FROM users))"))
 

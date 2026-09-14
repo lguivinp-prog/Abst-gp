@@ -24,9 +24,9 @@ class CaseContextBuilder:
         # Build sanitized dict
         context = {
             "case_metadata": {
-                "name": case.name,
-                "type": case.type
-            },
+                "name": case.title,
+                "type": case.contract_type
+             },
             "requirements": [{"desc": r.description, "value": r.value} for r in reqs],
             "offers": [{"id": o.id, "status": o.status} for o in offers],
             "evaluations": [{"offer_id": e.supplier_offer_id, "status": e.status} for e in evals]

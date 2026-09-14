@@ -1,4 +1,4 @@
-import pytest
+﻿import pytest
 from app.services.v6.integrations.validation_orchestrator import SupplierValidationOrchestrator
 from app.services.v6.supplier_offer_service import SupplierOfferService
 from app.models.v6.supplier import Supplier
@@ -19,7 +19,7 @@ def test_external_validation_hybrid_fallback(db_session: Session):
     orchestrator.run_async_validation(db_session, supplier.id)
     
     profile = db_session.query(SupplierProfile).filter_by(supplier_id=supplier.id).first()
-    assert profile.consolidated_status in ["WARNING", "MANUAL_REQUIRED"]
+    assert profile.status_summary in ["WARNING", "MANUAL_REQUIRED"]
     
     # 2. Run with Fallback (Simulating parsed Anexo 4 data)
     fallback = {
@@ -31,19 +31,36 @@ def test_external_validation_hybrid_fallback(db_session: Session):
     orchestrator.run_async_validation(db_session, supplier.id, fallback_evidence=fallback)
     
     profile2 = db_session.query(SupplierProfile).filter_by(supplier_id=supplier.id).first()
-    assert profile2.consolidated_status == "VERIFIED"
+    assert profile2.status_summary == "VERIFIED"
     
     # Verify Requests
-    reqs = db_session.query(ValidationRequest).filter_by(supplier_id=supplier.id).all()
-    assert len(reqs) >= 3
-    for r in reqs:
-        if r.response_payload:
-            assert r.status == "PASSED"
+    # Verify Requests
+    reqs = (
+        db_session.query(ValidationRequest)
+        .filter_by(supplier_id=supplier.id)
+        .order_by(ValidationRequest.id.asc())
+        .all()
+    )
+
+    assert len(reqs) == 6
+
+    first_run = reqs[:3]
+    second_run = reqs[-3:]
+
+    assert any(
+        r.status in ["WARNING", "MANUAL_REQUIRED"]
+        for r in first_run
+    )
+
+    assert all(
+        r.status == "PASSED"
+        for r in second_run
+    )
 
 def test_anexo4_auto_trigger(db_session: Session):
     # Setup
     supplier = Supplier(ruc="10444444444", business_name="Supplier 2", tenant_id="mega_tenant")
-    case = CaseFile(name="Case External", type="BIENES", tenant_id="mega_tenant")
+    case = CaseFile(title="Case External", contract_type="BIENES", tenant_id="mega_tenant")
     db_session.add_all([supplier, case])
     db_session.commit()
     
@@ -70,4 +87,4 @@ def test_anexo4_auto_trigger(db_session: Session):
     # Validation orchestrator should have been triggered synchronously (mocked celery)
     profile = db_session.query(SupplierProfile).filter_by(supplier_id=supplier.id).first()
     assert profile is not None
-    assert profile.consolidated_status == "VERIFIED"
+    assert profile.status_summary == "VERIFIED"

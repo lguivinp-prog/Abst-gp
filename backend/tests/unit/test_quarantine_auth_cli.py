@@ -43,17 +43,42 @@ def test_auth_rejects_inactive(mock_db_session):
 def test_cli_resolve_quarantine_real_db(db_session, setup_mega_tenant):
     runner = CliRunner()
     
-    # 1. Prepare data
+        # 1. Prepare data
     admin_u = db_session.query(User).filter_by(role="ADMIN").first()
     if not admin_u:
-        admin_u = User(username=f"admin_{uuid.uuid4().hex[:8]}", password_hash="h", is_active=True, role='ADMIN', tenant_id=setup_mega_tenant.id)
+        admin_u = User(
+            username=f"admin_{uuid.uuid4().hex[:8]}",
+            password_hash="h",
+            is_active=True,
+            role="ADMIN",
+            tenant_id=setup_mega_tenant.id,
+        )
         db_session.add(admin_u)
-        
-    target_u = User(username=f"ambiguous_{uuid.uuid4().hex[:8]}", password_hash="h", is_active=False, role='USER', tenant_id=None, tenant_resolution_status="QUARANTINED", quarantined_at=datetime.now(timezone.utc))
+
+    quarantine_origin = Tenant(
+        id=f"quarantine_origin_{uuid.uuid4().hex[:8]}",
+        name="Quarantine Origin",
+    )
+    db_session.add(quarantine_origin)
+    db_session.flush()
+
+    target_u = User(
+        username=f"ambiguous_{uuid.uuid4().hex[:8]}",
+        password_hash="h",
+        is_active=False,
+        role="USER",
+        tenant_id=quarantine_origin.id,
+        tenant_resolution_status="QUARANTINED",
+        quarantined_at=datetime.now(timezone.utc),
+    )
     db_session.add(target_u)
     db_session.commit()
-    
-    quarantine = UserTenantQuarantine(user_id=target_u.id, reason_code="AMBIGUOUS", status="QUARANTINED")
+
+    quarantine = UserTenantQuarantine(
+        user_id=target_u.id,
+        reason_code="AMBIGUOUS",
+        status="QUARANTINED",
+    )
     db_session.add(quarantine)
     db_session.commit()
     
@@ -105,7 +130,7 @@ def test_cli_resolve_already_resolved(db_session, setup_mega_tenant):
 def test_cli_resolve_invalid_actor(db_session, setup_mega_tenant):
     runner = CliRunner()
     
-    target_u = User(username=f"target_{uuid.uuid4().hex[:8]}", password_hash="h", is_active=False, role='USER', tenant_id=None, tenant_resolution_status="QUARANTINED", quarantined_at=datetime.now(timezone.utc))
+    target_u = User(username=f"target_{uuid.uuid4().hex[:8]}", password_hash="h", is_active=False, role='USER', tenant_id=setup_mega_tenant.id, tenant_resolution_status="QUARANTINED", quarantined_at=datetime.now(timezone.utc))
     db_session.add(target_u)
     db_session.commit()
     

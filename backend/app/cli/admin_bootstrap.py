@@ -90,6 +90,12 @@ def create_admin(password_file: str = None, operation_id: str = "bootstrap"):
 
         hashed = get_password_hash(password)
         
+        from app.models.domain import Tenant
+        mega_tenant = db.query(Tenant).filter_by(id="mega_tenant").first()
+        if not mega_tenant:
+            print("Error: El tenant por defecto 'mega_tenant' no existe. Ejecuta seed_base primero.")
+            sys.exit(1)
+
         admin_user = User(
             username="bootstrap_admin",
             password_hash=hashed,

@@ -35,6 +35,8 @@ def recovery_fixture(db_session):
         user = User(id=1, email="admin@abst.com", hashed_password="pw", full_name="Admin")
         db_session.add(user)
 
+    db_session.flush()
+
     case_a = CaseFile(
         id=8801,
         title="Expediente Alfa",

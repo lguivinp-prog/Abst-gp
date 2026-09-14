@@ -47,6 +47,8 @@ def run_migrations_offline() -> None:
     from app.core.config import settings
     url = settings.DATABASE_URL
     context.configure(
+        compare_type=True,
+        compare_server_default=True,
         url=url,
         target_metadata=target_metadata,
         literal_binds=True,
@@ -87,7 +89,9 @@ def run_migrations_online() -> None:
 
     with connectable.connect() as connection:
         context.configure(
-            connection=connection, target_metadata=target_metadata
+        compare_type=True,
+        compare_server_default=True,
+        connection=connection, target_metadata=target_metadata
         )
 
         with context.begin_transaction():

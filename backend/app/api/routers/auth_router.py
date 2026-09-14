@@ -14,13 +14,13 @@ router = APIRouter()
 @router.post("/token", response_model=Token)
 def login_for_access_token(form_data: OAuth2PasswordRequestForm = Depends(), db: Session = Depends(get_db)):
     user = db.query(User).filter(User.username == form_data.username).with_for_update().first()
-    
+
     if not user:
         raise UnauthorizedException("Incorrect username or password")
-        
+
     if user.locked_until and user.locked_until > datetime.now(timezone.utc):
         raise UnauthorizedException("Account locked")
-        
+
     if not verify_password(form_data.password, user.password_hash):
         # Increment failed login count
         user.failed_login_count += 1
@@ -28,7 +28,7 @@ def login_for_access_token(form_data: OAuth2PasswordRequestForm = Depends(), db:
             user.locked_until = datetime.now(timezone.utc) + timedelta(minutes=15)
         db.commit()
         raise UnauthorizedException("Incorrect username or password")
-        
+
     if not user.is_active:
         raise UnauthorizedException("Inactive user")
 
@@ -42,3 +42,25 @@ def login_for_access_token(form_data: OAuth2PasswordRequestForm = Depends(), db:
         data={"sub": user.username, "role": user.role}, expires_delta=access_token_expires
     )
     return {"access_token": access_token, "token_type": "bearer"}
+
+from pydantic import BaseModel
+from app.api.auth import get_password_hash, get_current_user
+
+class ChangePasswordRequest(BaseModel):
+    current_password: str
+    new_password: str
+
+@router.post("/change-password")
+def change_password(req: ChangePasswordRequest, current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+    if not verify_password(req.current_password, current_user.password_hash):
+        raise UnauthorizedException("Incorrect current password")
+
+    if len(req.new_password) < 8:
+        raise HTTPException(status_code=400, detail="Password must be at least 8 characters long")
+
+    current_user.password_hash = get_password_hash(req.new_password)
+    current_user.must_change_password = False
+    current_user.password_changed_at = datetime.now(timezone.utc)
+    db.commit()
+
+    return {"message": "Password changed successfully"}

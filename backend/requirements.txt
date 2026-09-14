@@ -18,3 +18,7 @@ opencv-python-headless>=4.10.0
 pdf2image>=1.17.0
 pdfplumber>=0.11.0
 reportlab>=4.2.0
+numpy
+
+
+pytesseract

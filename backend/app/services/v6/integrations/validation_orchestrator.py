@@ -25,7 +25,11 @@ class SupplierValidationOrchestrator:
             
         profile = db.query(SupplierProfile).filter_by(supplier_id=supplier_id).first()
         if not profile:
-            profile = SupplierProfile(supplier_id=supplier_id, consolidated_status="PENDING")
+            profile = SupplierProfile(
+    supplier_id=supplier_id,
+    status_summary="PENDING_VERIFICATION",
+    validation_status="PENDING"
+    )
             db.add(profile)
             db.flush()
             
@@ -51,15 +55,24 @@ class SupplierValidationOrchestrator:
             
         # Consolidate Supplier Profile Status
         statuses = [sunat_res.status, rnp_res.status, fup_res.status]
+
         if "ERROR" in statuses:
-            profile.consolidated_status = "ERROR"
+            summary_status = "ERROR"
+            validation_status = "WARNING"
         elif "BLOCKED" in statuses:
-            profile.consolidated_status = "BLOCKED"
+            summary_status = "BLOCKED"
+            validation_status = "BLOCKED"
         elif "MANUAL_REQUIRED" in statuses:
-            profile.consolidated_status = "MANUAL_REQUIRED"
+            summary_status = "MANUAL_REQUIRED"
+            validation_status = "PARTIAL"
         elif "WARNING" in statuses:
-            profile.consolidated_status = "WARNING"
+            summary_status = "WARNING"
+            validation_status = "WARNING"
         else:
-            profile.consolidated_status = "VERIFIED"
-            
+            summary_status = "VERIFIED"
+            validation_status = "VERIFIED"
+
+        profile.status_summary = summary_status
+        profile.validation_status = validation_status
+
         db.commit()

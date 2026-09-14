@@ -9,7 +9,7 @@ from app.models.domain import User, Tenant
 from tests.conftest import TestingSessionLocal
 
 # Assuming backend-app runs at this hostname/port inside the compose network
-BASE_URL = os.getenv("API_BASE_URL", "http://backend-app:8000")
+BASE_URL = os.getenv("API_BASE_URL", "http://127.0.0.1:8000")
 
 @pytest.fixture(scope="module", autouse=True)
 def setup_e2e_admin_user():
@@ -121,7 +121,22 @@ III. CARACTERÍSTICAS Y CONDICIONES DE LA CONTRATACIÓN
             sections = response.json()
             assert len(sections) > 0, "No sections parsed"
 
+            # 5.1 Simulate frontend manual review of sections
+            for sec in sections:
+                if sec.get("review_status") == "pending_review":
+                    update_resp = client.put(
+                        f"/cases/sections/{sec['id']}",
+                        json={
+                            "is_selected": True,
+                            "review_status": "validated",
+                            "current_text": sec.get("current_text", "")
+                        },
+                        headers=headers
+                    )
+                    assert update_resp.status_code == 200, f"Failed to validate section {sec['id']}"
+
             response = client.post(f"/cases/{case_id}/sections/confirm", headers=headers)
+            print(f"\nCONFIRM_RESPONSE: {response.status_code} {response.text}")
             assert response.status_code == 200
 
             # 6. Upload quotation PDF

@@ -48,10 +48,31 @@ def test_export_service_time_limit(db_session: Session):
     assert "6 meses" in excinfo.value.detail
 
 def test_export_service_audit_logging(db_session: Session):
+    from app.models.domain import Tenant, User
+
+    tenant = db_session.get(Tenant, "tenantA")
+    if tenant is None:
+        tenant = Tenant(id="tenantA", name="Tenant A")
+        db_session.add(tenant)
+        db_session.flush()
+
+    user = db_session.get(User, 10)
+    if user is None:
+        user = User(
+            id=10,
+            username="supervisor_export_user",
+            password_hash="h",
+            role="ADMIN",
+            is_active=True,
+            tenant_id="tenantA",
+            tenant_resolution_status="RESOLVED",
+        )
+        db_session.add(user)
+        db_session.flush()
+
     service = SupervisorExportService(db_session)
     filters = {"risk_level": "HIGH"}
-    
-    # Generate streams
+
     list(service.generate_csv_stream(10, "tenantA", filters))
     
     # Check audit log

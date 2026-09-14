@@ -30,6 +30,8 @@ def mock_case():
 def test_uploads_dir():
     test_dir = tempfile.mkdtemp(prefix="uploads_")
     os.environ["UPLOADS_DIR"] = test_dir
+    from app.core.config import settings
+    settings.UPLOADS_DIR = test_dir
     return test_dir
 
 def test_get_document_success_admin(mock_db, mock_user, mock_case, test_uploads_dir):

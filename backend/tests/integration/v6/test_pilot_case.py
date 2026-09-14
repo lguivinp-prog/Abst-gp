@@ -1,4 +1,4 @@
-from fastapi.testclient import TestClient
+﻿from fastapi.testclient import TestClient
 from sqlalchemy.orm import Session
 from app.models.domain import CaseFile
 from app.models.v6.supplier import Supplier
@@ -12,12 +12,12 @@ def test_pilot_case_execution(admin_client: TestClient, db_session: Session, set
     No direct DB manipulation except for setup dependencies (simulating V5.5 existing state).
     """
     # 1. Setup V5.5 Legacy Case
-    case = CaseFile(name="Pilot Case: Laptops", type="BIENES", tenant_id="mega_tenant")
+    case = CaseFile(title="Pilot Case: Laptops", contract_type="BIENES", tenant_id="mega_tenant")
     db_session.add(case)
     db_session.commit()
     
     # 2. Extract Requirements (Simulate)
-    req = CaseRequirementMatrix(case_id=case.id, type="TECHNICAL", description="RAM", value="32GB", weight=1.0)
+    req = CaseRequirementMatrix(case_id=case.id, requirement_type="TECHNICAL", description="RAM", value="32GB")
     db_session.add(req)
     db_session.commit()
     
@@ -27,10 +27,24 @@ def test_pilot_case_execution(admin_client: TestClient, db_session: Session, set
     db_session.commit()
     
     # 4. Add Offer
-    offer = SupplierOffer(case_id=case.id, supplier_id=supplier.id, status="PENDING")
+    offer = SupplierOffer(
+        case_id=case.id,
+        supplier_id=supplier.id,
+        status="PENDING"
+    )
     db_session.add(offer)
     db_session.commit()
-    
+
+    # 4.1 Add documentary evidence required by V6 evaluation
+    evidence = OfferEvidence(
+        supplier_offer_id=offer.id,
+        document_type="FICHA_TECNICA",
+        fragment="32GB",
+        confidence=0.99,
+    )
+    db_session.add(evidence)
+    db_session.commit()
+
     # 5. Evaluate Offer
     eval_res = admin_client.post(f"/api/v6/offers/{offer.id}/evaluate")
     assert eval_res.status_code == 200

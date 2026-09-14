@@ -9,14 +9,14 @@ class DeterministicCIIUMatcher:
     def match_activities(self, ciiu_codes: List[str], target_description: str) -> Dict[str, str]:
         results = {}
         for code in ciiu_codes:
-            catalog_entry = self.db.query(CiiuCatalog).filter(CiiuCatalog.code == code).first()
+            catalog_entry = self.db.query(CiiuCatalog).filter(CiiuCatalog.codigo == code).first()
             if not catalog_entry:
                 results[code] = "UNKNOWN"
                 continue
                 
             # Deterministic comparison mock for Sprint 3
             # Later: Semantic Matching Engine
-            desc_lower = catalog_entry.description.lower()
+            desc_lower = catalog_entry.descripcion.lower()
             target_lower = target_description.lower()
             
             # Simple word overlap

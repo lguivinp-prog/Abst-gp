@@ -87,12 +87,27 @@ def test_scenario_a_twenty_tenants_asymmetric_load():
 
     # 1. Setup de los 20 tenants y sus expedientes correspondientes
     with TestingSessionLocal() as db:
-        for idx, tid in enumerate(tenant_ids):
+        # Create parent tenants first so FK targets exist before CaseFile insertion.
+        for tid in tenant_ids:
             if not db.query(Tenant).filter(Tenant.id == tid).first():
                 db.add(Tenant(id=tid, name=f"Institution {tid}"))
+
+        db.flush()
+
+        # Create cases only after all tenant rows have been materialized.
+        for idx, tid in enumerate(tenant_ids):
             case_id = 9100 + idx
             if not db.query(CaseFile).filter(CaseFile.id == case_id).first():
-                db.add(CaseFile(id=case_id, title=f"Case {tid}", contract_type="BIEN", tenant_id=tid, status="OPEN"))
+                db.add(
+                    CaseFile(
+                        id=case_id,
+                        title=f"Case {tid}",
+                        contract_type="BIEN",
+                        tenant_id=tid,
+                        status="OPEN",
+                    )
+                )
+
         db.commit()
 
     # 2. Generar carga asimétrica: tenant_01 = 50 jobs, otros = 3 jobs cada uno
@@ -166,18 +181,44 @@ def test_scenario_b_global_capacity_race():
 
     # 1. Setup inicial de tenants y expedientes
     with TestingSessionLocal() as db:
+        # Crear primero todos los tenants para materializar las FK padre.
         if not db.query(Tenant).filter(Tenant.id == "tenant_race_base").first():
             db.add(Tenant(id="tenant_race_base", name="Tenant Race Base"))
+
+        for t_idx in range(10):
+            tid = f"tenant_competitor_{t_idx}"
+            if not db.query(Tenant).filter(Tenant.id == tid).first():
+                db.add(Tenant(id=tid, name=f"Competitor {t_idx}"))
+
+        db.flush()
+
+        # Crear los expedientes solo después de materializar los tenants.
         if not db.query(CaseFile).filter(CaseFile.id == 9200).first():
-            db.add(CaseFile(id=9200, title="Case Race Base", contract_type="BIEN", tenant_id="tenant_race_base", status="OPEN"))
-        
+            db.add(
+                CaseFile(
+                    id=9200,
+                    title="Case Race Base",
+                    contract_type="BIEN",
+                    tenant_id="tenant_race_base",
+                    status="OPEN",
+                )
+            )
+
         for t_idx in range(10):
             tid = f"tenant_competitor_{t_idx}"
             cid = 9201 + t_idx
-            if not db.query(Tenant).filter(Tenant.id == tid).first():
-                db.add(Tenant(id=tid, name=f"Competitor {t_idx}"))
+
             if not db.query(CaseFile).filter(CaseFile.id == cid).first():
-                db.add(CaseFile(id=cid, title=f"Case Comp {t_idx}", contract_type="BIEN", tenant_id=tid, status="OPEN"))
+                db.add(
+                    CaseFile(
+                        id=cid,
+                        title=f"Case Comp {t_idx}",
+                        contract_type="BIEN",
+                        tenant_id=tid,
+                        status="OPEN",
+                    )
+                )
+
         db.commit()
 
     for iteration in range(5):
@@ -257,9 +298,21 @@ def test_scenario_c_admission_throughput_benchmark():
         t_adm = db.query(Tenant).filter(Tenant.id == "tenant_admission").first()
         if not t_adm:
             db.add(Tenant(id="tenant_admission", name="Admission Tenant"))
+
+        db.flush()
+
         case_adm = db.query(CaseFile).filter(CaseFile.id == 9300).first()
         if not case_adm:
-            db.add(CaseFile(id=9300, title="Case Admission", contract_type="BIEN", tenant_id="tenant_admission", status="OPEN"))
+            db.add(
+                CaseFile(
+                    id=9300,
+                    title="Case Admission",
+                    contract_type="BIEN",
+                    tenant_id="tenant_admission",
+                    status="OPEN",
+                )
+            )
+
         db.commit()
 
     t_start = time.perf_counter()
@@ -305,9 +358,21 @@ def test_scenario_d_processing_sla_per_domain():
         t_sla = db.query(Tenant).filter(Tenant.id == "tenant_sla").first()
         if not t_sla:
             db.add(Tenant(id="tenant_sla", name="SLA Tenant"))
+
+        db.flush()
+
         case_sla = db.query(CaseFile).filter(CaseFile.id == 9350).first()
         if not case_sla:
-            db.add(CaseFile(id=9350, title="Case SLA", contract_type="BIEN", tenant_id="tenant_sla", status="OPEN"))
+            db.add(
+                CaseFile(
+                    id=9350,
+                    title="Case SLA",
+                    contract_type="BIEN",
+                    tenant_id="tenant_sla",
+                    status="OPEN",
+                )
+            )
+
         db.commit()
 
         for dom in domains:
@@ -370,22 +435,45 @@ def test_scenario_f_sql_execution_plans_and_indexes(db_session: Session):
     - Verifica el uso de índices compuestos en consultas clave.
     - Ejecuta EXPLAIN ANALYZE sobre PostgreSQL cuando esté conectado.
     """
-    is_postgres = "postgresql" in str(db_session.bind.url if db_session.bind else "").lower()
+    is_postgres = "postgresql" in str(
+        db_session.bind.url if db_session.bind else ""
+    ).lower()
 
     # 1. Setup de tenant y expediente para planes de ejecución
     t_plan_a = db_session.query(Tenant).filter(Tenant.id == "tenant_plan_a").first()
     if not t_plan_a:
         db_session.add(Tenant(id="tenant_plan_a", name="Plan Tenant A"))
+
     t_plan_b = db_session.query(Tenant).filter(Tenant.id == "tenant_plan_b").first()
     if not t_plan_b:
         db_session.add(Tenant(id="tenant_plan_b", name="Plan Tenant B"))
-    
+
+    db_session.flush()
+
     case_pa = db_session.query(CaseFile).filter(CaseFile.id == 9500).first()
     if not case_pa:
-        db_session.add(CaseFile(id=9500, title="Case Plan A", contract_type="BIEN", tenant_id="tenant_plan_a", status="OPEN"))
+        db_session.add(
+            CaseFile(
+                id=9500,
+                title="Case Plan A",
+                contract_type="BIEN",
+                tenant_id="tenant_plan_a",
+                status="OPEN",
+            )
+        )
+
     case_pb = db_session.query(CaseFile).filter(CaseFile.id == 9501).first()
     if not case_pb:
-        db_session.add(CaseFile(id=9501, title="Case Plan B", contract_type="BIEN", tenant_id="tenant_plan_b", status="OPEN"))
+        db_session.add(
+            CaseFile(
+                id=9501,
+                title="Case Plan B",
+                contract_type="BIEN",
+                tenant_id="tenant_plan_b",
+                status="OPEN",
+            )
+        )
+
     db_session.commit()
 
     # 2. Poblar datos para análisis
@@ -424,19 +512,28 @@ def test_scenario_f_sql_execution_plans_and_indexes(db_session: Session):
 def test_scenario_g_wal_churn_suppression_on_retained_job(db_session: Session):
     """
     ESCENARIO G: Supresión de Churn WAL en Jobs Retenidos.
-    - Un job en QUEUED retenido por cuota saturada es intentado múltiples veces.
-    - Verificaciones:
-      * El status_message no cambia en intentos subsecuentes.
-      * El updated_at permanece idéntico.
-      * Cero UPDATEs innecesarios a la base de datos (db.rollback() cuando no hay cambio).
-      * Telemetría Prometheus sí contabiliza el intento de reclamo retenido.
+    ...
     """
+
     t_churn = "tenant_churn"
+
     if not db_session.query(Tenant).filter(Tenant.id == t_churn).first():
         db_session.add(Tenant(id=t_churn, name="Churn Tenant"))
+
+    db_session.flush()
+
     case_c = db_session.query(CaseFile).filter(CaseFile.id == 9400).first()
     if not case_c:
-        db_session.add(CaseFile(id=9400, title="Case Churn", contract_type="BIEN", tenant_id=t_churn, status="OPEN"))
+        db_session.add(
+            CaseFile(
+                id=9400,
+                title="Case Churn",
+                contract_type="BIEN",
+                tenant_id=t_churn,
+                status="OPEN",
+            )
+        )
+
     db_session.commit()
 
     # 1. Crear 2 jobs activos para saturar cuota de 2

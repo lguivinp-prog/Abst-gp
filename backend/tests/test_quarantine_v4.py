@@ -33,7 +33,14 @@ def test_global_unique_username(db_session):
 
     # 2. un usuario en cuarentena conserva y bloquea su username
     # 4. no puede registrarse otro usuario con el username del usuario en cuarentena
-    user3 = User(username="quarantined_user", password_hash="hash", role="readonly", is_active=False, tenant_resolution_status="QUARANTINED", tenant_id=None)
+    user3 = User(
+    username="quarantined_user",
+    password_hash="hash",
+    role="readonly",
+    is_active=False,
+    tenant_resolution_status="QUARANTINED",
+    tenant_id="test_tenant",
+)
     db_session.add(user3)
     db_session.commit()
 
@@ -90,7 +97,14 @@ def test_cli_sequential_resolution(db_session):
         admin = User(username="admin_actor", password_hash="hash", role="ADMIN", is_active=True, tenant_id="seq_tenant")
         db_session.add(admin)
 
-    user = User(username="seq_q_user", password_hash="hash", role="readonly", is_active=False, tenant_resolution_status="QUARANTINED", tenant_id=None)
+    user = User(
+    username="seq_q_user",
+    password_hash="hash",
+    role="readonly",
+    is_active=False,
+    tenant_resolution_status="QUARANTINED",
+    tenant_id="seq_tenant",
+)
     db_session.add(user)
     db_session.commit()
 
@@ -122,24 +136,54 @@ def test_concurrent_quarantine_resolution(db_session):
     engine = create_engine(get_test_db_url(), pool_size=10, max_overflow=20)
     TestingSessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
-    # Setup
+        # Setup
     setup_session = TestingSessionLocal()
-    tenant1 = Tenant(id="concurrent_tenant_1", name="Concurrent Tenant 1")
-    tenant2 = Tenant(id="concurrent_tenant_2", name="Concurrent Tenant 2")
+
+    tenant1 = Tenant(
+        id="concurrent_tenant_1",
+        name="Concurrent Tenant 1",
+    )
+    tenant2 = Tenant(
+        id="concurrent_tenant_2",
+        name="Concurrent Tenant 2",
+    )
+    quarantine_origin = Tenant(
+        id="concurrent_quarantine_origin",
+        name="Concurrent Quarantine Origin",
+    )
+
     setup_session.merge(tenant1)
     setup_session.merge(tenant2)
+    setup_session.merge(quarantine_origin)
     setup_session.commit()
-    
+
     admin = setup_session.query(User).filter_by(role="ADMIN").first()
     if not admin:
-        admin = User(username="admin_actor", password_hash="hash", role="ADMIN", is_active=True, tenant_id="concurrent_tenant_1")
+        admin = User(
+            username="admin_actor",
+            password_hash="hash",
+            role="ADMIN",
+            is_active=True,
+            tenant_id="concurrent_tenant_1",
+        )
         setup_session.add(admin)
 
-    user = User(username="concurrent_q_user", password_hash="hash", role="readonly", is_active=False, tenant_resolution_status="QUARANTINED", tenant_id=None)
+    user = User(
+        username="concurrent_q_user",
+        password_hash="hash",
+        role="readonly",
+        is_active=False,
+        tenant_resolution_status="QUARANTINED",
+        tenant_id="concurrent_quarantine_origin",
+    )
     setup_session.add(user)
     setup_session.commit()
 
-    quarantine = UserTenantQuarantine(user_id=user.id, reason_code="AMBIGUOUS", status="QUARANTINED")
+    quarantine = UserTenantQuarantine(
+        user_id=user.id,
+        reason_code="AMBIGUOUS",
+        status="QUARANTINED",
+    )
     setup_session.add(quarantine)
     setup_session.commit()
     

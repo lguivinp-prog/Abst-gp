@@ -2,13 +2,13 @@ from fastapi.testclient import TestClient
 from sqlalchemy.orm import Session
 from app.models.domain import CaseFile, AuditLog
 from app.models.v6.case_workflow import CaseWorkflow
-from app.models.v6.supplier_selection import SupplierSelectionFinal
+from app.models.v6.supplier_selection import SupplierSelectionFinal, SupplierSelectionAttempt
 from app.models.v6.supplier_offer import SupplierOffer
 from app.models.v6.generated_output import GeneratedOutput
 
 def test_prepare_output_api(admin_client: TestClient, db_session: Session, setup_mega_tenant):
     # Setup mock data for passing the gate
-    case = CaseFile(name="Output Test", type="BIENES", tenant_id="mega_tenant")
+    case = CaseFile(title="Output Test", contract_type="BIENES", tenant_id="mega_tenant")
     db_session.add(case)
     db_session.commit()
     
@@ -20,7 +20,10 @@ def test_prepare_output_api(admin_client: TestClient, db_session: Session, setup
     db_session.commit()
     
     # Needs a final selection to generate profile mock
-    sel = SupplierSelectionFinal(case_id=case.id, attempt_id=1) # Mock attempt_id 1
+    attempt = SupplierSelectionAttempt(case_id=case.id, supplier_offer_id=offer.id, status="PROPOSED")
+    db_session.add(attempt)
+    db_session.flush()
+    sel = SupplierSelectionFinal(case_id=case.id, attempt_id=attempt.id) # Use real attempt.id
     db_session.add(sel)
     db_session.commit()
     

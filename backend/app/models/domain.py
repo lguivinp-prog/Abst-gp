@@ -144,7 +144,7 @@ class User(Base):
 
     __table_args__ = (
         CheckConstraint(
-            "(role = 'ADMIN' AND tenant_id IS NULL AND tenant_resolution_status = 'RESOLVED') OR (role != 'ADMIN' AND tenant_id IS NOT NULL)",
+            "tenant_id IS NOT NULL",
             name="chk_users_tenant_resolution"
         ),
     )

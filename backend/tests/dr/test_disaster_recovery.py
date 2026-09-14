@@ -418,9 +418,16 @@ def test_scenario_e_dead_worker_reconciliation(db_session):
     assert job.failure_classification == "RETRYABLE"
 
     # Limpieza
+    db_session.execute(
+        text("DELETE FROM audit_logs WHERE tenant_id = :tenant_id"),
+        {"tenant_id": tenant_id},
+    )
     db_session.execute(text(f"DELETE FROM processing_jobs WHERE case_id = {case.id}"))
     db_session.execute(text(f"DELETE FROM case_files WHERE id = {case.id}"))
-    db_session.execute(text(f"DELETE FROM tenants WHERE id = '{tenant_id}'"))
+    db_session.execute(
+        text("DELETE FROM tenants WHERE id = :tenant_id"),
+        {"tenant_id": tenant_id},
+    )
     db_session.commit()
 
 
@@ -562,26 +569,43 @@ def test_dr_telemetry_and_alerting(db_session):
     alert_engine = AlertEngine()
     tenant_id = f"dr-alert-tenant-{int(time.time())}"
 
+    tenant = Tenant(id=tenant_id, name="DR Alert Tenant")
+    db_session.add(tenant)
+    db_session.commit()
+
     alert_event = alert_engine.emit_dr_alert(
         db=db_session,
         alert_type=AlertType.DR_RPO_BREACH,
         severity=AlertSeverity.CRITICAL,
         message="RPO efectivo superó umbral de 5 minutos durante simulacro DR.",
         metric_value=320.0,
-        threshold=300.0,
-        tenant_id=tenant_id,
-        metadata={"scenario": "DRILL_SIMULATION", "secret_token": "should_be_redacted"}
-    )
+    threshold=300.0,
+    tenant_id=tenant_id,
+    metadata={"scenario": "DRILL_SIMULATION", "secret_token": "should_be_redacted"}
+)
 
     assert alert_event.status == AlertStatus.FIRING
     assert alert_event.alert_type == AlertType.DR_RPO_BREACH
     assert alert_event.metadata.get("secret_token") == "[REDACTED]"
 
     # Verificar que se registró en AuditLog
-    audit_entry = db_session.query(AuditLog).filter_by(action="SRE_ALERT_FIRING", entity_type="SRE_INCIDENT").order_by(AuditLog.id.desc()).first()
+    audit_entry = db_session.query(AuditLog).filter_by(
+        action="SRE_ALERT_FIRING",
+        entity_type="SRE_INCIDENT"
+    ).order_by(AuditLog.id.desc()).first()
+
     assert audit_entry is not None
     assert "DR_RPO_BREACH" in audit_entry.details
 
+    db_session.execute(
+        text("DELETE FROM audit_logs WHERE tenant_id = :tenant_id"),
+        {"tenant_id": tenant_id},
+    )
+    db_session.execute(
+        text("DELETE FROM tenants WHERE id = :tenant_id"),
+        {"tenant_id": tenant_id},
+    )
+    db_session.commit()
 
 # ===========================================================================
 # MEDICIÓN CUANTITATIVA DE RPO Y RTO

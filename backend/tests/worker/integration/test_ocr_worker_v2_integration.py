@@ -1,5 +1,5 @@
 import pytest
-import httpx
+from io import BytesIO
 import hashlib
 import uuid
 import json
@@ -18,13 +18,9 @@ def v2_client():
         yield c
 
 @pytest.fixture
-def enable_v2_upload_minio(monkeypatch):
+def enable_v2_upload_local(monkeypatch):
     monkeypatch.setattr(settings, "DOCUMENT_UPLOAD_MODE", "v2")
-    monkeypatch.setattr(settings, "STORAGE_BACKEND", "object_storage")
-    monkeypatch.setattr(settings, "S3_ENDPOINT_URL", "http://minio:9000")
-    monkeypatch.setattr(settings, "S3_ACCESS_KEY", "minioadmin")
-    monkeypatch.setattr(settings, "S3_SECRET_KEY", "minioadmin123")
-    monkeypatch.setattr(settings, "S3_BUCKET_NAME", "abst-documents")
+    monkeypatch.setattr(settings, "STORAGE_BACKEND", "local")
 
 @pytest.fixture
 def auth_headers(db_session: Session):
@@ -66,7 +62,7 @@ def mock_rq_job():
     rq.get_current_job = original
 
 def test_ocr_worker_v2_end_to_end(
-    v2_client, enable_v2_upload_minio, auth_headers, case_file, db_session, monkeypatch
+    v2_client, enable_v2_upload_local, auth_headers, case_file, db_session, monkeypatch
 ):
     from app.api.auth import get_current_user
     user = db_session.query(User).filter_by(username="integration_user_worker").first()
@@ -95,17 +91,34 @@ def test_ocr_worker_v2_end_to_end(
     upload_id = data["upload_id"]
     doc_id = data["document_id"]
     presigned_url = data["presigned_url"]
+    doc = db_session.query(UploadedDocument).get(doc_id)
     
-    # 2. Upload to MinIO
-    upload_resp = httpx.put(presigned_url, content=minimal_pdf)
-    assert upload_resp.status_code == 200, upload_resp.text
-    
+     # 2. Persist upload using the configured local storage backend
+    from app.storage.factory import get_storage
+
+    storage = get_storage()
+    tenant_key, object_key = doc.stored_path.split("/", 1)
+
+    storage.put(
+        tenant_key,
+        object_key,
+        BytesIO(minimal_pdf),
+        expected_checksum=expected_hash
+    )
+
+    assert storage.exists(doc.stored_path)
+    assert storage.checksum(doc.stored_path) == expected_hash
+
     # 3. Complete Upload
-    complete_resp = v2_client.post("/v2/documents/upload/complete", json={
-        "document_id": doc_id,
-        "upload_id": upload_id,
-        "sha256_checksum": expected_hash
-    }, headers=auth_headers)
+    complete_resp = v2_client.post(
+        "/v2/documents/upload/complete",
+        json={
+            "document_id": doc_id,
+            "upload_id": upload_id,
+            "sha256_checksum": expected_hash
+        },
+        headers=auth_headers
+    )
     assert complete_resp.status_code == 200, complete_resp.text
     
     # 4. Create ProcessingJob and OCRProcessingRun to simulate the V2 Orchestrator
