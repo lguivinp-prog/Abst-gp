@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { PlusCircle, Search, Clock, FileText, CheckCircle, AlertCircle } from 'lucide-react';
 import { Button } from '../../components/ui/Button';
 import { Badge } from '../../components/ui/Badge';
@@ -12,6 +12,7 @@ import { RoleGuard } from '../../components/Auth/RoleGuard';
 import './CasesList.css';
 
 const CasesList: React.FC = () => {
+  const navigate = useNavigate();
   const [cases, setCases] = useState<Case[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('ALL');
@@ -41,8 +42,9 @@ const CasesList: React.FC = () => {
   };
 
   const handleCreateCase = async (payload: CaseCreate) => {
-    await casesService.createCase(payload);
-    await fetchCases();
+    const createdCase = await casesService.createCase(payload);
+    setIsModalOpen(false);
+    navigate(`/expedientes/${createdCase.id}`);
   };
 
   const getStatusConfig = (status: string) => {
