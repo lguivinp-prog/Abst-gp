@@ -11,7 +11,7 @@ class RequirementExtractionService:
     def __init__(self, extractor: RequirementExtractionProvider = None):
         self.extractor = extractor or DeterministicRequirementExtractor()
 
-    def process_text_and_propose(self, db: Session, case_id: int, user_id: int, tenant_id: str, text: str, document_name: str) -> List[CaseRequirementMatrix]:
+    def process_text_and_propose(self, db: Session, case_id: int, user_id: int, tenant_id: str, text: str, document_name: str, document_id: int = None) -> List[CaseRequirementMatrix]:
         candidates = self.extractor.extract(text=text, source_document=document_name)
         
         created_matrices = []
@@ -19,6 +19,7 @@ class RequirementExtractionService:
             # Create Matrix Entry
             req = CaseRequirementMatrix(
                 case_id=case_id,
+                source_document_id=document_id,
                 requirement_type=candidate.requirement_type,
                 description=candidate.description,
                 value=candidate.value,

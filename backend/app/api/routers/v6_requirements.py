@@ -34,6 +34,7 @@ class RequirementResponse(BaseModel):
     value: Optional[str] = None
     mandatory: bool
     status: str
+    source_document_id: Optional[int] = None
     evidences: List[EvidenceResponse] = []
 
     class Config:
@@ -51,27 +52,40 @@ class RequirementCreate(BaseModel):
     mandatory: bool = True
     value: Optional[str] = None
 
+from app.api.auth import get_current_active_user, verify_case_access, require_role
+
 @router.post("/cases/{case_id}/requirements/extract", response_model=List[RequirementResponse])
 def extract_requirements(
     case_id: int,
     req: ExtractionRequest,
     case: CaseFile = Depends(verify_case_access),
-    current_user: User = Depends(get_current_active_user),
+    current_user: User = Depends(require_role(["ADMIN", "OPERATOR"])),
     db: Session = Depends(get_db)
 ):
     doc = db.query(UploadedDocument).filter(UploadedDocument.id == req.document_id, UploadedDocument.case_id == case_id).first()
     if not doc:
         raise HTTPException(status_code=404, detail="Document not found")
 
-    text = doc.text_extracted or "Simulated OCR Text for Extraction"
+    if not doc.text_extracted or not doc.text_extracted.strip():
+        raise HTTPException(status_code=422, detail="Document text not yet extracted or empty")
+
+    # Idempotency check
+    existing_reqs = db.query(CaseRequirementMatrix).filter(
+        CaseRequirementMatrix.case_id == case_id,
+        CaseRequirementMatrix.source_document_id == req.document_id
+    ).all()
+
+    if existing_reqs:
+        return existing_reqs
 
     return extraction_service.process_text_and_propose(
         db=db,
         case_id=case_id,
         user_id=current_user.id,
         tenant_id=current_user.tenant_id,
-        text=text,
-        document_name=doc.original_filename
+        text=doc.text_extracted,
+        document_name=doc.original_filename,
+        document_id=doc.id
     )
 
 @router.get("/cases/{case_id}/requirements", response_model=List[RequirementResponse])

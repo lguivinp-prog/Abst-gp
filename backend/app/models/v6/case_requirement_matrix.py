@@ -15,6 +15,7 @@ class CaseRequirementMatrix(Base):
     status = Column(String(50), default="PENDING_REVIEW", nullable=False) # PENDING_REVIEW, VALIDATED, MODIFIED_BY_USER, OBSERVED, REJECTED
     validated_by = Column(Integer, ForeignKey("users.id", ondelete="SET NULL"), nullable=True)
     validated_at = Column(DateTime(timezone=True), nullable=True)
+    source_document_id = Column(Integer, ForeignKey("uploaded_documents.id", ondelete="SET NULL"), nullable=True, index=True)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     
     case = relationship("CaseFile", foreign_keys=[case_id])

@@ -5,6 +5,7 @@ import { handleApiError } from '../apiError';
 export const requirementsPaths = {
   list: (caseId: string | number) => `/cases/${caseId}/requirements`,
   detail: (caseId: string | number, reqId: string | number) => `/cases/${caseId}/requirements/${reqId}`,
+  extract: (caseId: string | number) => `/cases/${caseId}/requirements/extract`,
 };
 
 export const requirementsService = {
@@ -27,6 +28,14 @@ export const requirementsService = {
   updateRequirement: async (caseId: string, reqId: string | number, data: RequirementUpdate): Promise<RequirementResponse> => {
     try {
       return await v6Client.put<RequirementResponse, RequirementUpdate>(requirementsPaths.detail(caseId, reqId), data);
+    } catch (error) {
+      throw handleApiError(error);
+    }
+  },
+
+  extractRequirements: async (caseId: string, documentId: number): Promise<RequirementResponse[]> => {
+    try {
+      return await v6Client.post<RequirementResponse[], { document_id: number }>(requirementsPaths.extract(caseId), { document_id: documentId });
     } catch (error) {
       throw handleApiError(error);
     }

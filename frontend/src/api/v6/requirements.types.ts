@@ -16,6 +16,7 @@ export interface RequirementResponse {
   value?: string | null;
   mandatory: boolean;
   status: string;
+  source_document_id?: number;
   evidences: EvidenceResponse[];
 }
 
