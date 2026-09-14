@@ -1,6 +1,6 @@
 import React from 'react';
 import { Outlet, Link, useLocation } from 'react-router-dom';
-import { FileText, Settings, LayoutDashboard, Activity } from 'lucide-react';
+import { FileText, Settings, LayoutDashboard, Activity, LogOut } from 'lucide-react';
 import { useAuth } from '../../features/auth/AuthContext';
 import './Layout.css';
 
@@ -16,7 +16,7 @@ const Layout: React.FC = () => {
     if (location.pathname.includes('/settings')) {
       return 'Configuración / Sistema';
     }
-    if (location.pathname.includes('/cases/')) {
+    if (location.pathname.includes('/expedientes/')) {
       return 'Gestión Documental / Detalle de Expediente';
     }
     return 'Gestión Documental / Expedientes';
@@ -35,8 +35,8 @@ const Layout: React.FC = () => {
 
         <nav className="sidebar-nav">
           <Link
-            to="/cases"
-            className={`nav-item ${location.pathname.includes('/cases') ? 'active' : ''}`}
+            to="/expedientes"
+            className={`nav-item ${location.pathname.includes('/expedientes') ? 'active' : ''}`}
           >
             <LayoutDashboard size={20} />
             <span>Expedientes</span>
@@ -78,10 +78,11 @@ const Layout: React.FC = () => {
             </div>
           </div>
           <button
-            className="logout-button mt-2 text-sm text-red-500 hover:text-red-700 font-medium"
+            className="nav-item nav-item--logout"
             onClick={logout}
           >
-            Cerrar sesión
+            <LogOut size={20} />
+            <span>Cerrar sesión</span>
           </button>
         </div>
       </aside>

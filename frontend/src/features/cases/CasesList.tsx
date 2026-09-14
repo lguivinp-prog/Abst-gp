@@ -130,7 +130,7 @@ const CasesList: React.FC = () => {
           {filteredCases.map(c => {
             const statusConfig = getStatusConfig(c.status);
             return (
-              <Link to={`/cases/${c.id}`} key={c.id} className="block no-underline">
+              <Link to={`/expedientes/${c.id}`} key={c.id} className="block no-underline">
                 <Card className="h-full hover:shadow-md transition-shadow cursor-pointer">
                   <CardHeader className="pb-2">
                     <div className="flex justify-between items-start">

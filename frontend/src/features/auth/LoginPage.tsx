@@ -33,7 +33,7 @@ export default function LoginPage() {
       const data = response.data;
       if (data.access_token) {
         login(data.access_token);
-        navigate('/cases', { replace: true });
+        navigate('/expedientes', { replace: true });
       }
     } catch (err: any) {
       if (err.response && err.response.data && err.response.data.error) {
