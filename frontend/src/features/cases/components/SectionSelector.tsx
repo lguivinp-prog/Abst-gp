@@ -2,7 +2,7 @@ import React from 'react';
 import { Card, CardHeader, CardTitle, CardContent } from '../../../components/ui/Card';
 import { Badge } from '../../../components/ui/Badge';
 import { Button } from '../../../components/ui/Button';
-import type { Section, StructureBlock } from '../../../types';
+import type { Section } from '../../../types';
 
 
 interface SectionSelectorProps {
