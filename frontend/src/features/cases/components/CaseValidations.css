@@ -1,0 +1,170 @@
+.case-validations-container {
+  padding: 24px;
+  background-color: var(--color-background-primary);
+  border-radius: 8px;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+}
+
+.case-validations-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 24px;
+  border-bottom: 1px solid var(--color-border);
+  padding-bottom: 16px;
+}
+
+.case-validations-header h2 {
+  margin: 0 0 8px 0;
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: var(--color-text-primary);
+}
+
+.case-validations-header p {
+  margin: 0;
+  color: var(--color-text-secondary);
+  font-size: 0.875rem;
+}
+
+.case-validations-error {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background-color: #fee2e2;
+  color: #b91c1c;
+  padding: 12px 16px;
+  border-radius: 6px;
+  margin-bottom: 16px;
+  font-size: 0.875rem;
+}
+
+.case-validations-form {
+  background-color: var(--color-background-secondary);
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
+  padding: 16px;
+  margin-bottom: 24px;
+}
+
+.case-validations-form h3 {
+  margin: 0 0 16px 0;
+  font-size: 1rem;
+  color: var(--color-text-primary);
+}
+
+.case-validations-form .form-group {
+  margin-bottom: 16px;
+}
+
+.case-validations-form .form-actions {
+  display: flex;
+  justify-content: flex-end;
+}
+
+.case-validations-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 48px 24px;
+  background-color: var(--color-background-secondary);
+  border: 1px dashed var(--color-border);
+  border-radius: 8px;
+  text-align: center;
+}
+
+.case-validations-empty .empty-icon {
+  color: var(--color-text-tertiary);
+  margin-bottom: 16px;
+}
+
+.case-validations-empty h3 {
+  margin: 0 0 8px 0;
+  color: var(--color-text-primary);
+}
+
+.case-validations-empty p {
+  margin: 0;
+  color: var(--color-text-secondary);
+}
+
+.case-validations-list {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.case-validation-card {
+  background-color: var(--color-background-secondary);
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.validation-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 16px;
+  background-color: var(--color-background-primary);
+  border-bottom: 1px solid var(--color-border);
+}
+
+.validation-supplier {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.validation-supplier h4 {
+  margin: 0;
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--color-text-primary);
+}
+
+.validation-body {
+  padding: 16px;
+}
+
+.validation-details {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 24px;
+  margin-bottom: 16px;
+}
+
+.validation-payload {
+  background-color: var(--color-background-primary);
+  padding: 12px;
+  border-radius: 6px;
+  border: 1px solid var(--color-border);
+}
+
+.validation-payload .label {
+  display: block;
+  font-size: 0.75rem;
+  font-weight: 500;
+  color: var(--color-text-secondary);
+  text-transform: uppercase;
+  margin-bottom: 8px;
+}
+
+.validation-payload pre {
+  margin: 0;
+  font-size: 0.75rem;
+  color: var(--color-text-primary);
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+.spin {
+  animation: spin 2s linear infinite;
+}
+
+@keyframes spin {
+  100% {
+    transform: rotate(360deg);
+  }
+}
