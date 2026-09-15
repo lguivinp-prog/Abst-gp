@@ -1,4 +1,4 @@
-﻿from app.services.v6.ai.context_builder import CaseContextBuilder
+from app.services.v6.ai.context_builder import CaseContextBuilder
 from app.models.domain import CaseFile
 from app.models.v6.case_requirement_matrix import CaseRequirementMatrix
 from app.models.v6.supplier_offer import SupplierOffer
@@ -19,7 +19,7 @@ def test_context_builder_retrieves_clean_data(db_session: Session):
     
     context = CaseContextBuilder.build_context(db_session, case.id)
     
-    assert context["case_metadata"]["name"] == "AI Case"
+    assert context["case_metadata"]["title"] == "AI Case"
     assert len(context["requirements"]) == 1
     assert context["requirements"][0]["value"] == "16GB"
     assert len(context["offers"]) == 1

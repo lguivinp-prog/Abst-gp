@@ -41,7 +41,7 @@ class CaseContextBuilder:
                 "type": case.contract_type,
                 "status": case.status
              },
-            "requirements": [{"id": r.id, "desc": r.description, "value": r.value, "type": r.req_type} for r in reqs],
+            "requirements": [{"id": r.id, "desc": r.description, "value": r.value, "type": r.requirement_type} for r in reqs],
             "suppliers": [{"id": s.id, "ruc": s.ruc, "name": s.business_name} for s in suppliers],
             "offers": [{"id": o.id, "supplier_id": o.supplier_id, "status": o.status, "evaluation_status": o.evaluation_status} for o in offers],
             "evaluations": [{"offer_id": e.supplier_offer_id, "status": e.status, "comments": e.comments} for e in evals],

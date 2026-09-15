@@ -1,4 +1,4 @@
-﻿from fastapi.testclient import TestClient
+from fastapi.testclient import TestClient
 from sqlalchemy.orm import Session
 from app.models.domain import CaseFile
 from app.models.v6.supplier import Supplier
@@ -30,7 +30,8 @@ def test_pilot_case_execution(admin_client: TestClient, db_session: Session, set
     offer = SupplierOffer(
         case_id=case.id,
         supplier_id=supplier.id,
-        status="PENDING"
+        status="PENDING",
+        price=1000.0
     )
     db_session.add(offer)
     db_session.commit()
@@ -46,7 +47,7 @@ def test_pilot_case_execution(admin_client: TestClient, db_session: Session, set
     db_session.commit()
 
     # 5. Evaluate Offer
-    eval_res = admin_client.post(f"/api/v6/offers/{offer.id}/evaluate")
+    eval_res = admin_client.post(f"/api/v6/cases/{case.id}/offers/{offer.id}/evaluate")
     assert eval_res.status_code == 200
     
     # 6. Make Selection

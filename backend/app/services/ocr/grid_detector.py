@@ -1,7 +1,7 @@
 import fitz
 import cv2
 import numpy as np
-import pytesserac
+import pytesseract
 
 def extract_tables_by_grid_page(page, page_num, zoom=300/72, debug_dir="backend/data/debug"):
 
@@ -86,7 +86,7 @@ def extract_tables_by_grid_page(page, page_num, zoom=300/72, debug_dir="backend/
                 mean_val = np.mean(cell_img)
                 header_text = None
 
-                # Expand slightly to not cut off tex
+                # Expand slightly to not cut off text
                 cx = x + 2
                 cy = y + 2
                 cw = w - 4
@@ -107,7 +107,7 @@ def extract_tables_by_grid_page(page, page_num, zoom=300/72, debug_dir="backend/
                         c['words'].append({'x': w_cx, 'y': w_cy, 'text': wtext})
 
                 if header_text:
-                    final_text = header_tex
+                    final_text = header_text
                 else:
                     c['words'].sort(key=lambda ww: (ww['y'] // 15, ww['x']))
                     final_text = " ".join(ww['text'] for ww in c['words'])
@@ -117,7 +117,7 @@ def extract_tables_by_grid_page(page, page_num, zoom=300/72, debug_dir="backend/
 
         class MockCell:
             def __init__(self, text):
-                self.text = tex
+                self.text = text
             def __str__(self):
                 return str(self.text)
             def __repr__(self):
@@ -141,12 +141,12 @@ def extract_tables_by_grid_page(page, page_num, zoom=300/72, debug_dir="backend/
 import cv2
 import numpy as np
 import fitz
-import pytesserac
-from pytesseract import Outpu
+import pytesseract
+from pytesseract import Output
 
 class MockCell:
     def __init__(self, text):
-        self.text = tex
+        self.text = text
     def __str__(self):
         return str(self.text)
     def __repr__(self):

@@ -1,4 +1,4 @@
-﻿from fastapi.testclient import TestClient
+from fastapi.testclient import TestClient
 from sqlalchemy.orm import Session
 from app.models.domain import CaseFile
 from app.models.v6.supplier import Supplier
@@ -28,20 +28,20 @@ def test_full_v6_end_to_end_flow(admin_client: TestClient, db_session: Session, 
     db_session.add(supplier)
     db_session.commit()
     
-    # 4. Trigger Validation
-    val_res = admin_client.post(f"/api/v6/suppliers/{supplier.id}/validation-requests", json={"source": "SUNAT"})
-    assert val_res.status_code == 200
-    
-    # 5. Load Offer & Evidence
-    offer = SupplierOffer(case_id=case.id, supplier_id=supplier.id, status="PENDING")
+    # 4. Load Offer & Evidence
+    offer = SupplierOffer(case_id=case.id, supplier_id=supplier.id, status="PENDING", price=1000.0)
     db_session.add(offer)
     db_session.commit()
     ev = OfferEvidence(supplier_offer_id=offer.id, document_type="Ficha Tecnica", fragment="32GB RAM")
     db_session.add(ev)
     db_session.commit()
+
+    # 5. Trigger Validation
+    val_res = admin_client.post(f"/api/v6/cases/{case.id}/suppliers/{supplier.id}/validations", json={"source": "SUNAT"})
+    assert val_res.status_code == 200
     
     # 6. Evaluate Offer
-    eval_res = admin_client.post(f"/api/v6/offers/{offer.id}/evaluate")
+    eval_res = admin_client.post(f"/api/v6/cases/{case.id}/offers/{offer.id}/evaluate")
     assert eval_res.status_code == 200
     
     # 7. Evaluate Experience (Mocked passed via rules)
