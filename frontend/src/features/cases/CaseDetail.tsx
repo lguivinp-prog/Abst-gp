@@ -11,6 +11,7 @@ import { CaseDocuments } from './components/CaseDocuments';
 import { CaseSuppliers } from './components/CaseSuppliers';
 import { CaseOffers } from './components/CaseOffers';
 import { CaseValidations } from './components/CaseValidations';
+import { CaseEvaluations } from './components/CaseEvaluations';
 import { useComparisonFlow } from './hooks/useComparisonFlow';
 import { useCaseDetails } from './hooks/useCaseDetails';
 import { casesService } from '../../api/cases.service';
@@ -198,6 +199,8 @@ const CaseDetail: React.FC = () => {
             <CaseOffers caseId={id || ''} />
           ) : activeTab === 'validaciones' ? (
             <CaseValidations caseId={id || ''} />
+          ) : activeTab === 'evaluacion' ? (
+            <CaseEvaluations caseId={id || ''} />
           ) : (
             <div className="case-detail-placeholder">
               <p className="case-detail-placeholder-text">
