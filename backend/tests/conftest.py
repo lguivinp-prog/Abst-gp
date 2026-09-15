@@ -8,8 +8,23 @@ from alembic.config import Config
 from alembic import command
 from app.models.domain import Tenant, RolloutTenantAssignment, SystemSettings
 
-# Configurar namespace y db exclusivas para testing
 import sys
+
+def ensure_safe_test_db(conn):
+    db_name = conn.execute(text("SELECT current_database()")).scalar()
+    if not db_name:
+        pytest.exit("FATAL: Could not determine database name. Aborting test.")
+
+    db_name = db_name.lower()
+    if "abst_gp" in db_name or "production" in db_name:
+        pytest.exit(f"FATAL: Database name '{db_name}' is protected. Tests cannot run against development/production targets.")
+
+    if "test" not in db_name:
+        pytest.exit(f"FATAL: Database name '{db_name}' does not look like a test database (must contain 'test').")
+
+    app_env = os.environ.get("APP_ENV")
+    if app_env != "test":
+        pytest.exit(f"FATAL: APP_ENV is '{app_env}', but must be 'test' for destructive operations.")
 
 # Configurar namespace y db exclusivas para testing
 TEST_DATABASE_URL = os.environ.get("DATABASE_URL")
@@ -28,9 +43,8 @@ TestingSessionLocal = scoped_session(sessionmaker(autocommit=False, autoflush=Fa
 def setup_test_db_schema():
     """Ejecuta alembic upgrade head una vez por sesión de tests"""
     with engine.connect() as conn:
+        ensure_safe_test_db(conn)
         db_name = conn.execute(text("SELECT current_database()")).scalar()
-        if db_name == "abst_gp":
-            pytest.exit("FATAL: Tests are attempting to run against the production target abst_gp! Aborting.")
         print(f"\n--- Pytest running against isolated DB: {db_name} ---")
 
     # NO_USE_METADATA_CREATE_ALL
@@ -66,6 +80,7 @@ def db_session():
     ]
     
     with engine.begin() as conn:
+        ensure_safe_test_db(conn)
         conn.execute(text(f"TRUNCATE TABLE {', '.join(tables)} RESTART IDENTITY CASCADE"))
         conn.execute(text("INSERT INTO tenants (id, name, created_at) VALUES ('mega_tenant', 'Mega Tenant', NOW()) ON CONFLICT DO NOTHING"))
         conn.execute(text("INSERT INTO rollout_tenant_assignments (tenant_id, routing_mode, assignment_version) VALUES ('mega_tenant', 'FORCE_LEGACY', 'v1') ON CONFLICT DO NOTHING"))
@@ -91,6 +106,7 @@ def db_session():
     
     # Truncate tables between tests (preservando esquema y tablas de config)
     with engine.begin() as conn:
+        ensure_safe_test_db(conn)
         # RESTART IDENTITY asegura que las IDs vuelvan a 1. CASCADE limpia dependencias.
         conn.execute(text(f"TRUNCATE TABLE {', '.join(tables)} RESTART IDENTITY CASCADE"))
         
