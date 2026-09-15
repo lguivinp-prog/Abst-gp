@@ -169,4 +169,59 @@ export const casesService = {
     }
   },
 
+  // --- V6 methods ---
+  getOffers: async (id: string): Promise<any[]> => {
+    try {
+      const response = await apiClient.get(`/v6/cases/${id}/offers`);
+      return response.data;
+    } catch (error) {
+      throw handleApiError(error);
+    }
+  },
+
+  getSelection: async (id: string): Promise<any> => {
+    try {
+      const response = await apiClient.get(`/v6/cases/${id}/selection`);
+      return response.data;
+    } catch (error) {
+      throw handleApiError(error);
+    }
+  },
+
+  proposeSelection: async (id: string, data: { supplier_offer_id: number; justification_comment: string }): Promise<any> => {
+    try {
+      const response = await apiClient.post(`/v6/cases/${id}/selection`, data);
+      return response.data;
+    } catch (error) {
+      throw handleApiError(error);
+    }
+  },
+
+  getResult: async (id: string): Promise<any> => {
+    try {
+      const response = await apiClient.get(`/v6/cases/${id}/result`);
+      return response.data;
+    } catch (error) {
+      throw handleApiError(error);
+    }
+  },
+
+  approveSelection: async (id: string): Promise<any> => {
+    try {
+      const response = await apiClient.post(`/v6/cases/${id}/approve`);
+      return response.data;
+    } catch (error) {
+      throw handleApiError(error);
+    }
+  },
+
+  getHistory: async (id: string): Promise<any[]> => {
+    try {
+      const response = await apiClient.get(`/v6/cases/${id}/history`);
+      return response.data;
+    } catch (error) {
+      throw handleApiError(error);
+    }
+  },
+
 };
