@@ -19,12 +19,23 @@ class CIIUProvider:
                 payload={"error": "Missing SUNAT CIIU code. Provide manual evidence."}
             )
             
+        import os
+        is_test = os.getenv("APP_ENV") == "test"
+        
+        if not is_test:
+            # We don't have a complete official INEI catalog loaded in runtime.
+            return ValidationResult(
+                status="NO_DISPONIBLE_API",
+                source="CIIU_MATCH",
+                payload={"error": "Catálogo oficial CIIU Rev.4 no disponible en runtime."}
+            )
+            
         ciiu = db.query(CiiuCatalog).filter_by(codigo=sunat_ciiu_code, activo=True).first()
         if not ciiu:
             return ValidationResult(
                 status="WARNING",
                 source="CIIU_MATCH",
-                payload={"codigo": sunat_ciiu_code, "certeza": "UNKNOWN", "msg": "Codigo no encontrado en catalogo local INEI"}
+                payload={"codigo": sunat_ciiu_code, "certeza": "UNKNOWN", "msg": "Codigo no encontrado en catalogo de prueba"}
             )
             
         return ValidationResult(
