@@ -8,6 +8,12 @@ export interface CaseSupplierResponse {
   status?: string;
 }
 
+export interface SupplierBasic {
+  id: number;
+  ruc: string;
+  business_name: string;
+}
+
 export interface SupplierCreate {
   ruc: string;
   business_name: string;

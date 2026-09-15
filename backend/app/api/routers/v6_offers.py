@@ -9,20 +9,38 @@ from typing import Optional
 
 router = APIRouter()
 
+from typing import List
+
 class SupplierOfferCreate(BaseModel):
     supplier_id: int
     price: Optional[float] = None
     source_document: Optional[str] = None
+
+class SupplierBasic(BaseModel):
+    id: int
+    ruc: str
+    business_name: str
+
+    class Config:
+        from_attributes = True
 
 class SupplierOfferResponse(BaseModel):
     id: int
     case_id: int
     supplier_id: int
     status: str
+    evaluation_status: str
     price: Optional[float] = None
-    
+    source_document: Optional[str] = None
+    supplier: Optional[SupplierBasic] = None
+
     class Config:
         from_attributes = True
+
+class SupplierOfferUpdate(BaseModel):
+    price: Optional[float] = None
+    source_document: Optional[str] = None
+    status: Optional[str] = None
 
 @router.post("/cases/{case_id}/offers", response_model=SupplierOfferResponse)
 def attach_offer(
@@ -32,6 +50,17 @@ def attach_offer(
     current_user: User = Depends(get_current_active_user),
     db: Session = Depends(get_db)
 ):
+    from app.models.v6.supplier import Supplier
+
+    # Validar supplier existe y pertenece al tenant
+    supplier = db.query(Supplier).filter(
+        Supplier.id == item.supplier_id,
+        Supplier.tenant_id == current_user.tenant_id
+    ).first()
+
+    if not supplier:
+        raise HTTPException(status_code=400, detail="Supplier not found or not accessible")
+
     return SupplierOfferService.attach_offer(
         db=db,
         case_id=case_id,
@@ -40,3 +69,70 @@ def attach_offer(
         tenant_id=current_user.tenant_id,
         data=item.model_dump()
     )
+
+@router.get("/cases/{case_id}/offers", response_model=List[SupplierOfferResponse])
+def get_offers(
+    case_id: int,
+    case: CaseFile = Depends(verify_case_access),
+    current_user: User = Depends(get_current_active_user),
+    db: Session = Depends(get_db)
+):
+    from app.models.v6.supplier_offer import SupplierOffer
+    offers = db.query(SupplierOffer).filter(SupplierOffer.case_id == case_id).all()
+    return offers
+
+@router.get("/cases/{case_id}/offers/{offer_id}", response_model=SupplierOfferResponse)
+def get_offer(
+    case_id: int,
+    offer_id: int,
+    case: CaseFile = Depends(verify_case_access),
+    current_user: User = Depends(get_current_active_user),
+    db: Session = Depends(get_db)
+):
+    from app.models.v6.supplier_offer import SupplierOffer
+    offer = db.query(SupplierOffer).filter(SupplierOffer.case_id == case_id, SupplierOffer.id == offer_id).first()
+    if not offer:
+        raise HTTPException(status_code=404, detail="Offer not found")
+    return offer
+
+@router.put("/cases/{case_id}/offers/{offer_id}", response_model=SupplierOfferResponse)
+def update_offer(
+    case_id: int,
+    offer_id: int,
+    item: SupplierOfferUpdate,
+    case: CaseFile = Depends(verify_case_access),
+    current_user: User = Depends(get_current_active_user),
+    db: Session = Depends(get_db)
+):
+    from app.models.v6.supplier_offer import SupplierOffer
+    offer = db.query(SupplierOffer).filter(SupplierOffer.case_id == case_id, SupplierOffer.id == offer_id).first()
+    if not offer:
+        raise HTTPException(status_code=404, detail="Offer not found")
+
+    if item.price is not None:
+        offer.price = item.price
+    if item.source_document is not None:
+        offer.source_document = item.source_document
+    if item.status is not None:
+        offer.status = item.status
+
+    db.commit()
+    db.refresh(offer)
+    return offer
+
+@router.delete("/cases/{case_id}/offers/{offer_id}")
+def delete_offer(
+    case_id: int,
+    offer_id: int,
+    case: CaseFile = Depends(verify_case_access),
+    current_user: User = Depends(get_current_active_user),
+    db: Session = Depends(get_db)
+):
+    from app.models.v6.supplier_offer import SupplierOffer
+    offer = db.query(SupplierOffer).filter(SupplierOffer.case_id == case_id, SupplierOffer.id == offer_id).first()
+    if not offer:
+        raise HTTPException(status_code=404, detail="Offer not found")
+
+    db.delete(offer)
+    db.commit()
+    return {"message": "Offer deleted"}

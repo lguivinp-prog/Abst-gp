@@ -1,0 +1,237 @@
+.case-offers-container {
+  padding: 24px;
+  background-color: var(--color-background-primary);
+  border-radius: 8px;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+}
+
+.case-offers-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 24px;
+  border-bottom: 1px solid var(--color-border);
+  padding-bottom: 16px;
+}
+
+.case-offers-header h2 {
+  margin: 0 0 8px 0;
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: var(--color-text-primary);
+}
+
+.case-offers-header p {
+  margin: 0;
+  color: var(--color-text-secondary);
+  font-size: 0.875rem;
+}
+
+.case-offers-error {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background-color: #fee2e2;
+  color: #b91c1c;
+  padding: 12px 16px;
+  border-radius: 6px;
+  margin-bottom: 16px;
+  font-size: 0.875rem;
+}
+
+.case-offers-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 48px 24px;
+  background-color: var(--color-background-secondary);
+  border: 1px dashed var(--color-border);
+  border-radius: 8px;
+  text-align: center;
+}
+
+.empty-icon {
+  color: var(--color-text-tertiary);
+  margin-bottom: 16px;
+}
+
+.case-offers-empty h3 {
+  margin: 0 0 8px 0;
+  color: var(--color-text-primary);
+}
+
+.case-offers-empty p {
+  margin: 0;
+  color: var(--color-text-secondary);
+}
+
+.case-offers-list {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.case-offer-card {
+  background-color: var(--color-background-secondary);
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
+  overflow: hidden;
+  transition: all 0.2s ease;
+}
+
+.case-offer-card:hover {
+  border-color: var(--color-primary);
+  box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+}
+
+.case-offer-card.editing {
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 1px var(--color-primary);
+}
+
+.case-offer-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 16px;
+  background-color: var(--color-background-primary);
+  border-bottom: 1px solid var(--color-border);
+}
+
+.case-offer-supplier {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.case-offer-supplier h4 {
+  margin: 0;
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--color-text-primary);
+}
+
+.supplier-ruc {
+  font-size: 0.875rem;
+  color: var(--color-text-secondary);
+}
+
+.case-offer-body {
+  padding: 16px;
+}
+
+.case-offer-details {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 16px;
+}
+
+.detail-item {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.detail-item .label {
+  font-size: 0.75rem;
+  font-weight: 500;
+  color: var(--color-text-secondary);
+  text-transform: uppercase;
+}
+
+.detail-item .value {
+  font-size: 0.875rem;
+  color: var(--color-text-primary);
+}
+
+.detail-item.price .value {
+  font-size: 1.125rem;
+  font-weight: 600;
+  color: var(--color-primary);
+}
+
+.case-offer-edit-form {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 16px;
+}
+
+.form-group {
+  display: flex;
+  flex-direction: column;
+}
+
+.form-group label {
+  font-size: 0.875rem;
+  font-weight: 500;
+  margin-bottom: 6px;
+  color: var(--color-text-primary);
+}
+
+.form-group input,
+.form-group select {
+  padding: 8px 12px;
+  border: 1px solid var(--color-border);
+  border-radius: 4px;
+  font-size: 0.875rem;
+  background-color: var(--color-background-primary);
+}
+
+.input-with-icon {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.input-with-icon svg {
+  position: absolute;
+  left: 10px;
+  color: var(--color-text-tertiary);
+}
+
+.input-with-icon input {
+  padding-left: 32px;
+  width: 100%;
+}
+
+.edit-actions {
+  grid-column: 1 / -1;
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+  margin-top: 16px;
+  padding-top: 16px;
+  border-top: 1px solid var(--color-border);
+}
+
+.case-offer-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+  padding: 12px 16px;
+  background-color: var(--color-background-primary);
+  border-top: 1px solid var(--color-border);
+}
+
+.btn-delete {
+  color: var(--color-text-tertiary);
+}
+
+.btn-delete:hover {
+  color: #dc2626;
+  background-color: #fee2e2;
+}
+
+.case-offers-loading {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 200px;
+}
+
+.case-offers-loading p {
+  margin-top: 16px;
+  color: var(--color-text-secondary);
+}
