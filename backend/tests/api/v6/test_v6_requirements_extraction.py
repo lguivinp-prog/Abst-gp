@@ -65,7 +65,7 @@ def test_extract_success_and_idempotent(req_client, db_session, setup_mega_tenan
     doc1 = UploadedDocument(
         case_id=case.id, document_type="requirement", original_filename="doc1.pdf",
         mime_type="application/pdf", stored_path="/f1", processing_status="COMPLETED",
-        text_extracted="Req 1 from doc 1"
+        text_extracted="El proveedor deberá asegurar la correcta instalación."
     )
     db_session.add(doc1)
     db_session.commit()
@@ -120,7 +120,7 @@ def test_extract_cross_tenant_denied(req_client, db_session):
     doc = UploadedDocument(
         case_id=case.id, document_type="requirement", original_filename="doc.pdf",
         mime_type="application/pdf", stored_path="/f", processing_status="COMPLETED",
-        text_extracted="text"
+        text_extracted="El proveedor deberá proveer los equipos."
     )
     db_session.add(doc)
     db_session.commit()
@@ -137,7 +137,7 @@ def test_extract_unauthorized_user(readonly_client, db_session, setup_mega_tenan
     doc = UploadedDocument(
         case_id=case.id, document_type="requirement", original_filename="doc.pdf",
         mime_type="application/pdf", stored_path="/f", processing_status="COMPLETED",
-        text_extracted="text"
+        text_extracted="El proveedor deberá proveer los equipos."
     )
     db_session.add(doc)
     db_session.commit()
@@ -153,7 +153,7 @@ def test_extract_edited_requirement_preserved(req_client, db_session, setup_mega
     doc = UploadedDocument(
         case_id=case.id, document_type="requirement", original_filename="doc.pdf",
         mime_type="application/pdf", stored_path="/f", processing_status="COMPLETED",
-        text_extracted="Some req text"
+        text_extracted="El proveedor deberá entregar los repuestos."
     )
     db_session.add(doc)
     db_session.commit()
@@ -185,12 +185,12 @@ def test_extract_multiple_docs_same_case(req_client, db_session, setup_mega_tena
     doc1 = UploadedDocument(
         case_id=case.id, document_type="requirement", original_filename="doc1.pdf",
         mime_type="application/pdf", stored_path="/f1", processing_status="COMPLETED",
-        text_extracted="This is requirement 1"
+        text_extracted="El proveedor deberá contar con certificación."
     )
     doc2 = UploadedDocument(
         case_id=case.id, document_type="requirement", original_filename="doc2.pdf",
         mime_type="application/pdf", stored_path="/f2", processing_status="COMPLETED",
-        text_extracted="This is requirement 2"
+        text_extracted="El equipo debe incluir garantía de un año."
     )
     db_session.add_all([doc1, doc2])
     db_session.commit()
