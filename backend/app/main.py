@@ -45,7 +45,7 @@ app.include_router(v6_evaluations.router, prefix="/api/v6", tags=["v6_evaluation
 app.include_router(v6_selection.router, prefix="/api/v6", tags=["v6_selection"])
 app.include_router(v6_history.router, prefix="/api/v6", tags=["v6_history"])
 app.include_router(v6_outputs.router, prefix="/api/v6", tags=["v6_outputs"])
-app.include_router(v6_ai.router, prefix="/api/v6/ai", tags=["v6_ai"])
+app.include_router(v6_ai.router, prefix="/api/v6", tags=["v6_ai"])
 app.include_router(v6_health.router, prefix="/api/v6", tags=["v6_health"])
 
 from app.api.routers import auth_router, admin, pilot

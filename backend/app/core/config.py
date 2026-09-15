@@ -50,6 +50,11 @@ class Settings(BaseSettings):
     SYSTEM_MAX_CONCURRENT_PROCESSING_JOBS: int = int(os.getenv("SYSTEM_MAX_CONCURRENT_PROCESSING_JOBS", "20"))
     CAPACITY_GOVERNOR_ENABLED: bool = os.getenv("CAPACITY_GOVERNOR_ENABLED", "true").lower() == "true"
 
+    # AI Provider Configuration (V6)
+    OPENAI_API_KEY: str = os.getenv("OPENAI_API_KEY", "")
+    ANTHROPIC_API_KEY: str = os.getenv("ANTHROPIC_API_KEY", "")
+    AI_PROVIDER: str = os.getenv("AI_PROVIDER", "auto") # auto, openai, anthropic, mock, none
+
     class Config:
         case_sensitive = True
 

@@ -15,6 +15,7 @@ import { CaseEvaluations } from './components/CaseEvaluations';
 import { CaseSelection } from './components/CaseSelection';
 import { CaseResult } from './components/CaseResult';
 import { CaseHistory } from './components/CaseHistory';
+import { CaseAssistant } from './components/CaseAssistant';
 import { useComparisonFlow } from './hooks/useComparisonFlow';
 import { useCaseDetails } from './hooks/useCaseDetails';
 import { casesService } from '../../api/cases.service';
@@ -210,6 +211,8 @@ const CaseDetail: React.FC = () => {
             <CaseResult caseId={id || ''} />
           ) : activeTab === 'historial' ? (
             <CaseHistory caseId={id || ''} />
+          ) : activeTab === 'ia' ? (
+            <CaseAssistant caseId={id || ''} />
           ) : (
             <div className="case-detail-placeholder">
               <p className="case-detail-placeholder-text">
