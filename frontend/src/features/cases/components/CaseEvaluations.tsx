@@ -26,7 +26,7 @@ export const CaseEvaluations: React.FC<CaseEvaluationsProps> = ({ caseId }) => {
     try {
       const [evalsData, offersData] = await Promise.all([
         evaluationService.getCaseEvaluations(caseId),
-        offerService.getCaseOffers(caseId)
+        offerService.getOffers(caseId)
       ]);
       setEvaluations(evalsData);
       setOffers(offersData);

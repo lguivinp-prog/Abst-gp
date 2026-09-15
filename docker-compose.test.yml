@@ -10,11 +10,11 @@ services:
       APP_ENV: test
       POSTGRES_USER: test_user
       POSTGRES_PASSWORD: test_password
-      POSTGRES_DB: test_db
+      POSTGRES_DB: v6_eval_test
     volumes:
       - test_pgdata:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U test_user -d test_db"]
+      test: ["CMD-SHELL", "pg_isready -U test_user -d v6_eval_test"]
       interval: 3s
       timeout: 3s
       retries: 5
@@ -35,7 +35,7 @@ services:
     restart: "no"
     environment:
       - APP_ENV=test
-      - DATABASE_URL=postgresql://test_user:test_password@db:5432/test_db
+      - DATABASE_URL=postgresql://test_user:test_password@db:5432/v6_eval_test
       - REDIS_URL=redis://redis:6379/0
       - SECRET_KEY=test_secret_key
       - UPLOADS_DIR=/data/uploads
@@ -55,7 +55,7 @@ services:
     restart: "no"
     environment:
       - APP_ENV=test
-      - DATABASE_URL=postgresql://test_user:test_password@db:5432/test_db
+      - DATABASE_URL=postgresql://test_user:test_password@db:5432/v6_eval_test
       - REDIS_URL=redis://redis:6379/0
       - SECRET_KEY=test_secret_key
       - UPLOADS_DIR=/data/uploads
@@ -75,7 +75,7 @@ services:
     restart: "no"
     environment:
       - APP_ENV=test
-      - DATABASE_URL=postgresql://test_user:test_password@db:5432/test_db
+      - DATABASE_URL=postgresql://test_user:test_password@db:5432/v6_eval_test
       - REDIS_URL=redis://redis:6379/0
       - SECRET_KEY=test_secret_key
       - UPLOADS_DIR=/data/uploads

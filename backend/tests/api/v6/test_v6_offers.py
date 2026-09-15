@@ -4,7 +4,7 @@ from sqlalchemy.orm import Session
 from app.models.v6.supplier import Supplier
 from app.models.v6.supplier_offer import SupplierOffer
 
-def test_offers_empty_list(client: TestClient, db: Session, test_case_file):
+def test_offers_empty_list(client: TestClient, db_session: Session, test_case_file):
     response = client.get(
         f"/api/v6/cases/{test_case_file.id}/offers",
         headers={"Authorization": "Bearer test_token"}
@@ -12,7 +12,7 @@ def test_offers_empty_list(client: TestClient, db: Session, test_case_file):
     assert response.status_code == 200
     assert response.json() == []
 
-def test_offers_create_and_list(client: TestClient, db: Session, test_case_file):
+def test_offers_create_and_list(client: TestClient, db_session: Session, test_case_file):
     # First create a supplier
     supplier_data = {
         "ruc": "11111111111",
@@ -47,15 +47,16 @@ def test_offers_create_and_list(client: TestClient, db: Session, test_case_file)
     assert update_res.status_code == 200
     assert update_res.json()["price"] == 1500.50
 
+def test_offers_cross_tenant_check(other_client: TestClient, db_session: Session, test_case_file):
     # Cross tenant check
-    cross_res = client.get(
+    cross_res = other_client.get(
         f"/api/v6/cases/{test_case_file.id}/offers",
         headers={"Authorization": "Bearer other_tenant_token"}
     )
     # The user should not have access to the case
     assert cross_res.status_code == 403 or cross_res.status_code == 404
 
-def test_offers_cross_case_not_modifiable(client: TestClient, db: Session, test_case_file):
+def test_offers_cross_case_not_modifiable(client: TestClient, db_session: Session, test_case_file):
     # Create an offer
     sup_res = client.post(
         f"/api/v6/cases/{test_case_file.id}/suppliers",
@@ -75,7 +76,7 @@ def test_offers_cross_case_not_modifiable(client: TestClient, db: Session, test_
     )
     assert update_res.status_code == 403 or update_res.status_code == 404
 
-def test_offers_delete(client: TestClient, db: Session, test_case_file):
+def test_offers_delete(client: TestClient, db_session: Session, test_case_file):
     sup_res = client.post(
         f"/api/v6/cases/{test_case_file.id}/suppliers",
         json={"ruc": "33333333333", "business_name": "Test Supplier 3"},

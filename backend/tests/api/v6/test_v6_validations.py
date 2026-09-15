@@ -3,7 +3,7 @@ from fastapi.testclient import TestClient
 from sqlalchemy.orm import Session
 from app.models.v6.validation_request import ValidationRequest
 
-def test_validations_empty_list(client: TestClient, db: Session, test_case_file):
+def test_validations_empty_list(client: TestClient, db_session: Session, test_case_file):
     response = client.get(
         f"/api/v6/cases/{test_case_file.id}/validations",
         headers={"Authorization": "Bearer test_token"}
@@ -11,7 +11,7 @@ def test_validations_empty_list(client: TestClient, db: Session, test_case_file)
     assert response.status_code == 200
     assert response.json() == []
 
-def test_validations_create_and_list(client: TestClient, db: Session, test_case_file):
+def test_validations_create_and_list(client: TestClient, db_session: Session, test_case_file):
     # First create a supplier (this links it to the case via SupplierOffer)
     supplier_data = {
         "ruc": "10101010101",
@@ -56,7 +56,7 @@ def test_validations_create_and_list(client: TestClient, db: Session, test_case_
     assert detail_res.status_code == 200
     assert detail_res.json()["id"] == val_id
 
-def test_validations_supplier_not_in_case(client: TestClient, db: Session, test_case_file):
+def test_validations_supplier_not_in_case(client: TestClient, db_session: Session, test_case_file):
     # Request validation for an unlinked supplier (e.g. supplier 999)
     val_req = client.post(
         f"/api/v6/cases/{test_case_file.id}/suppliers/999/validations",
@@ -65,8 +65,8 @@ def test_validations_supplier_not_in_case(client: TestClient, db: Session, test_
     )
     assert val_req.status_code == 400
 
-def test_validations_cross_tenant_rejected(client: TestClient, db: Session, test_case_file):
-    cross_res = client.get(
+def test_validations_cross_tenant_rejected(other_client: TestClient, db_session: Session, test_case_file):
+    cross_res = other_client.get(
         f"/api/v6/cases/{test_case_file.id}/validations",
         headers={"Authorization": "Bearer other_tenant_token"}
     )
