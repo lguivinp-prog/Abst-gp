@@ -36,11 +36,26 @@ export default function LoginPage() {
         navigate('/expedientes', { replace: true });
       }
     } catch (err: any) {
-      if (err.response && err.response.data && err.response.data.error) {
-        const domainError = err.response.data as DomainErrorResponse;
-        setError(domainError.error.message || 'Error de autenticación');
+      if (!err.response) {
+        setError('No se pudo conectar con el servidor');
       } else {
-        setError('Error de red al contactar al servidor.');
+        const status = err.response.status;
+        if (status === 401 || status === 403) {
+          setError('Usuario o contraseña incorrectos');
+        } else if (status === 422) {
+          if (err.response.data && err.response.data.error) {
+             setError(err.response.data.error.message || 'Error de validación');
+          } else {
+             setError('Error de validación');
+          }
+        } else if (status >= 500) {
+          setError('No se pudo iniciar sesión por un error del servidor');
+        } else if (err.response.data && err.response.data.error) {
+          const domainError = err.response.data as DomainErrorResponse;
+          setError(domainError.error.message || 'Error de autenticación');
+        } else {
+          setError('Error de red al contactar al servidor.');
+        }
       }
     } finally {
       setIsLoading(false);

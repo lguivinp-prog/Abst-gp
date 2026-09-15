@@ -2,7 +2,6 @@ import React from 'react';
 import { Card, CardHeader, CardTitle, CardContent } from '../../../components/ui/Card';
 import type { Case } from '../../../types';
 import { FileText, Tag, Calendar, Activity, AlertCircle } from 'lucide-react';
-import './CaseSummary.css';
 
 interface CaseSummaryProps {
   caseData: Case;

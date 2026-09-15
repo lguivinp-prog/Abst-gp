@@ -144,7 +144,7 @@ export const CaseEvaluations: React.FC<CaseEvaluationsProps> = ({ caseId }) => {
                           </div>
                           <div className="result-details">
                             <span className="req-id">
-                              <Badge variant="outline" className="mr-2">
+                              <Badge variant="secondary" className="mr-2">
                                 {evalItem.requirement_type || 'Requisito'} #{evalItem.requirement_id}
                               </Badge>
                             </span>
