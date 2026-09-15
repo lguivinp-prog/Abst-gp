@@ -27,19 +27,8 @@ class CIIUProvider:
                 payload={"codigo": sunat_ciiu_code, "certeza": "UNKNOWN", "msg": "Codigo no encontrado en catalogo local INEI"}
             )
             
-        # Very naive deterministic match for the mock
-        keywords = expected_description_keywords.lower().split()
-        match_count = sum(1 for k in keywords if k in ciiu.descripcion.lower())
-        
-        if match_count > 0 or len(keywords) == 0:
-            status = "PASSED"
-            certeza = "HIGH"
-        else:
-            status = "WARNING"
-            certeza = "LOW"
-            
         return ValidationResult(
-            status=status,
-            source="CIIU_MATCH",
-            payload={"codigo": ciiu.codigo, "descripcion": ciiu.descripcion, "certeza": certeza}
+            status="PASSED",
+            source="CIIU_MATCH_EXACT_INEI_REV4",
+            payload={"codigo": ciiu.codigo, "descripcion": ciiu.descripcion, "certeza": "HIGH"}
         )

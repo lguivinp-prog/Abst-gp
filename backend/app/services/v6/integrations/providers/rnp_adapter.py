@@ -4,12 +4,12 @@ import os
 
 class RNPProvider(ExternalProviderInterface):
     def validate(self, identifier: str, fallback_evidence: Dict[str, Any] = None) -> ValidationResult:
-        api_key = os.getenv("RNP_API_KEY")
+        is_test = os.getenv("APP_ENV") == "test"
         
-        if api_key:
+        if is_test:
             return ValidationResult(
                 status="PASSED",
-                source="RNP_API",
+                source="RNP_API_MOCK",
                 payload={"ruc": identifier, "vigente": True, "capacidad_libre": 1000000}
             )
             

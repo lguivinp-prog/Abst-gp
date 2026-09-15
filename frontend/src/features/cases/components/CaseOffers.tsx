@@ -18,6 +18,7 @@ export const CaseOffers: React.FC<CaseOffersProps> = ({ caseId }) => {
 
   const [editingOfferId, setEditingOfferId] = useState<number | null>(null);
   const [editData, setEditData] = useState<SupplierOfferUpdate>({});
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const loadOffers = async () => {
@@ -54,6 +55,7 @@ export const CaseOffers: React.FC<CaseOffersProps> = ({ caseId }) => {
   const handleCancelEdit = () => {
     setEditingOfferId(null);
     setEditData({});
+    setSelectedFile(null);
   };
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
@@ -69,8 +71,36 @@ export const CaseOffers: React.FC<CaseOffersProps> = ({ caseId }) => {
     setError(null);
 
     try {
-      await offerService.updateOffer(caseId, offerId, editData);
+      let documentIds: number[] | undefined = undefined;
+      
+      // If a file was selected, we should upload it first
+      if (selectedFile) {
+        const formData = new FormData();
+        formData.append('file', selectedFile);
+        formData.append('document_type', 'oferta');
+        
+        const response = await fetch(`/api/v6/cases/${caseId}/documents`, {
+          method: 'POST',
+          body: formData,
+          headers: {
+            'Authorization': `Bearer ${localStorage.getItem('token')}`
+          }
+        });
+        
+        if (response.ok) {
+          const result = await response.json();
+          documentIds = [result.id];
+        } else {
+          throw new Error('Error al subir documento de cotización');
+        }
+      }
+
+      const updateData = { ...editData };
+      if (documentIds) updateData.document_ids = documentIds;
+
+      await offerService.updateOffer(caseId, offerId, updateData);
       setEditingOfferId(null);
+      setSelectedFile(null);
       await loadOffers();
     } catch (err) {
       if (err instanceof AppError) {
@@ -177,22 +207,27 @@ export const CaseOffers: React.FC<CaseOffersProps> = ({ caseId }) => {
                         </div>
                       </div>
                       <div className="form-group">
-                        <label>Documento Fuente</label>
+                        <label>Documento Fuente (Cotización)</label>
                         <input
-                          type="text"
-                          name="source_document"
-                          value={editData.source_document || ''}
-                          onChange={handleInputChange}
-                          placeholder="Referencia o enlace"
+                          type="file"
+                          accept=".pdf"
+                          onChange={e => {
+                            if (e.target.files && e.target.files.length > 0) {
+                              setSelectedFile(e.target.files[0]);
+                            }
+                          }}
                         />
+                        {offer.documents && offer.documents.length > 0 && !selectedFile && (
+                          <div className="text-xs text-green-600 mt-1">✓ Documento adjunto previamente</div>
+                        )}
                       </div>
                       <div className="form-group">
                         <label>Estado</label>
                         <select name="status" value={editData.status || offer.status} onChange={handleInputChange}>
                           <option value="PENDING">PENDIENTE</option>
-                          <option value="APPROVED">APROBADO</option>
-                          <option value="OBSERVED">OBSERVADO</option>
-                          <option value="REJECTED">RECHAZADO</option>
+                          <option value="APPROVED">APROBADA</option>
+                          <option value="OBSERVED">OBSERVADA</option>
+                          <option value="REJECTED">RECHAZADA</option>
                         </select>
                       </div>
                       <div className="edit-actions">
@@ -219,7 +254,7 @@ export const CaseOffers: React.FC<CaseOffersProps> = ({ caseId }) => {
                       <div className="detail-item">
                         <span className="label">Estado Actual:</span>
                         <Badge variant={offer.status === 'APPROVED' ? 'success' : (offer.status === 'REJECTED' ? 'danger' : 'warning')}>
-                          {offer.status === 'PENDING' ? 'PENDIENTE' : offer.status === 'APPROVED' ? 'APROBADO' : offer.status === 'REJECTED' ? 'RECHAZADO' : 'OBSERVADO'}
+                          {offer.status === 'PENDING' ? 'PENDIENTE' : offer.status === 'APPROVED' ? 'APROBADA' : offer.status === 'REJECTED' ? 'RECHAZADA' : 'OBSERVADA'}
                         </Badge>
                       </div>
                     </div>

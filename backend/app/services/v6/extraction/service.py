@@ -16,6 +16,11 @@ class RequirementExtractionService:
         
         created_matrices = []
         for candidate in candidates:
+            # OCR QUALITY GATE
+            # Campos críticos si la confianza < 0.85 -> REVIEW_REQUIRED
+            threshold = 0.85
+            req_status = "REVIEW_REQUIRED" if candidate.confidence < threshold else "PENDING_REVIEW"
+
             # Create Matrix Entry
             req = CaseRequirementMatrix(
                 case_id=case_id,
@@ -24,7 +29,7 @@ class RequirementExtractionService:
                 description=candidate.description,
                 value=candidate.value,
                 mandatory=candidate.mandatory,
-                status="PENDING_REVIEW" # Rule: NO automagic approvals
+                status=req_status
             )
             db.add(req)
             db.flush()

@@ -117,10 +117,19 @@ def update_offer(
 
     if item.price is not None:
         offer.price = item.price
+    if item.currency is not None:
+        offer.currency = item.currency
     if item.source_document is not None:
         offer.source_document = item.source_document
     if item.status is not None:
         offer.status = item.status
+    if item.document_ids is not None:
+        from app.models.v6.supplier_offer import SupplierOfferDocument
+        # Remove old docs
+        db.query(SupplierOfferDocument).filter(SupplierOfferDocument.offer_id == offer_id).delete()
+        # Add new docs
+        for doc_id in item.document_ids:
+            db.add(SupplierOfferDocument(offer_id=offer_id, document_id=doc_id))
 
     db.commit()
     db.refresh(offer)

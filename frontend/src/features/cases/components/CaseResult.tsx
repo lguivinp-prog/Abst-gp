@@ -82,7 +82,7 @@ export const CaseResult: React.FC<CaseResultProps> = ({ caseId }) => {
             </div>
             <div>
               <p className="text-gray-500 mb-1">Fecha de Adjudicación</p>
-              <p>{result.created_at ? new Date(result.created_at).toLocaleString('es-PE') : 'Fecha no disponible'}</p>
+              <p>{result.created_at && !isNaN(new Date(result.created_at).getTime()) ? new Date(result.created_at).toLocaleString('es-PE') : 'Fecha no disponible'}</p>
             </div>
           </div>
         </div>

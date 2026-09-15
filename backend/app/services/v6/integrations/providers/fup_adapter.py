@@ -4,13 +4,12 @@ import os
 
 class FUPProvider(ExternalProviderInterface):
     def validate(self, identifier: str, fallback_evidence: Dict[str, Any] = None) -> ValidationResult:
-        api_key = os.getenv("FUP_API_KEY")
+        is_test = os.getenv("APP_ENV") == "test"
         
-        if api_key:
-            # Simulating an API call that checks sanctions
+        if is_test:
             return ValidationResult(
                 status="PASSED",
-                source="FUP_API",
+                source="FUP_API_MOCK",
                 payload={"ruc": identifier, "sancionado": False, "alertas": []}
             )
             

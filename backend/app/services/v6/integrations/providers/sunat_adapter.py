@@ -4,14 +4,12 @@ import os
 
 class SUNATProvider(ExternalProviderInterface):
     def validate(self, identifier: str, fallback_evidence: Dict[str, Any] = None) -> ValidationResult:
-        # Mocking check for API config
-        api_key = os.getenv("SUNAT_API_KEY")
+        is_test = os.getenv("APP_ENV") == "test"
         
-        if api_key:
-            # Simulate API Call
+        if is_test:
             return ValidationResult(
                 status="PASSED",
-                source="SUNAT_API",
+                source="SUNAT_API_MOCK",
                 payload={"ruc": identifier, "estado": "ACTIVO", "condicion": "HABIDO"}
             )
             

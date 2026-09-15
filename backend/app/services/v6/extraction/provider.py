@@ -11,6 +11,7 @@ class RequirementCandidate(BaseModel):
     source_page: int
     source_fragment: str
     confidence: float
+    needs_review: bool = False
 
 class RequirementExtractionProvider(ABC):
     @abstractmethod
