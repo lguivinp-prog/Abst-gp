@@ -18,6 +18,8 @@ class EvaluationResponse(BaseModel):
     status: str
     explanation: Optional[str] = None
     evaluation_confidence: Optional[float] = None
+    requirement_description: Optional[str] = None
+    requirement_type: Optional[str] = None
 
     class Config:
         from_attributes = True
@@ -42,6 +44,11 @@ def get_case_evaluations(
         return []
 
     evals = db.query(OfferEvaluation).filter(OfferEvaluation.supplier_offer_id.in_(offer_ids)).all()
+    # Populate extra fields from relationship
+    for ev in evals:
+        if ev.requirement:
+            ev.requirement_description = ev.requirement.description
+            ev.requirement_type = ev.requirement.requirement_type
     return evals
 
 @router.post("/cases/{case_id}/offers/{offer_id}/evaluate", response_model=List[EvaluationResponse])
@@ -76,6 +83,10 @@ def evaluate_offer(
         user_id=current_user.id,
         tenant_id=current_user.tenant_id
     )
+    for ev in evals:
+        if ev.requirement:
+            ev.requirement_description = ev.requirement.description
+            ev.requirement_type = ev.requirement.requirement_type
     return evals
 
 @router.get("/cases/{case_id}/offers/{offer_id}/evaluations", response_model=List[EvaluationResponse])
@@ -96,7 +107,12 @@ def get_offer_evaluations(
     if not offer:
         raise HTTPException(status_code=403, detail="Offer does not belong to this case")
 
-    return db.query(OfferEvaluation).filter(OfferEvaluation.supplier_offer_id == offer_id).all()
+    evals = db.query(OfferEvaluation).filter(OfferEvaluation.supplier_offer_id == offer_id).all()
+    for ev in evals:
+        if ev.requirement:
+            ev.requirement_description = ev.requirement.description
+            ev.requirement_type = ev.requirement.requirement_type
+    return evals
 
 @router.put("/cases/{case_id}/evaluations/{eval_id}", response_model=EvaluationResponse)
 def update_evaluation(
@@ -131,4 +147,7 @@ def update_evaluation(
     )
     if not updated:
         raise HTTPException(status_code=404, detail="Evaluation not found")
+    if updated.requirement:
+        updated.requirement_description = updated.requirement.description
+        updated.requirement_type = updated.requirement.requirement_type
     return updated

@@ -26,6 +26,6 @@ class SUNATProvider(ExternalProviderInterface):
             
         return ValidationResult(
             status="MANUAL_REQUIRED",
-            source="SUNAT_API_MISSING",
+            source="NO_DISPONIBLE_API",
             payload={"error": "API Key missing and no fallback evidence provided."}
         )

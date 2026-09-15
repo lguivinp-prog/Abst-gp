@@ -23,7 +23,7 @@ class RNPProvider(ExternalProviderInterface):
             
         # RNP not blocking automatically if API down
         return ValidationResult(
-            status="WARNING",
-            source="RNP_API_MISSING",
+            status="MANUAL_REQUIRED",
+            source="NO_DISPONIBLE_API",
             payload={"error": "API Key missing. Requires manual RNP certificate verification."}
         )

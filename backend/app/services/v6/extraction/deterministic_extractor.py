@@ -52,9 +52,9 @@ class DeterministicRequirementExtractor(RequirementExtractionProvider):
             r'^n° de pedido', r'^fecha\b', r'^direccion de', r'^organo y/o',
             r'^administracion de', r'^actividad operativa', r'^economicos y',
             r'^agraria amazonas', r'^meta presupuestaria', r'^descripción del ccmn',
-            r'^adquisicion de', r'^denominación de la', r'^finalidad pública',
+            r'^adquisicion de', r'^denominación de la', 
             r'^especificaciones tecnicas para', r'^\d+\.\s+entidad convocante',
-            r'^\d+\.\s+objeto de la contratación', r'^pág\.', r'^firma del',
+            r'^pág\.', r'^firma del',
             r'^elaborado por'
         ]
         text_lower = text.lower()
@@ -100,7 +100,21 @@ class DeterministicRequirementExtractor(RequirementExtractionProvider):
                 continue
 
             # Phase 4: Identify requirement
-            if self._is_requirement(clean_p) or self._is_requirement(p):
+            text_lower = clean_p.lower()
+            if "finalidad pública" in text_lower or "objeto de la contratación" in text_lower or "objetivo de la contratación" in text_lower:
+                candidates.append(
+                    RequirementCandidate(
+                        requirement_type="CONTEXT",
+                        description=clean_p,
+                        value=None,
+                        mandatory=False,
+                        source_document=source_document,
+                        source_page=source_page,
+                        source_fragment=p,
+                        confidence=1.0
+                    )
+                )
+            elif self._is_requirement(clean_p) or self._is_requirement(p):
                 candidates.append(
                     RequirementCandidate(
                         requirement_type="TECHNICAL",

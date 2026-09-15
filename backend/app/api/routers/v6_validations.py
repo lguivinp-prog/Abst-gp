@@ -56,7 +56,7 @@ def get_case_validations(
 
     return validations
 
-@router.post("/cases/{case_id}/suppliers/{supplier_id}/validations", response_model=ValidationRequestResponse)
+@router.post("/cases/{case_id}/suppliers/{supplier_id}/validations", response_model=Any)
 def create_case_validation_request(
     case_id: int,
     supplier_id: int,
@@ -74,6 +74,12 @@ def create_case_validation_request(
     if not offer:
         raise HTTPException(status_code=400, detail="Supplier is not linked to this case")
 
+    if req.source == "ALL":
+        from app.services.v6.integrations.validation_orchestrator import SupplierValidationOrchestrator
+        orchestrator = SupplierValidationOrchestrator()
+        orchestrator.run_async_validation(db, supplier_id, current_user.id)
+        return {"status": "SUCCESS", "message": "All validations triggered"}
+    
     return ValidationService.request_validation(
         db=db,
         supplier_id=supplier_id,

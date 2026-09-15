@@ -1,6 +1,6 @@
 import json
 from sqlalchemy.orm import Session
-from app.models.v6.supplier_offer import SupplierOffer
+from app.models.v6.supplier_offer import SupplierOffer, SupplierOfferDocument
 from app.models.domain import AuditLog
 from app.models.v6.offer_evidence import OfferEvidence
 from app.workers.validation_worker import trigger_external_validation
@@ -12,10 +12,17 @@ class SupplierOfferService:
             case_id=case_id,
             supplier_id=supplier_id,
             price=data.get("price"),
+            currency=data.get("currency", "PEN"),
             source_document=data.get("source_document")
         )
         db.add(offer)
         db.flush()
+        
+        document_ids = data.get("document_ids", [])
+        if document_ids:
+            for doc_id in document_ids:
+                offer_doc = SupplierOfferDocument(offer_id=offer.id, document_id=doc_id)
+                db.add(offer_doc)
         
         audit = AuditLog(
             user_id=user_id,

@@ -6,17 +6,17 @@ def extract_supplier_info(text: str) -> Dict[str, Any]:
     Extrae información del proveedor de una cotización con un nivel de confianza.
     """
     result = {
-        "supplier_ruc": {"value": None, "confidence": 0.0, "source": "regex"},
-        "supplier_business_name": {"value": None, "confidence": 0.0, "source": "keywords"},
-        "supplier_email": {"value": None, "confidence": 0.0, "source": "regex"},
-        "supplier_phone": {"value": None, "confidence": 0.0, "source": "regex"},
+        "supplier_ruc": {"value": None, "confidence": 0.0, "source": "regex", "needs_review": True},
+        "supplier_business_name": {"value": None, "confidence": 0.0, "source": "keywords", "needs_review": True},
+        "supplier_email": {"value": None, "confidence": 0.0, "source": "regex", "needs_review": False},
+        "supplier_phone": {"value": None, "confidence": 0.0, "source": "regex", "needs_review": False},
     }
     
-    # 1. Extraer RUC (11 dígitos, empieza en 10, 15, 17, 20)
     ruc_match = re.search(r'\b(10|15|17|20)\d{9}\b', text)
     if ruc_match:
         result["supplier_ruc"]["value"] = ruc_match.group(0)
         result["supplier_ruc"]["confidence"] = 1.0 # RUC es muy estricto
+        result["supplier_ruc"]["needs_review"] = False
     
     # 2. Extraer Email
     email_match = re.search(r'\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,}\b', text)
@@ -35,5 +35,6 @@ def extract_supplier_info(text: str) -> Dict[str, Any]:
     if business_match:
         result["supplier_business_name"]["value"] = business_match.group(2).strip()
         result["supplier_business_name"]["confidence"] = 0.85
+        result["supplier_business_name"]["needs_review"] = False
 
     return result

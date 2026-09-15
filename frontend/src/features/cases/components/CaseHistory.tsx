@@ -19,7 +19,7 @@ export const CaseHistory: React.FC<CaseHistoryProps> = ({ caseId }) => {
     setLoading(true);
     try {
       const data = await casesService.getHistory(caseId);
-      setLogs(data || []);
+      setLogs(Array.isArray(data) ? data : []);
     } catch (err: any) {
       setError(err.message || 'Error al cargar historial');
     } finally {

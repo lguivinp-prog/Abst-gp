@@ -27,6 +27,12 @@ class ResultResponse(BaseModel):
     case_id: int
     attempt_id: int
     created_at: datetime
+    supplier_name: Optional[str] = None
+    supplier_ruc: Optional[str] = None
+    offer_price: Optional[float] = None
+    offer_currency: Optional[str] = None
+    justification_comment: Optional[str] = None
+    status: str = "APPROVED"
 
 @router.post("/cases/{case_id}/selection", response_model=SelectionResponse)
 def propose_selection(
@@ -98,8 +104,25 @@ def get_result(
     final = db.query(SupplierSelectionFinal).filter_by(case_id=case.id).first()
     if not final:
         return None
+    
+    # Eager load attempt and offer to avoid N+1 and detached session issues
+    attempt = db.query(SupplierSelectionAttempt).filter_by(id=final.attempt_id).first()
+    offer = None
+    supplier = None
+    if attempt:
+        offer = db.query(SupplierOffer).filter_by(id=attempt.supplier_offer_id).first()
+        if offer:
+            from app.models.v6.supplier import Supplier
+            supplier = db.query(Supplier).filter_by(id=offer.supplier_id).first()
+
     return {
         "case_id": final.case_id,
         "attempt_id": final.attempt_id,
-        "created_at": final.created_at
+        "created_at": final.created_at,
+        "supplier_name": supplier.business_name if supplier else None,
+        "supplier_ruc": supplier.ruc if supplier else None,
+        "offer_price": offer.price if offer else None,
+        "offer_currency": getattr(offer, "currency", "PEN") if offer else None,
+        "justification_comment": attempt.justification_comment if attempt else None,
+        "status": "APPROVED"
     }

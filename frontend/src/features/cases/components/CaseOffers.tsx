@@ -45,6 +45,7 @@ export const CaseOffers: React.FC<CaseOffersProps> = ({ caseId }) => {
     setEditingOfferId(offer.id);
     setEditData({
       price: offer.price,
+      currency: offer.currency || 'PEN',
       source_document: offer.source_document,
       status: offer.status
     });
@@ -164,6 +165,15 @@ export const CaseOffers: React.FC<CaseOffersProps> = ({ caseId }) => {
                             onChange={handleInputChange}
                             placeholder="Ej. 1500.00"
                           />
+                          <select 
+                            name="currency" 
+                            value={editData.currency || 'PEN'} 
+                            onChange={handleInputChange}
+                            className="ml-2 border rounded p-1"
+                          >
+                            <option value="PEN">PEN</option>
+                            <option value="USD">USD</option>
+                          </select>
                         </div>
                       </div>
                       <div className="form-group">
@@ -179,10 +189,10 @@ export const CaseOffers: React.FC<CaseOffersProps> = ({ caseId }) => {
                       <div className="form-group">
                         <label>Estado</label>
                         <select name="status" value={editData.status || offer.status} onChange={handleInputChange}>
-                          <option value="PENDING">PENDING</option>
-                          <option value="APPROVED">APPROVED</option>
-                          <option value="OBSERVED">OBSERVED</option>
-                          <option value="REJECTED">REJECTED</option>
+                          <option value="PENDING">PENDIENTE</option>
+                          <option value="APPROVED">APROBADO</option>
+                          <option value="OBSERVED">OBSERVADO</option>
+                          <option value="REJECTED">RECHAZADO</option>
                         </select>
                       </div>
                       <div className="edit-actions">
@@ -199,7 +209,7 @@ export const CaseOffers: React.FC<CaseOffersProps> = ({ caseId }) => {
                       <div className="detail-item price">
                         <span className="label">Precio:</span>
                         <span className="value">
-                          {offer.price ? `$${offer.price.toFixed(2)}` : 'No especificado'}
+                          {offer.price ? `${offer.currency || 'PEN'} ${offer.price.toLocaleString('es-PE', {minimumFractionDigits: 2})}` : 'No especificado'}
                         </span>
                       </div>
                       <div className="detail-item">
@@ -209,7 +219,7 @@ export const CaseOffers: React.FC<CaseOffersProps> = ({ caseId }) => {
                       <div className="detail-item">
                         <span className="label">Estado Actual:</span>
                         <Badge variant={offer.status === 'APPROVED' ? 'success' : (offer.status === 'REJECTED' ? 'danger' : 'warning')}>
-                          {offer.status}
+                          {offer.status === 'PENDING' ? 'PENDIENTE' : offer.status === 'APPROVED' ? 'APROBADO' : offer.status === 'REJECTED' ? 'RECHAZADO' : 'OBSERVADO'}
                         </Badge>
                       </div>
                     </div>

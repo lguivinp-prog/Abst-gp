@@ -14,7 +14,9 @@ from typing import List
 class SupplierOfferCreate(BaseModel):
     supplier_id: int
     price: Optional[float] = None
+    currency: Optional[str] = "PEN"
     source_document: Optional[str] = None
+    document_ids: Optional[List[int]] = None
 
 class SupplierBasic(BaseModel):
     id: int
@@ -31,7 +33,9 @@ class SupplierOfferResponse(BaseModel):
     status: str
     evaluation_status: str
     price: Optional[float] = None
+    currency: Optional[str] = "PEN"
     source_document: Optional[str] = None
+    documents: List[dict] = []
     supplier: Optional[SupplierBasic] = None
 
     class Config:
@@ -39,7 +43,9 @@ class SupplierOfferResponse(BaseModel):
 
 class SupplierOfferUpdate(BaseModel):
     price: Optional[float] = None
+    currency: Optional[str] = None
     source_document: Optional[str] = None
+    document_ids: Optional[List[int]] = None
     status: Optional[str] = None
 
 @router.post("/cases/{case_id}/offers", response_model=SupplierOfferResponse)

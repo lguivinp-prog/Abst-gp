@@ -178,21 +178,7 @@ const CaseDetail: React.FC = () => {
 
         <div className="v6-workspace-content">
           {activeTab === 'resumen' ? (
-            <CaseSummary
-              caseData={caseData}
-              activeJobId={activeJobId}
-              sections={sections}
-              editingSection={editingSection}
-              comparisonFlow={comparisonFlow}
-              handleUploadSuccess={handleUploadSuccess}
-              handleProcessComplete={handleProcessComplete}
-              handleProcessRetry={handleProcessRetry}
-              refresh={refresh}
-              handleEditSection={handleEditSection}
-              handleSaveSection={handleSaveSection}
-              handleConfirmSections={handleConfirmSections}
-              setEditingSection={setEditingSection}
-            />
+            <CaseSummary caseData={caseData} />
           ) : activeTab === 'requerimiento' ? (
             <CaseRequirements caseId={id || ''} />
           ) : activeTab === 'documentos' ? (

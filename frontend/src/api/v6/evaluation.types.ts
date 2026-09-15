@@ -5,6 +5,8 @@ export interface EvaluationResponse {
   status: string;
   explanation?: string;
   evaluation_confidence?: number;
+  requirement_description?: string;
+  requirement_type?: string;
 }
 
 export interface EvaluationUpdate {

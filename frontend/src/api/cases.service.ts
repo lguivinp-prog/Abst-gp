@@ -172,7 +172,7 @@ export const casesService = {
   // --- V6 methods ---
   getOffers: async (id: string): Promise<any[]> => {
     try {
-      const response = await apiClient.get(`/v6/cases/${id}/offers`);
+      const response = await apiClient.get(`/api/v6/cases/${id}/offers`);
       return response.data;
     } catch (error) {
       throw handleApiError(error);
@@ -181,7 +181,7 @@ export const casesService = {
 
   getSelection: async (id: string): Promise<any> => {
     try {
-      const response = await apiClient.get(`/v6/cases/${id}/selection`);
+      const response = await apiClient.get(`/api/v6/cases/${id}/selection`);
       return response.data;
     } catch (error) {
       throw handleApiError(error);
@@ -190,7 +190,7 @@ export const casesService = {
 
   proposeSelection: async (id: string, data: { supplier_offer_id: number; justification_comment: string }): Promise<any> => {
     try {
-      const response = await apiClient.post(`/v6/cases/${id}/selection`, data);
+      const response = await apiClient.post(`/api/v6/cases/${id}/selection`, data);
       return response.data;
     } catch (error) {
       throw handleApiError(error);
@@ -199,7 +199,7 @@ export const casesService = {
 
   getResult: async (id: string): Promise<any> => {
     try {
-      const response = await apiClient.get(`/v6/cases/${id}/result`);
+      const response = await apiClient.get(`/api/v6/cases/${id}/result`);
       return response.data;
     } catch (error) {
       throw handleApiError(error);
@@ -208,7 +208,7 @@ export const casesService = {
 
   approveSelection: async (id: string): Promise<any> => {
     try {
-      const response = await apiClient.post(`/v6/cases/${id}/approve`);
+      const response = await apiClient.post(`/api/v6/cases/${id}/approve`);
       return response.data;
     } catch (error) {
       throw handleApiError(error);
@@ -217,7 +217,7 @@ export const casesService = {
 
   getHistory: async (id: string): Promise<any[]> => {
     try {
-      const response = await apiClient.get(`/v6/cases/${id}/history`);
+      const response = await apiClient.get(`/api/v6/cases/${id}/history`);
       return response.data;
     } catch (error) {
       throw handleApiError(error);

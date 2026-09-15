@@ -28,7 +28,7 @@ export const CaseSelection: React.FC<CaseSelectionProps> = ({ caseId }) => {
         casesService.getOffers(caseId)
       ]);
       setSelection(selRes);
-      setOffers(offRes || []);
+      setOffers(Array.isArray(offRes) ? offRes : []);
     } catch (err: any) {
       setError(err.message || 'Error al cargar selección');
     } finally {

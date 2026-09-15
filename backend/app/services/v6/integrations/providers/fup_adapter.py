@@ -24,6 +24,6 @@ class FUPProvider(ExternalProviderInterface):
             
         return ValidationResult(
             status="MANUAL_REQUIRED",
-            source="FUP_API_MISSING",
+            source="NO_DISPONIBLE_API",
             payload={"error": "API Key missing. FUP sanction check is mandatory."}
         )

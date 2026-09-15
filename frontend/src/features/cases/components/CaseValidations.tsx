@@ -72,16 +72,19 @@ export const CaseValidations: React.FC<CaseValidationsProps> = ({ caseId }) => {
     }
   };
 
-  const getStatusBadge = (status: string) => {
-    switch (status) {
-      case 'PASSED': return <Badge variant="success"><ShieldCheck size={14} className="mr-1" /> Aprobado</Badge>;
-      case 'WARNING': return <Badge variant="warning"><ShieldAlert size={14} className="mr-1" /> Advertencia</Badge>;
-      case 'BLOCKED':
-      case 'ERROR': return <Badge variant="danger"><ShieldAlert size={14} className="mr-1" /> {status}</Badge>;
-      case 'RUNNING': return <Badge variant="primary"><RefreshCw size={14} className="mr-1 spin" /> Procesando</Badge>;
-      default: return <Badge variant="secondary"><Clock size={14} className="mr-1" /> Pendiente</Badge>;
-    }
-  };
+    const getStatusBadge = (status: string) => {
+      switch (status) {
+        case 'PASSED':
+        case 'VERIFIED': return <Badge variant="success"><ShieldCheck size={14} className="mr-1" /> VALIDADO</Badge>;
+        case 'WARNING': return <Badge variant="warning"><ShieldAlert size={14} className="mr-1" /> OBSERVADO</Badge>;
+        case 'MANUAL_REQUIRED':
+        case 'NO_DISPONIBLE_API': return <Badge variant="warning"><ShieldAlert size={14} className="mr-1" /> NO DISPONIBLE</Badge>;
+        case 'BLOCKED':
+        case 'ERROR': return <Badge variant="danger"><ShieldAlert size={14} className="mr-1" /> ERROR</Badge>;
+        case 'RUNNING': return <Badge variant="primary"><RefreshCw size={14} className="mr-1 spin" /> EN PROCESO</Badge>;
+        default: return <Badge variant="secondary"><Clock size={14} className="mr-1" /> PENDIENTE</Badge>;
+      }
+    };
 
   if (loading && validations.length === 0) {
     return (
@@ -125,6 +128,7 @@ export const CaseValidations: React.FC<CaseValidationsProps> = ({ caseId }) => {
           <div className="form-group">
             <label>Fuente (Integración)</label>
             <select value={selectedSource} onChange={e => setSelectedSource(e.target.value)} required>
+              <option value="ALL">Validar Todo (Orquestador)</option>
               <option value="SUNAT">SUNAT</option>
               <option value="RNP">RNP</option>
               <option value="FUP">FUP</option>

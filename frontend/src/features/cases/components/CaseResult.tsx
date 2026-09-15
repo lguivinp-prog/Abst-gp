@@ -60,11 +60,31 @@ export const CaseResult: React.FC<CaseResultProps> = ({ caseId }) => {
       {error && <div className="text-red-600 mb-4">{error}</div>}
 
       {result ? (
-        <div className="mb-6 p-6 border rounded bg-green-50 border-green-200">
-          <h3 className="font-bold flex items-center gap-2 text-green-800 text-lg mb-2"><Flag size={20}/> Adjudicado</h3>
-          <p><strong>ID de Intento:</strong> {result.attempt_id}</p>
-          <p><strong>Fecha:</strong> {new Date(result.created_at).toLocaleString()}</p>
-          <p><strong>Estado:</strong> Aprobado Definitivo</p>
+        <div className="mb-6 p-6 border rounded bg-green-50 border-green-200 shadow-sm">
+          <h3 className="font-bold flex items-center gap-2 text-green-800 text-lg mb-4">
+            <Flag size={20} className="text-green-600"/> 
+            Expediente Adjudicado
+          </h3>
+          <div className="grid grid-cols-2 gap-4 text-sm">
+            <div>
+              <p className="text-gray-500 mb-1">Proveedor Adjudicado</p>
+              <p className="font-medium">{result.supplier_name || 'Desconocido'} (RUC: {result.supplier_ruc || 'N/A'})</p>
+            </div>
+            <div>
+              <p className="text-gray-500 mb-1">Importe de Adjudicación</p>
+              <p className="font-medium text-lg text-green-700">
+                {result.offer_currency} {result.offer_price != null ? result.offer_price.toLocaleString('es-PE', {minimumFractionDigits: 2}) : 'N/A'}
+              </p>
+            </div>
+            <div>
+              <p className="text-gray-500 mb-1">Justificación</p>
+              <p>{result.justification_comment || 'Ninguna proporcionada'}</p>
+            </div>
+            <div>
+              <p className="text-gray-500 mb-1">Fecha de Adjudicación</p>
+              <p>{result.created_at ? new Date(result.created_at).toLocaleString('es-PE') : 'Fecha no disponible'}</p>
+            </div>
+          </div>
         </div>
       ) : selection && selection.status === 'UNDER_REVIEW' ? (
         <div className="mb-6 p-4 border rounded bg-yellow-50 border-yellow-200">

@@ -143,8 +143,20 @@ export const CaseEvaluations: React.FC<CaseEvaluationsProps> = ({ caseId }) => {
                             {getStatusBadge(evalItem.status)}
                           </div>
                           <div className="result-details">
-                            <span className="req-id">Requisito #{evalItem.requirement_id}</span>
+                            <span className="req-id">
+                              <Badge variant="outline" className="mr-2">
+                                {evalItem.requirement_type || 'Requisito'} #{evalItem.requirement_id}
+                              </Badge>
+                            </span>
+                            <span className="req-description">
+                              <strong>{evalItem.requirement_description || 'Sin descripción'}</strong>
+                            </span>
                             <span className="explanation">{evalItem.explanation || 'Sin observaciones'}</span>
+                            {evalItem.evaluation_confidence !== undefined && (
+                              <span className="confidence mt-1 text-xs text-gray-500">
+                                Confianza: {(evalItem.evaluation_confidence * 100).toFixed(1)}%
+                              </span>
+                            )}
                           </div>
                         </div>
                       ))}

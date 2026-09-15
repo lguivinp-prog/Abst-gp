@@ -7,9 +7,9 @@ def extract_products_basic(text: str) -> Dict[str, Any]:
     (Para extracción avanzada en tablas, se usaría table_extractor.py)
     """
     result = {
-        "description": {"value": None, "confidence": 0.0, "source": "keywords"},
-        "total_price": {"value": None, "confidence": 0.0, "source": "regex"},
-        "currency": {"value": "PEN", "confidence": 0.5, "source": "default"}
+        "description": {"value": None, "confidence": 0.0, "source": "keywords", "needs_review": True},
+        "total_price": {"value": None, "confidence": 0.0, "source": "regex", "needs_review": True},
+        "currency": {"value": "PEN", "confidence": 0.5, "source": "default", "needs_review": False}
     }
     
     # Extraer Total (S/, $, USD)
@@ -25,6 +25,7 @@ def extract_products_basic(text: str) -> Dict[str, Any]:
         try:
             result["total_price"]["value"] = float(amount_str)
             result["total_price"]["confidence"] = 0.85
+            result["total_price"]["needs_review"] = True  # Always review price unless we verify math
         except ValueError:
             pass
 
@@ -33,5 +34,6 @@ def extract_products_basic(text: str) -> Dict[str, Any]:
     if desc_match:
         result["description"]["value"] = desc_match.group(2).strip()
         result["description"]["confidence"] = 0.7
+        result["description"]["needs_review"] = False
 
     return result

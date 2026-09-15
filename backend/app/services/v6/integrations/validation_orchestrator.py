@@ -5,6 +5,7 @@ from app.models.v6.supplier import Supplier
 from .providers.sunat_adapter import SUNATProvider
 from .providers.rnp_adapter import RNPProvider
 from .providers.fup_adapter import FUPProvider
+from .providers.ciiu_adapter import CIIUProvider
 from typing import Dict, Any
 
 class SupplierValidationOrchestrator:
@@ -12,6 +13,7 @@ class SupplierValidationOrchestrator:
         self.sunat = SUNATProvider()
         self.rnp = RNPProvider()
         self.fup = FUPProvider()
+        self.ciiu = CIIUProvider()
         
     def run_async_validation(self, db: Session, supplier_id: int, user_id: int = None, fallback_evidence: Dict[str, Dict[str, Any]] = None):
         """
@@ -40,8 +42,12 @@ class SupplierValidationOrchestrator:
         rnp_res = self.rnp.validate(supplier.ruc, fallback.get("RNP"))
         fup_res = self.fup.validate(supplier.ruc, fallback.get("FUP"))
         
+        sunat_ciiu = sunat_res.payload.get("ciiu") if sunat_res.payload else None
+        # Retrieve expected keywords from some case context if possible, otherwise empty
+        ciiu_res = self.ciiu.validate(db, sunat_ciiu, "")
+        
         # Create ValidationRequests
-        for name, res in [("SUNAT", sunat_res), ("RNP", rnp_res), ("FUP", fup_res)]:
+        for name, res in [("SUNAT", sunat_res), ("RNP", rnp_res), ("FUP", fup_res), ("CIIU", ciiu_res)]:
             req = ValidationRequest(
                 supplier_id=supplier_id,
                 source=name,
@@ -54,7 +60,7 @@ class SupplierValidationOrchestrator:
             db.add(req)
             
         # Consolidate Supplier Profile Status
-        statuses = [sunat_res.status, rnp_res.status, fup_res.status]
+        statuses = [sunat_res.status, rnp_res.status, fup_res.status, ciiu_res.status]
 
         if "ERROR" in statuses:
             summary_status = "ERROR"
