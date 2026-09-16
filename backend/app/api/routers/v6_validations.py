@@ -12,13 +12,34 @@ from datetime import datetime
 
 router = APIRouter()
 
+from enum import Enum
+
 class ValidationRequestCreate(BaseModel):
     source: str # SUNAT, RNP, FUP, CIIU
+
+class ManualValidationResult(str, Enum):
+    VALIDATED = "VALIDATED"
+    REJECTED = "REJECTED"
+    REVIEW_REQUIRED = "REVIEW_REQUIRED"
+
+class ValidationManualCreate(BaseModel):
+    source: str
+    result: ManualValidationResult
+    observation: str
+    evidence_reference: Optional[str] = None
 
 class SupplierBasic(BaseModel):
     id: int
     ruc: str
     business_name: str
+
+    class Config:
+        from_attributes = True
+
+class UserBasic(BaseModel):
+    id: int
+    username: Optional[str] = None
+    full_name: Optional[str] = None
 
     class Config:
         from_attributes = True
@@ -32,6 +53,13 @@ class ValidationRequestResponse(BaseModel):
     completed_at: Optional[datetime] = None
     response_payload: Optional[Any] = None
     supplier: Optional[SupplierBasic] = None
+    validation_mode: str
+    manual_result: Optional[str] = None
+    manual_observation: Optional[str] = None
+    manual_evidence_reference: Optional[str] = None
+    verified_by_user_id: Optional[int] = None
+    verified_at: Optional[datetime] = None
+    verified_by_user: Optional[UserBasic] = None
 
     class Config:
         from_attributes = True
@@ -57,7 +85,7 @@ def get_case_validations(
 
     return validations
 
-@router.post("/cases/{case_id}/suppliers/{supplier_id}/validations", response_model=Any)
+@router.post("/cases/{case_id}/suppliers/{supplier_id}/validations", response_model=ValidationRequestResponse)
 def create_case_validation_request(
     case_id: int,
     supplier_id: int,
@@ -80,7 +108,7 @@ def create_case_validation_request(
         orchestrator = SupplierValidationOrchestrator()
         orchestrator.run_async_validation(db, case_id, supplier_id, current_user.id)
         return {"status": "SUCCESS", "message": "All validations triggered"}
-    
+
     return ValidationService.request_validation(
         db=db,
         case_id=case_id,
@@ -89,6 +117,60 @@ def create_case_validation_request(
         user_id=current_user.id,
         tenant_id=current_user.tenant_id
     )
+
+@router.post("/cases/{case_id}/suppliers/{supplier_id}/validations/manual", response_model=ValidationRequestResponse)
+def create_manual_validation(
+    case_id: int,
+    supplier_id: int,
+    req: ValidationManualCreate,
+    case: CaseFile = Depends(verify_case_access),
+    current_user: User = Depends(get_current_active_user),
+    db: Session = Depends(get_db)
+):
+    # Verify supplier is linked to case
+    offer = db.query(SupplierOffer).filter(
+        SupplierOffer.case_id == case_id,
+        SupplierOffer.supplier_id == supplier_id
+    ).first()
+
+    if not offer:
+        raise HTTPException(status_code=400, detail="Supplier is not linked to this case")
+
+    if req.source not in ["SUNAT", "RNP", "FUP", "CIIU"]:
+        raise HTTPException(status_code=422, detail="Invalid source")
+
+    if not req.observation or not req.observation.strip():
+        raise HTTPException(status_code=422, detail="Observation is required")
+
+    status_map = {
+        "VALIDATED": "PASSED",
+        "REJECTED": "ERROR",
+        "REVIEW_REQUIRED": "WARNING"
+    }
+
+    from sqlalchemy.sql import func
+
+    val_req = ValidationRequest(
+        supplier_id=supplier_id,
+        case_id=case_id,
+        source=req.source,
+        status=status_map.get(req.result.value, "PENDING"),
+        requested_by=current_user.id,
+        requested_at=func.now(),
+        completed_at=func.now(),
+        validation_mode="MANUAL",
+        manual_result=req.result.value,
+        manual_observation=req.observation,
+        manual_evidence_reference=req.evidence_reference,
+        verified_by_user_id=current_user.id,
+        verified_at=func.now(),
+        response_payload={"manual_verification": True, "observation": req.observation}
+    )
+
+    db.add(val_req)
+    db.commit()
+    db.refresh(val_req)
+    return val_req
 
 @router.get("/cases/{case_id}/validations/{req_id}", response_model=ValidationRequestResponse)
 def get_case_validation_request(

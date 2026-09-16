@@ -6,6 +6,7 @@ export const validationPaths = {
   list: (caseId: string | number) => `/cases/${caseId}/validations`,
   detail: (caseId: string | number, reqId: string | number) => `/cases/${caseId}/validations/${reqId}`,
   create: (caseId: string | number, supplierId: string | number) => `/cases/${caseId}/suppliers/${supplierId}/validations`,
+  createManual: (caseId: string | number, supplierId: string | number) => `/cases/${caseId}/suppliers/${supplierId}/validations/manual`,
 };
 
 export const validationService = {
@@ -28,6 +29,14 @@ export const validationService = {
   createValidation: async (caseId: string, supplierId: number, data: ValidationRequestCreate): Promise<ValidationRequestResponse> => {
     try {
       return await v6Client.post<ValidationRequestResponse, ValidationRequestCreate>(validationPaths.create(caseId, supplierId), data);
+    } catch (error) {
+      throw handleApiError(error);
+    }
+  },
+
+  createManualValidation: async (caseId: string, supplierId: number, data: import('./validation.types').ValidationManualCreate): Promise<ValidationRequestResponse> => {
+    try {
+      return await v6Client.post<ValidationRequestResponse, import('./validation.types').ValidationManualCreate>(validationPaths.createManual(caseId, supplierId), data);
     } catch (error) {
       throw handleApiError(error);
     }

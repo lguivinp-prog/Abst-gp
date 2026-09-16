@@ -6,7 +6,7 @@ from sqlalchemy.orm import relationship
 
 class ValidationRequest(Base):
     __tablename__ = "validation_requests"
-    
+
     id = Column(Integer, primary_key=True, index=True)
     supplier_id = Column(Integer, ForeignKey("suppliers.id", ondelete="CASCADE"), nullable=False, index=True)
     case_id = Column(Integer, ForeignKey("case_files.id", ondelete="CASCADE"), nullable=True, index=True)
@@ -20,5 +20,13 @@ class ValidationRequest(Base):
     response_schema_version = Column(String(20), nullable=True)
     attempt_number = Column(Integer, default=1, nullable=False)
     expiration_cache = Column(DateTime(timezone=True), nullable=True)
-    
+
+    validation_mode = Column(String(50), nullable=False, default="EXTERNAL", server_default="EXTERNAL") # EXTERNAL, MANUAL
+    manual_result = Column(String(50), nullable=True) # VALIDATED, REJECTED, REVIEW_REQUIRED
+    manual_observation = Column(String, nullable=True)
+    manual_evidence_reference = Column(String, nullable=True)
+    verified_by_user_id = Column(Integer, ForeignKey("users.id", ondelete="SET NULL"), nullable=True)
+    verified_at = Column(DateTime(timezone=True), nullable=True)
+
+    verified_by_user = relationship("User", foreign_keys=[verified_by_user_id])
     supplier = relationship("Supplier")

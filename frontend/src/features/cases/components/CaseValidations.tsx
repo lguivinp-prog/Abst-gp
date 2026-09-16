@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Shield, ShieldAlert, ShieldCheck, Clock, AlertCircle, RefreshCw, Building2 } from 'lucide-react';
+import { Shield, ShieldAlert, ShieldCheck, Clock, AlertCircle, RefreshCw, Building2, CheckSquare } from 'lucide-react';
 import { Button } from '../../../components/ui/Button';
 import { Badge } from '../../../components/ui/Badge';
 import { validationService } from '../../../api/v6/validation.service';
@@ -20,9 +20,14 @@ export const CaseValidations: React.FC<CaseValidationsProps> = ({ caseId }) => {
   const [error, setError] = useState<string | null>(null);
 
   const [showForm, setShowForm] = useState(false);
+  const [isManualMode, setIsManualMode] = useState(false);
   const [selectedSupplierId, setSelectedSupplierId] = useState<number | ''>('');
   const [selectedSource, setSelectedSource] = useState<string>('SUNAT');
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const [manualResult, setManualResult] = useState<'' | 'VALIDATED' | 'REJECTED' | 'REVIEW_REQUIRED'>('');
+  const [manualObservation, setManualObservation] = useState('');
+  const [manualEvidence, setManualEvidence] = useState('');
 
   const loadData = async () => {
     setLoading(true);
@@ -52,14 +57,29 @@ export const CaseValidations: React.FC<CaseValidationsProps> = ({ caseId }) => {
   const handleRequestValidation = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!selectedSupplierId) return;
+    if (isManualMode && !manualResult) {
+      setError("Debe seleccionar un resultado manual.");
+      return;
+    }
 
     setIsSubmitting(true);
     setError(null);
 
     try {
-      await validationService.createValidation(caseId, selectedSupplierId as number, { source: selectedSource });
+      if (isManualMode) {
+        await validationService.createManualValidation(caseId, selectedSupplierId as number, {
+          source: selectedSource === 'ALL' ? 'SUNAT' : selectedSource,
+          result: manualResult as any,
+          observation: manualObservation,
+          evidence_reference: manualEvidence
+        });
+      } else {
+        await validationService.createValidation(caseId, selectedSupplierId as number, { source: selectedSource });
+      }
       setShowForm(false);
       setSelectedSupplierId('');
+      setManualObservation('');
+      setManualEvidence('');
       await loadData();
     } catch (err) {
       if (err instanceof AppError) {
@@ -92,6 +112,15 @@ export const CaseValidations: React.FC<CaseValidationsProps> = ({ caseId }) => {
       }
     };
 
+  const translateManualResult = (result?: string) => {
+    switch(result) {
+      case 'VALIDATED': return 'Validado';
+      case 'REJECTED': return 'No validado';
+      case 'REVIEW_REQUIRED': return 'Requiere revisión';
+      default: return result || '';
+    }
+  };
+
   if (loading && validations.length === 0) {
     return (
       <div className="case-validations-loading">
@@ -105,8 +134,8 @@ export const CaseValidations: React.FC<CaseValidationsProps> = ({ caseId }) => {
     <div className="case-validations-container">
       <div className="case-validations-header">
         <div>
-          <h2>Validaciones Externas</h2>
-          <p>Solicite y consulte integraciones externas (SUNAT, RNP, FUP) para los proveedores de este expediente.</p>
+          <h2>Validaciones de Proveedores</h2>
+          <p>Consulte integraciones externas o registre verificaciones manuales con sustento.</p>
         </div>
         <div className="case-validations-actions flex gap-2">
           <Button onClick={async () => {
@@ -125,8 +154,12 @@ export const CaseValidations: React.FC<CaseValidationsProps> = ({ caseId }) => {
           }} disabled={isSubmitting || suppliers.length === 0} className="bg-blue-600 hover:bg-blue-700 text-white">
             {isSubmitting ? 'Ejecutando...' : 'Ejecutar Validaciones'}
           </Button>
-          <Button variant="outline" onClick={() => setShowForm(!showForm)}>
-            {showForm ? 'Cancelar' : 'Nueva Validación Manual'}
+          <Button variant="outline" onClick={() => {
+            setShowForm(!showForm);
+            setIsManualMode(true);
+            if (selectedSource === 'ALL') setSelectedSource('SUNAT');
+          }}>
+            {showForm && isManualMode ? 'Cancelar' : 'Nueva Validación Manual'}
           </Button>
         </div>
       </div>
@@ -135,7 +168,7 @@ export const CaseValidations: React.FC<CaseValidationsProps> = ({ caseId }) => {
 
       {showForm && (
         <form className="case-validations-form" onSubmit={handleRequestValidation}>
-          <h3>Solicitar Validación</h3>
+          <h3>{isManualMode ? 'Registrar Validación Manual' : 'Solicitar Validación'}</h3>
           <div className="form-group">
             <label>Proveedor</label>
             <select
@@ -152,16 +185,51 @@ export const CaseValidations: React.FC<CaseValidationsProps> = ({ caseId }) => {
           <div className="form-group">
             <label>Fuente (Integración)</label>
             <select value={selectedSource} onChange={e => setSelectedSource(e.target.value)} required>
-              <option value="ALL">Validar Todo (Orquestador)</option>
+              {!isManualMode && <option value="ALL">Validar Todo (Orquestador)</option>}
               <option value="SUNAT">SUNAT</option>
               <option value="RNP">RNP</option>
               <option value="FUP">FUP</option>
               <option value="CIIU">CIIU</option>
             </select>
           </div>
+
+          {isManualMode && (
+            <>
+              <div className="form-group">
+                <label>Resultado Manual</label>
+                <select value={manualResult} onChange={e => setManualResult(e.target.value as any)} required>
+                  <option value="">Seleccione un resultado</option>
+                  <option value="VALIDATED">Validado</option>
+                  <option value="REJECTED">No validado</option>
+                  <option value="REVIEW_REQUIRED">Requiere revisión</option>
+                </select>
+              </div>
+              <div className="form-group">
+                <label>Observación</label>
+                <textarea
+                  value={manualObservation}
+                  onChange={e => setManualObservation(e.target.value)}
+                  required
+                  placeholder="Detalle de la validación..."
+                  rows={3}
+                />
+              </div>
+              <div className="form-group">
+                <label>Evidencia (Referencia)</label>
+                <input
+                  type="text"
+                  value={manualEvidence}
+                  onChange={e => setManualEvidence(e.target.value)}
+                  placeholder="Ej. Constancia PDF adjunta"
+                />
+              </div>
+            </>
+          )}
+
           <div className="form-actions">
-            <Button type="submit" disabled={isSubmitting || !selectedSupplierId}>
-              {isSubmitting ? 'Solicitando...' : 'Solicitar'}
+            <Button type="button" variant="ghost" onClick={() => setShowForm(false)}>Cancelar</Button>
+            <Button type="submit" disabled={isSubmitting || !selectedSupplierId || (isManualMode && !manualResult)}>
+              {isSubmitting ? 'Guardando...' : (isManualMode ? 'Guardar Validación' : 'Solicitar')}
             </Button>
           </div>
         </form>
@@ -186,6 +254,7 @@ export const CaseValidations: React.FC<CaseValidationsProps> = ({ caseId }) => {
                   {val.supplier?.ruc && <span className="supplier-ruc">RUC: {val.supplier.ruc}</span>}
                 </div>
                 <div className="validation-status">
+                  {val.validation_mode === 'MANUAL' && <Badge variant="primary" className="mr-2"><CheckSquare size={14} className="mr-1" /> MANUAL</Badge>}
                   {getStatusBadge(val.status, val.requested_at)}
                 </div>
               </div>
@@ -204,12 +273,26 @@ export const CaseValidations: React.FC<CaseValidationsProps> = ({ caseId }) => {
                     <span className="label">Completado el:</span>
                     <span className="value">{val.completed_at ? new Date(val.completed_at).toLocaleString() : '-'}</span>
                   </div>
+                  {val.validation_mode === 'MANUAL' && val.verified_by_user_id && (
+                    <div className="detail-item">
+                      <span className="label">Verificado por:</span>
+                      <span className="value">{val.verified_by_user?.full_name || val.verified_by_user?.username || `Usuario #${val.verified_by_user_id}`}</span>
+                    </div>
+                  )}
                 </div>
-                {val.response_payload && (
-                  <div className="validation-payload">
-                    <span className="label">Respuesta:</span>
-                    <pre>{JSON.stringify(val.response_payload, null, 2)}</pre>
+
+                {val.validation_mode === 'MANUAL' ? (
+                  <div className="validation-payload manual-payload">
+                    <p><strong>Resultado:</strong> {translateManualResult(val.manual_result)}</p>
+                    <p><strong>Observación:</strong> {val.manual_observation}</p>
+                    {val.manual_evidence_reference && <p><strong>Evidencia:</strong> {val.manual_evidence_reference}</p>}
                   </div>
+                ) : (
+                  (val.status === 'NO_DISPONIBLE_API' || val.status === 'ERROR' || val.status === 'WARNING' || val.status === 'BLOCKED') && (
+                    <div className="validation-payload">
+                      <p className="text-sm text-amber-700 m-0">Integración externa no disponible. Puede realizar una validación manual con sustento.</p>
+                    </div>
+                  )
                 )}
               </div>
             </div>
