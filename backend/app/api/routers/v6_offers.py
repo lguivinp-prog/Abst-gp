@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, HTTPException
+﻿from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from app.core.database import get_db
 from app.api.auth import get_current_active_user, verify_case_access
@@ -9,11 +9,12 @@ from typing import Optional
 
 router = APIRouter()
 
-from typing import List
+from typing import List, Optional
+from decimal import Decimal, ROUND_HALF_UP
 
 class SupplierOfferItemCreate(BaseModel):
     procurement_item_id: int
-    unit_price: float
+    unit_price: Decimal
 
 class SupplierOfferItemResponse(BaseModel):
     id: int
@@ -21,8 +22,8 @@ class SupplierOfferItemResponse(BaseModel):
     description: Optional[str] = None
     quantity: float
     unit: str
-    unit_price: float
-    subtotal: float
+    unit_price: Decimal
+    subtotal: Decimal
 
     class Config:
         from_attributes = True
@@ -55,7 +56,7 @@ class SupplierOfferResponse(BaseModel):
     documents: List[dict] = []
     supplier: Optional[SupplierBasic] = None
     items: List[SupplierOfferItemResponse] = []
-    total_amount: Optional[float] = None
+    total_amount: Optional[Decimal] = None
 
     class Config:
         from_attributes = True
@@ -155,24 +156,38 @@ def update_offer(
     if item.items is not None:
         from app.models.v6.supplier_offer_item import SupplierOfferItem
         from app.models.v6.case_procurement_item import CaseProcurementItem
-        
-        # Remove old items
+
+        # Remove old items to replace them
         db.query(SupplierOfferItem).filter(SupplierOfferItem.supplier_offer_id == offer_id).delete()
-        
+
+        total_amount = Decimal('0.00')
+
         for item_data in item.items:
+            if item_data.unit_price is None or item_data.unit_price < 0:
+                raise HTTPException(status_code=400, detail="Invalid unit price")
+
             procurement_item = db.query(CaseProcurementItem).filter_by(id=item_data.procurement_item_id).first()
             if not procurement_item or procurement_item.case_id != case_id:
                 raise HTTPException(status_code=403, detail=f"Procurement item {item_data.procurement_item_id} is invalid or does not belong to the case")
-            
+
+            qty = Decimal(str(procurement_item.quantity)) if procurement_item.quantity is not None else Decimal('0')
+            u_price = item_data.unit_price
+
+            # Subtotal calculation
+            subtotal = (qty * u_price).quantize(Decimal('0.01'), rounding=ROUND_HALF_UP)
+            total_amount += subtotal
+
             offer_item = SupplierOfferItem(
                 supplier_offer_id=offer.id,
                 procurement_item_id=procurement_item.id,
                 description=procurement_item.description,
                 quantity=procurement_item.quantity,
                 unit=procurement_item.unit,
-                unit_price=item_data.unit_price
+                unit_price=u_price
             )
             db.add(offer_item)
+
+        offer.total_amount = total_amount
 
     db.commit()
     db.refresh(offer)

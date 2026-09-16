@@ -1,4 +1,4 @@
-import pytest
+﻿import pytest
 from fastapi.testclient import TestClient
 from sqlalchemy.orm import Session
 from app.models.v6.supplier import Supplier
@@ -94,3 +94,87 @@ def test_offers_delete(client: TestClient, db_session: Session, test_case_file):
 
     list_res2 = client.get(f"/api/v6/cases/{test_case_file.id}/offers", headers={"Authorization": "Bearer test_token"})
     assert offer_id not in [o["id"] for o in list_res2.json()]
+
+def test_offers_itemized_calculations_and_rollback(client: TestClient, db_session: Session, test_case_file):
+    from app.models.v6.case_procurement_item import CaseProcurementItem
+    # Create procurement items
+    pi1 = CaseProcurementItem(case_id=test_case_file.id, item_number="1", description="Item 1", quantity=10, unit="UNIDAD")
+    pi2 = CaseProcurementItem(case_id=test_case_file.id, item_number="2", description="Item 2", quantity=5, unit="CAJA")
+    db_session.add(pi1)
+    db_session.add(pi2)
+    db_session.commit()
+    db_session.refresh(pi1)
+    db_session.refresh(pi2)
+
+    # Create supplier and get offer
+    sup_res = client.post(
+        f"/api/v6/cases/{test_case_file.id}/suppliers",
+        json={"ruc": "44444444444", "business_name": "Test Supplier 4"},
+        headers={"Authorization": "Bearer test_token"}
+    )
+    supplier_id = sup_res.json()["id"]
+    list_res = client.get(f"/api/v6/cases/{test_case_file.id}/offers", headers={"Authorization": "Bearer test_token"})
+    offer_id = [o for o in list_res.json() if o["supplier_id"] == supplier_id][0]["id"]
+
+    # A) Calculation & D) Server-side authority
+    # Send client total_amount = 999.99, but server should recalculate
+    # 10 * 12.50 = 125.00
+    # 5 * 20.00 = 100.00
+    # Total should be 225.00
+    update_res = client.put(
+        f"/api/v6/cases/{test_case_file.id}/offers/{offer_id}",
+        json={
+            "total_amount": 999.99,
+            "currency": "USD",
+            "items": [
+                {"procurement_item_id": pi1.id, "unit_price": 12.50},
+                {"procurement_item_id": pi2.id, "unit_price": 20.00}
+            ]
+        },
+        headers={"Authorization": "Bearer test_token"}
+    )
+    assert update_res.status_code == 200
+    data = update_res.json()
+    assert data["currency"] == "USD"
+    # Check if calculation is correct and total_amount sent by client is ignored
+    assert float(data["total_amount"]) == 225.00
+    assert len(data["items"]) == 2
+
+    # B) Update idempotency & C) No duplicate items
+    # Sending again with different prices should replace them
+    update_res2 = client.put(
+        f"/api/v6/cases/{test_case_file.id}/offers/{offer_id}",
+        json={
+            "items": [
+                {"procurement_item_id": pi1.id, "unit_price": 10.00},
+                {"procurement_item_id": pi2.id, "unit_price": 10.00}
+            ]
+        },
+        headers={"Authorization": "Bearer test_token"}
+    )
+    assert update_res2.status_code == 200
+    data2 = update_res2.json()
+    assert float(data2["total_amount"]) == 150.00
+    assert len(data2["items"]) == 2
+
+    # Check database to ensure no duplicates
+    from app.models.v6.supplier_offer_item import SupplierOfferItem
+    offer_items_count = db_session.query(SupplierOfferItem).filter_by(supplier_offer_id=offer_id).count()
+    assert offer_items_count == 2
+
+    # E) Rollback on invalid item
+    update_res3 = client.put(
+        f"/api/v6/cases/{test_case_file.id}/offers/{offer_id}",
+        json={
+            "items": [
+                {"procurement_item_id": pi1.id, "unit_price": 10.00},
+                {"procurement_item_id": 99999, "unit_price": 10.00} # Invalid item
+            ]
+        },
+        headers={"Authorization": "Bearer test_token"}
+    )
+    assert update_res3.status_code == 403
+    # Check that it rolled back to previous valid state
+    db_session.rollback() # just to clear any aborted transaction state
+    offer_items_count = db_session.query(SupplierOfferItem).filter_by(supplier_offer_id=offer_id).count()
+    assert offer_items_count == 2

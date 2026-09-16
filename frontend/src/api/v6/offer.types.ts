@@ -1,18 +1,20 @@
 import type { SupplierBasic } from './supplier.types';
 
+export type NumericLike = number | string;
+
 export interface SupplierOfferItemCreate {
   procurement_item_id: number;
-  unit_price: number;
+  unit_price: NumericLike;
 }
 
 export interface SupplierOfferItemResponse {
   id: number;
   procurement_item_id: number;
   description?: string;
-  quantity: number;
+  quantity: NumericLike;
   unit: string;
-  unit_price: number;
-  subtotal: number;
+  unit_price: NumericLike;
+  subtotal: NumericLike;
 }
 
 export interface SupplierOfferResponse {
@@ -21,18 +23,18 @@ export interface SupplierOfferResponse {
   supplier_id: number;
   status: string;
   evaluation_status: string;
-  price?: number;
+  price?: NumericLike;
   currency?: string;
   source_document?: string;
   documents?: any[];
   supplier?: SupplierBasic;
   items?: SupplierOfferItemResponse[];
-  total_amount?: number;
+  total_amount?: NumericLike;
 }
 
 export interface SupplierOfferCreate {
   supplier_id: number;
-  price?: number;
+  price?: NumericLike;
   currency?: string;
   source_document?: string;
   document_ids?: number[];
@@ -40,7 +42,7 @@ export interface SupplierOfferCreate {
 }
 
 export interface SupplierOfferUpdate {
-  price?: number;
+  price?: NumericLike;
   currency?: string;
   source_document?: string;
   status?: string;

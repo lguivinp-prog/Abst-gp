@@ -6,6 +6,15 @@ import { offerService } from '../../../api/v6/offer.service';
 import type { SupplierOfferResponse, SupplierOfferUpdate } from '../../../api/v6/offer.types';
 import { AppError } from '../../../api/apiError';
 import './CaseOffers.css';
+import type { NumericLike } from '../../../api/v6/offer.types';
+
+const toFiniteNumber = (value: NumericLike | null | undefined): number => {
+  const parsed = typeof value === 'number' ? value : Number(value);
+  return Number.isFinite(parsed) ? parsed : 0;
+};
+
+const formatMoney = (value: NumericLike | null | undefined): string =>
+  toFiniteNumber(value).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2});
 
 interface CaseOffersProps {
   caseId: string;
@@ -333,7 +342,7 @@ export const CaseOffers: React.FC<CaseOffersProps> = ({ caseId }) => {
                                       </td>
                                       <td className="px-3 py-2 text-right">
                                         {pi.quantity != null && currentItem?.unit_price != null
-                                          ? (pi.quantity * currentItem.unit_price).toFixed(2)
+                                          ? formatMoney(toFiniteNumber(pi.quantity) * toFiniteNumber(currentItem.unit_price))
                                           : '0.00'}
                                       </td>
                                     </tr>
@@ -358,12 +367,28 @@ export const CaseOffers: React.FC<CaseOffersProps> = ({ caseId }) => {
                     </div>
                   ) : (
                     <div className="case-offer-details">
-                      <div className="detail-item price">
-                        <span className="label">Precio:</span>
-                        <span className="value">
-                          {offer.price ? `${(offer.currency || 'PEN') === 'USD' ? 'US$' : 'S/'} ${offer.price.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}` : 'No especificado'}
-                        </span>
-                      </div>
+                      {(!offer.items || offer.items.length === 0) && (
+                        <div className="detail-item price">
+                          <span className="label">Precio:</span>
+                          <span className="value">
+                            {offer.price != null ? `${(offer.currency || 'PEN') === 'USD' ? 'US$' : 'S/'} ${formatMoney(offer.price)}` : 'No especificado'}
+                          </span>
+                        </div>
+                      )}
+                      {(offer.items && offer.items.length > 0) && (
+                        <>
+                          <div className="detail-item">
+                            <span className="label">Moneda:</span>
+                            <span className="value">{offer.currency || 'PEN'}</span>
+                          </div>
+                          <div className="detail-item price">
+                            <span className="label">Monto Total:</span>
+                            <span className="value font-bold text-green-700">
+                              {(offer.currency || 'PEN') === 'USD' ? 'US$' : 'S/'} {formatMoney(offer.total_amount)}
+                            </span>
+                          </div>
+                        </>
+                      )}
                       <div className="detail-item">
                         <span className="label">Doc. Fuente:</span>
                         <span className="value">{offer.source_document || '-'}</span>
@@ -376,31 +401,40 @@ export const CaseOffers: React.FC<CaseOffersProps> = ({ caseId }) => {
                       </div>
 
                       {offer.items && offer.items.length > 0 && (
-                        <div className="mt-4">
-                          <h5 className="text-sm font-semibold text-gray-700 mb-2">Detalle de Ãtems</h5>
-                          <div className="border rounded overflow-hidden">
-                            <table className="w-full text-xs">
+                        <div className="mt-4" style={{ display: 'block', width: '100%', gridColumn: '1 / -1', minWidth: '0' }}>
+                          <h5 className="text-sm font-semibold text-gray-700 mb-2">Detalle de Ítems</h5>
+                          <div className="offer-items-table-wrapper" style={{ width: '100%', minWidth: '0', overflowX: 'auto', border: '1px solid var(--color-border)', borderRadius: '4px' }}>
+                            <table className="w-full text-sm" style={{ width: '100%', minWidth: '850px', tableLayout: 'fixed' }}>
+                              <colgroup>
+                                <col style={{ width: '44%' }} />
+                                <col style={{ width: '10%' }} />
+                                <col style={{ width: '12%' }} />
+                                <col style={{ width: '18%' }} />
+                                <col style={{ width: '16%' }} />
+                              </colgroup>
                               <thead className="bg-gray-50 text-gray-700">
                                 <tr>
-                                  <th className="px-2 py-1 text-left font-medium">Ãtem</th>
-                                  <th className="px-2 py-1 text-right font-medium">Cant.</th>
-                                  <th className="px-2 py-1 text-right font-medium">P. Unit</th>
-                                  <th className="px-2 py-1 text-right font-medium">Subtotal</th>
+                                  <th className="px-3 py-2 text-left font-medium">Ítem</th>
+                                  <th className="px-3 py-2 text-left font-medium">Cant.</th>
+                                  <th className="px-3 py-2 text-left font-medium">Unidad</th>
+                                  <th className="px-3 py-2 text-left font-medium">P. Unit.</th>
+                                  <th className="px-3 py-2 text-right font-medium">Subtotal</th>
                                 </tr>
                               </thead>
                               <tbody>
                                 {offer.items.map(it => (
                                   <tr key={it.id} className="border-t border-gray-100">
-                                    <td className="px-2 py-1">{it.description || `Ãtem #${it.procurement_item_id}`}</td>
-                                    <td className="px-2 py-1 text-right">{it.quantity} {it.unit}</td>
-                                    <td className="px-2 py-1 text-right">{it.unit_price.toFixed(2)}</td>
-                                    <td className="px-2 py-1 text-right font-medium">{it.subtotal.toFixed(2)}</td>
+                                    <td className="px-3 py-2" style={{ whiteSpace: 'normal', overflowWrap: 'normal', wordBreak: 'normal' }}>{it.description || `Ítem #${it.procurement_item_id}`}</td>
+                                    <td className="px-3 py-2">{it.quantity}</td>
+                                    <td className="px-3 py-2">{it.unit}</td>
+                                    <td className="px-3 py-2">{formatMoney(it.unit_price)}</td>
+                                    <td className="px-3 py-2 text-right font-medium">{formatMoney(it.subtotal)}</td>
                                   </tr>
                                 ))}
                                 <tr className="border-t border-gray-200 bg-gray-50">
-                                  <td colSpan={3} className="px-2 py-2 text-right font-semibold">Monto Total:</td>
-                                  <td className="px-2 py-2 text-right font-bold text-green-700">
-                                    {(offer.currency || 'PEN') === 'USD' ? 'US$' : 'S/'} {offer.total_amount?.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}
+                                  <td colSpan={4} className="px-3 py-2 text-right font-semibold">Total:</td>
+                                  <td className="px-3 py-2 text-right font-bold text-green-700">
+                                    {(offer.currency || 'PEN') === 'USD' ? 'US$' : 'S/'} {formatMoney(offer.total_amount)}
                                   </td>
                                 </tr>
                               </tbody>
