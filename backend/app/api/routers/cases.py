@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, HTTPException, UploadFile, File
+from fastapi import APIRouter, Depends, HTTPException, UploadFile, File, Form
 from fastapi.responses import FileResponse
 from sqlalchemy.orm import Session
 from typing import List
@@ -170,11 +170,11 @@ def get_case(
 def upload_requirement(
     case_id: int,
     file: UploadFile = File(...),
+    document_type: str = Form("requirement"),
     db_case: CaseFile = Depends(verify_case_access),
     current_user: User = Depends(get_current_active_user),
     db: Session = Depends(get_db)
 ):
-
 
     if not file.filename.lower().endswith(".pdf"):
         raise HTTPException(
@@ -198,7 +198,7 @@ def upload_requirement(
 
     document = UploadedDocument(
         case_id=case_id,
-        document_type="requirement",
+        document_type=document_type,
         original_filename=file.filename,
         stored_path=file_path,
         mime_type="application/pdf",

@@ -25,6 +25,9 @@ from .telemetry import InstitutionalTelemetryEvent
 from .tenant_config import TenantConfiguration, TenantConfigurationHistory
 from .structured_tables import StructuredTable, StructuredRow, StructuredCell
 
+from .case_procurement_item import CaseProcurementItem
+from .supplier_offer_item import SupplierOfferItem
+
 __all__ = [
     "CaseRequirementMatrix", "Supplier", "SupplierOffer", "RequirementEvidence", 
     "SupplierProfile", "ValidationRequest", "CiiuCatalog", "OfferEvidence", 

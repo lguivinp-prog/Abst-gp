@@ -13,6 +13,7 @@ interface CaseOffersProps {
 
 export const CaseOffers: React.FC<CaseOffersProps> = ({ caseId }) => {
   const [offers, setOffers] = useState<SupplierOfferResponse[]>([]);
+  const [procurementItems, setProcurementItems] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -25,8 +26,13 @@ export const CaseOffers: React.FC<CaseOffersProps> = ({ caseId }) => {
     setLoading(true);
     setError(null);
     try {
-      const data = await offerService.getOffers(caseId);
-      setOffers(data);
+      const { requirementsService } = await import('../../../api/v6/requirements.service');
+      const [offersData, itemsData] = await Promise.all([
+        offerService.getOffers(caseId),
+        requirementsService.getProcurementItems(caseId)
+      ]);
+      setOffers(offersData);
+      setProcurementItems(itemsData);
     } catch (err) {
       if (err instanceof AppError) {
         setError(err.message);
@@ -44,11 +50,26 @@ export const CaseOffers: React.FC<CaseOffersProps> = ({ caseId }) => {
 
   const handleEditClick = (offer: SupplierOfferResponse) => {
     setEditingOfferId(offer.id);
+    
+    // Initialize items from offer if present, or from procurementItems
+    let initialItems = offer.items?.map(it => ({
+      procurement_item_id: it.procurement_item_id,
+      unit_price: it.unit_price
+    }));
+
+    if (!initialItems || initialItems.length === 0) {
+      initialItems = procurementItems.map(pi => ({
+        procurement_item_id: pi.id,
+        unit_price: 0
+      }));
+    }
+
     setEditData({
       price: offer.price,
       currency: offer.currency || 'PEN',
       source_document: offer.source_document,
-      status: offer.status
+      status: offer.status,
+      items: initialItems
     });
   };
 
@@ -208,7 +229,60 @@ export const CaseOffers: React.FC<CaseOffersProps> = ({ caseId }) => {
                           </select>
                         </div>
                       </div>
-                      <div className="form-group">
+                      <div className="form-group mt-4">
+                        <label>Ítems Cotizados</label>
+                        {procurementItems.length > 0 ? (
+                          <div className="border rounded overflow-hidden">
+                            <table className="w-full text-sm">
+                              <thead className="bg-gray-50 text-gray-700">
+                                <tr>
+                                  <th className="px-3 py-2 text-left font-medium">Ítem</th>
+                                  <th className="px-3 py-2 text-left font-medium">Cantidad</th>
+                                  <th className="px-3 py-2 text-left font-medium">Unidad</th>
+                                  <th className="px-3 py-2 text-left font-medium">Precio Unit.</th>
+                                </tr>
+                              </thead>
+                              <tbody>
+                                {procurementItems.map(pi => {
+                                  const currentItem = editData.items?.find(it => it.procurement_item_id === pi.id);
+                                  return (
+                                    <tr key={pi.id} className="border-t border-gray-100">
+                                      <td className="px-3 py-2">{pi.description}</td>
+                                      <td className="px-3 py-2">{pi.quantity}</td>
+                                      <td className="px-3 py-2">{pi.unit}</td>
+                                      <td className="px-3 py-2">
+                                        <input
+                                          type="number"
+                                          step="0.01"
+                                          min="0"
+                                          value={currentItem?.unit_price || ''}
+                                          onChange={(e) => {
+                                            const val = e.target.value ? parseFloat(e.target.value) : 0;
+                                            setEditData(prev => ({
+                                              ...prev,
+                                              items: prev.items?.map(it => 
+                                                it.procurement_item_id === pi.id 
+                                                  ? { ...it, unit_price: val }
+                                                  : it
+                                              )
+                                            }));
+                                          }}
+                                          className="w-full border rounded p-1 text-right"
+                                          placeholder="0.00"
+                                        />
+                                      </td>
+                                    </tr>
+                                  );
+                                })}
+                              </tbody>
+                            </table>
+                          </div>
+                        ) : (
+                          <p className="text-sm text-gray-500 italic">No hay ítems requeridos registrados.</p>
+                        )}
+                      </div>
+
+                      <div className="form-group mt-4">
                         <label>Documento Fuente (Cotización)</label>
                         <input
                           type="file"
@@ -259,6 +333,40 @@ export const CaseOffers: React.FC<CaseOffersProps> = ({ caseId }) => {
                           {offer.status === 'PENDING' ? 'PENDIENTE' : offer.status === 'APPROVED' ? 'APROBADA' : offer.status === 'REJECTED' ? 'RECHAZADA' : 'OBSERVADA'}
                         </Badge>
                       </div>
+                      
+                      {offer.items && offer.items.length > 0 && (
+                        <div className="mt-4">
+                          <h5 className="text-sm font-semibold text-gray-700 mb-2">Detalle de Ítems</h5>
+                          <div className="border rounded overflow-hidden">
+                            <table className="w-full text-xs">
+                              <thead className="bg-gray-50 text-gray-700">
+                                <tr>
+                                  <th className="px-2 py-1 text-left font-medium">Ítem</th>
+                                  <th className="px-2 py-1 text-right font-medium">Cant.</th>
+                                  <th className="px-2 py-1 text-right font-medium">P. Unit</th>
+                                  <th className="px-2 py-1 text-right font-medium">Subtotal</th>
+                                </tr>
+                              </thead>
+                              <tbody>
+                                {offer.items.map(it => (
+                                  <tr key={it.id} className="border-t border-gray-100">
+                                    <td className="px-2 py-1">{it.description || `Ítem #${it.procurement_item_id}`}</td>
+                                    <td className="px-2 py-1 text-right">{it.quantity} {it.unit}</td>
+                                    <td className="px-2 py-1 text-right">{it.unit_price.toFixed(2)}</td>
+                                    <td className="px-2 py-1 text-right font-medium">{it.subtotal.toFixed(2)}</td>
+                                  </tr>
+                                ))}
+                                <tr className="border-t border-gray-200 bg-gray-50">
+                                  <td colSpan={3} className="px-2 py-2 text-right font-semibold">Monto Total:</td>
+                                  <td className="px-2 py-2 text-right font-bold text-green-700">
+                                    {(offer.currency || 'PEN') === 'USD' ? 'US$' : 'S/'} {offer.total_amount?.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}
+                                  </td>
+                                </tr>
+                              </tbody>
+                            </table>
+                          </div>
+                        </div>
+                      )}
                     </div>
                   )}
                 </div>

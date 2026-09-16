@@ -11,12 +11,29 @@ router = APIRouter()
 
 from typing import List
 
+class SupplierOfferItemCreate(BaseModel):
+    procurement_item_id: int
+    unit_price: float
+
+class SupplierOfferItemResponse(BaseModel):
+    id: int
+    procurement_item_id: int
+    description: Optional[str] = None
+    quantity: float
+    unit: str
+    unit_price: float
+    subtotal: float
+
+    class Config:
+        from_attributes = True
+
 class SupplierOfferCreate(BaseModel):
     supplier_id: int
     price: Optional[float] = None
     currency: Optional[str] = "PEN"
     source_document: Optional[str] = None
     document_ids: Optional[List[int]] = None
+    items: Optional[List[SupplierOfferItemCreate]] = None
 
 class SupplierBasic(BaseModel):
     id: int
@@ -37,6 +54,8 @@ class SupplierOfferResponse(BaseModel):
     source_document: Optional[str] = None
     documents: List[dict] = []
     supplier: Optional[SupplierBasic] = None
+    items: List[SupplierOfferItemResponse] = []
+    total_amount: Optional[float] = None
 
     class Config:
         from_attributes = True
@@ -47,6 +66,7 @@ class SupplierOfferUpdate(BaseModel):
     source_document: Optional[str] = None
     document_ids: Optional[List[int]] = None
     status: Optional[str] = None
+    items: Optional[List[SupplierOfferItemCreate]] = None
 
 @router.post("/cases/{case_id}/offers", response_model=SupplierOfferResponse)
 def attach_offer(
@@ -129,7 +149,30 @@ def update_offer(
         db.query(SupplierOfferDocument).filter(SupplierOfferDocument.offer_id == offer_id).delete()
         # Add new docs
         for doc_id in item.document_ids:
-            db.add(SupplierOfferDocument(offer_id=offer_id, document_id=doc_id))
+            offer_doc = SupplierOfferDocument(offer_id=offer.id, document_id=doc_id)
+            db.add(offer_doc)
+
+    if item.items is not None:
+        from app.models.v6.supplier_offer_item import SupplierOfferItem
+        from app.models.v6.case_procurement_item import CaseProcurementItem
+        
+        # Remove old items
+        db.query(SupplierOfferItem).filter(SupplierOfferItem.supplier_offer_id == offer_id).delete()
+        
+        for item_data in item.items:
+            procurement_item = db.query(CaseProcurementItem).filter_by(id=item_data.procurement_item_id).first()
+            if not procurement_item or procurement_item.case_id != case_id:
+                raise HTTPException(status_code=403, detail=f"Procurement item {item_data.procurement_item_id} is invalid or does not belong to the case")
+            
+            offer_item = SupplierOfferItem(
+                supplier_offer_id=offer.id,
+                procurement_item_id=procurement_item.id,
+                description=procurement_item.description,
+                quantity=procurement_item.quantity,
+                unit=procurement_item.unit,
+                unit_price=item_data.unit_price
+            )
+            db.add(offer_item)
 
     db.commit()
     db.refresh(offer)

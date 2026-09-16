@@ -4,6 +4,7 @@ import { documentsService } from '../../../api/v6/documents.service';
 import { requirementsService } from '../../../api/v6/requirements.service';
 import type { DocumentResponse } from '../../../api/v6/documents.types';
 import { AppError } from '../../../api/apiError';
+import { RequirementUpload } from './RequirementUpload';
 
 interface CaseDocumentsProps {
   caseId: string;
@@ -85,7 +86,19 @@ export const CaseDocuments: React.FC<CaseDocumentsProps> = ({ caseId }) => {
   if (documents.length === 0) {
     return (
       <div className="case-documents__empty">
-        <p>No hay documentos registrados para este expediente.</p>
+        <div className="mb-4">
+          <p>No hay documentos registrados para este expediente.</p>
+        </div>
+        <div className="max-w-lg mx-auto">
+          <RequirementUpload 
+            caseId={caseId} 
+            onUploadSuccess={() => {
+              // Reload page or re-fetch documents?
+              // The component will re-fetch if we just reset some state or we can just reload for now
+              window.location.reload();
+            }} 
+          />
+        </div>
       </div>
     );
   }

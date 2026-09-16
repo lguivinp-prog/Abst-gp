@@ -34,10 +34,11 @@ export const casesService = {
     }
   },
 
-  uploadRequirement: async (id: string, file: File): Promise<{ message: string, job_id: string }> => {
+  uploadRequirement: async (id: string, file: File, documentType: string = 'requirement'): Promise<{ message: string, job_id: string }> => {
     try {
       const formData = new FormData();
       formData.append('file', file);
+      formData.append('document_type', documentType);
       const response = await apiClient.post(`/cases/${id}/requirement/upload`, formData, {
         headers: { 'Content-Type': 'multipart/form-data' },
       });

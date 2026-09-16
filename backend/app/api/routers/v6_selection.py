@@ -29,7 +29,7 @@ class ResultResponse(BaseModel):
     created_at: datetime
     supplier_name: Optional[str] = None
     supplier_ruc: Optional[str] = None
-    offer_price: Optional[float] = None
+    offer_total_amount: Optional[float] = None
     offer_currency: Optional[str] = None
     justification_comment: Optional[str] = None
     status: str = "APPROVED"
@@ -121,7 +121,7 @@ def get_result(
         "created_at": final.created_at,
         "supplier_name": supplier.business_name if supplier else None,
         "supplier_ruc": supplier.ruc if supplier else None,
-        "offer_price": offer.price if offer else None,
+        "offer_total_amount": offer.total_amount if offer else None,
         "offer_currency": getattr(offer, "currency", "PEN") if offer else None,
         "justification_comment": attempt.justification_comment if attempt else None,
         "status": "APPROVED"

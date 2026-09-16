@@ -54,12 +54,26 @@ class SelectionService:
 
     @staticmethod
     def propose_selection(db: Session, case_id: int, supplier_offer_id: int, justification: str, user_id: int, tenant_id: str):
+        offer = db.query(SupplierOffer).filter_by(id=supplier_offer_id, case_id=case_id).first()
+        if not offer:
+            raise ValueError("Offer not found in this case")
+            
+        if offer.status == "PENDING":
+            raise ValueError("Cannot select a PENDING offer")
+            
+        from app.models.v6.case_procurement_item import CaseProcurementItem
+        procurement_items_count = db.query(CaseProcurementItem).filter_by(case_id=case_id).count()
+        
+        if procurement_items_count > 0:
+            if not offer.items or len(offer.items) < procurement_items_count:
+                raise ValueError("Incomplete offer: Missing prices for some procurement items")
+            
         attempt = SupplierSelectionAttempt(
             case_id=case_id,
             supplier_offer_id=supplier_offer_id,
             justification_comment=justification,
-            selected_by=user_id,
-            status="PROPOSED"
+            proposed_by=user_id,
+            status="UNDER_REVIEW"
         )
         db.add(attempt)
 

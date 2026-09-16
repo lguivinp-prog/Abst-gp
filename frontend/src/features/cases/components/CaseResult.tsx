@@ -73,7 +73,7 @@ export const CaseResult: React.FC<CaseResultProps> = ({ caseId }) => {
             <div>
               <p className="text-gray-500 mb-1">Importe de Adjudicación</p>
               <p className="font-medium text-lg text-green-700">
-                {result.offer_currency} {result.offer_price != null ? result.offer_price.toLocaleString('es-PE', {minimumFractionDigits: 2}) : 'N/A'}
+                {result.offer_currency} {result.offer_total_amount != null ? result.offer_total_amount.toLocaleString('es-PE', {minimumFractionDigits: 2}) : 'N/A'}
               </p>
             </div>
             <div>

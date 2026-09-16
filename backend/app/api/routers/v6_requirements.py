@@ -182,3 +182,27 @@ def update_requirement(
     db.refresh(req)
 
     return req
+
+class ProcurementItemResponse(BaseModel):
+    id: int
+    case_id: int
+    item_number: Optional[str] = None
+    description: str
+    quantity: float
+    unit: str
+    source_document_id: Optional[int] = None
+    source_page: Optional[int] = None
+    source_requirement_id: Optional[int] = None
+    confidence: Optional[float] = None
+    
+    class Config:
+        from_attributes = True
+
+@router.get("/cases/{case_id}/procurement-items", response_model=List[ProcurementItemResponse])
+def get_procurement_items(
+    case_id: int,
+    case: CaseFile = Depends(verify_case_access),
+    db: Session = Depends(get_db)
+):
+    from app.models.v6.case_procurement_item import CaseProcurementItem
+    return db.query(CaseProcurementItem).filter(CaseProcurementItem.case_id == case_id).all()

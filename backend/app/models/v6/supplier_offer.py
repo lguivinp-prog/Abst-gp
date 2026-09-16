@@ -27,3 +27,11 @@ class SupplierOffer(Base):
     case = relationship("CaseFile", foreign_keys=[case_id])
     supplier = relationship("Supplier", foreign_keys=[supplier_id])
     documents = relationship("SupplierOfferDocument", backref="offer", cascade="all, delete-orphan")
+    items = relationship("SupplierOfferItem", backref="offer", cascade="all, delete-orphan")
+
+    @property
+    def total_amount(self):
+        if self.items and len(self.items) > 0:
+            return sum([item.subtotal for item in self.items])
+        return self.price
+

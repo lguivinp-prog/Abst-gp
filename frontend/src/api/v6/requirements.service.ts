@@ -6,6 +6,7 @@ export const requirementsPaths = {
   list: (caseId: string | number) => `/cases/${caseId}/requirements`,
   detail: (caseId: string | number, reqId: string | number) => `/cases/${caseId}/requirements/${reqId}`,
   extract: (caseId: string | number) => `/cases/${caseId}/requirements/extract`,
+  procurementItems: (caseId: string | number) => `/cases/${caseId}/procurement-items`,
 };
 
 export const requirementsService = {
@@ -36,6 +37,14 @@ export const requirementsService = {
   extractRequirements: async (caseId: string, documentId: number): Promise<RequirementResponse[]> => {
     try {
       return await v6Client.post<RequirementResponse[], { document_id: number }>(requirementsPaths.extract(caseId), { document_id: documentId });
+    } catch (error) {
+      throw handleApiError(error);
+    }
+  },
+  
+  getProcurementItems: async (caseId: string): Promise<any[]> => {
+    try {
+      return await v6Client.get<any[]>(requirementsPaths.procurementItems(caseId));
     } catch (error) {
       throw handleApiError(error);
     }

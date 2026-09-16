@@ -76,11 +76,13 @@ export const CaseSelection: React.FC<CaseSelectionProps> = ({ caseId }) => {
           <p>No hay ofertas registradas.</p>
         ) : (
           offers.map(offer => {
-            const isOfferComplete = offer.status === 'APPROVED' && offer.price !== null && offer.price !== undefined;
+            const hasPrice = (offer.total_amount !== null && offer.total_amount !== undefined) || (offer.price !== null && offer.price !== undefined);
+            const isOfferComplete = offer.status === 'APPROVED' && hasPrice;
+            const displayPrice = offer.total_amount ?? offer.price;
             return (
             <div key={offer.id} className="v6-eval-card p-4 border rounded mb-4">
               <h3 className="font-bold">{offer.supplier?.business_name || `Proveedor (RUC: ${offer.supplier?.ruc})` || 'Proveedor'}</h3>
-              <p>Precio: {offer.price ? `${offer.currency || 'PEN'} ${offer.price.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}` : 'No definido'}</p>
+              <p>Precio Total: {displayPrice ? `${offer.currency || 'PEN'} ${displayPrice.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}` : 'No definido (o incompleto)'}</p>
               <p>Estado de Oferta: {offer.status === 'APPROVED' ? 'APROBADA' : offer.status === 'PENDING' ? 'PENDIENTE' : offer.status}</p>
               
               {!selection && (
