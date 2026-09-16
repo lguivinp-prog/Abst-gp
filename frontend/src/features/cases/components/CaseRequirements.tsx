@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from 'react';
-import { Edit2, Save, X, Plus, AlertCircle, RefreshCw } from 'lucide-react';
+﻿import React, { useState, useEffect } from 'react';
+import { Edit2, Save, X, Plus, AlertCircle, RefreshCw, Trash2 } from 'lucide-react';
 import { requirementsService } from '../../../api/v6/requirements.service';
 import type { RequirementResponse, RequirementUpdate, RequirementCreate, UpdateRequirementStatus } from '../../../api/v6/requirements.types';
 import { Button } from '../../../components/ui/Button';
@@ -22,6 +22,7 @@ interface CaseRequirementsProps {
 
 export const CaseRequirements: React.FC<CaseRequirementsProps> = ({ caseId }) => {
   const [requirements, setRequirements] = useState<RequirementResponse[]>([]);
+  const [procurementItems, setProcurementItems] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -35,12 +36,30 @@ export const CaseRequirements: React.FC<CaseRequirementsProps> = ({ caseId }) =>
   const [isAdding, setIsAdding] = useState(false);
   const [formError, setFormError] = useState<string | null>(null);
 
+  const [showAddItemForm, setShowAddItemForm] = useState(false);
+  const [addItemForm, setAddItemForm] = useState({ item_number: '', description: '', quantity: 1, unit: 'UNIDAD' });
+  const [isAddingItem, setIsAddingItem] = useState(false);
+  const [itemFormError, setItemFormError] = useState<string | null>(null);
+
+  const [editingItemId, setEditingItemId] = useState<number | null>(null);
+  const [editItemForm, setEditItemForm] = useState({ item_number: '', description: '', quantity: 1, unit: 'UNIDAD' });
+
+  const loadProcurementItems = async () => {
+    try {
+      const items = await requirementsService.getProcurementItems(caseId);
+      setProcurementItems(items);
+    } catch (e) {
+      console.error(e);
+    }
+  };
+
   const fetchRequirements = async () => {
     setLoading(true);
     setError(null);
     try {
       const data = await requirementsService.getRequirements(caseId);
       setRequirements(data);
+      await loadProcurementItems();
     } catch (err) {
       if (err instanceof AppError) {
         setError(err.message);
@@ -54,10 +73,14 @@ export const CaseRequirements: React.FC<CaseRequirementsProps> = ({ caseId }) =>
 
   useEffect(() => {
     let mounted = true;
-    requirementsService.getRequirements(caseId)
-      .then(data => {
+    Promise.all([
+      requirementsService.getRequirements(caseId),
+      requirementsService.getProcurementItems(caseId)
+    ])
+      .then(([reqs, items]) => {
         if (mounted) {
-          setRequirements(data);
+          setRequirements(reqs);
+          setProcurementItems(items);
           setLoading(false);
         }
       })
@@ -93,7 +116,7 @@ export const CaseRequirements: React.FC<CaseRequirementsProps> = ({ caseId }) =>
   const handleSaveEdit = async (id: number) => {
     setMutationError(null);
     if (!editForm.reason.trim()) {
-      setMutationError('Debe ingresar un motivo para la modificación.');
+      setMutationError('Debe ingresar un motivo para la modificaciÃ³n.');
       return;
     }
 
@@ -116,7 +139,7 @@ export const CaseRequirements: React.FC<CaseRequirementsProps> = ({ caseId }) =>
   const handleSaveNew = async () => {
     setFormError(null);
     if (!addForm.requirement_type.trim() || !addForm.description.trim()) {
-      setFormError('El tipo de requerimiento y la descripción son obligatorios.');
+      setFormError('El tipo de requerimiento y la descripciÃ³n son obligatorios.');
       return;
     }
 
@@ -167,7 +190,7 @@ export const CaseRequirements: React.FC<CaseRequirementsProps> = ({ caseId }) =>
       <div className="case-requirements">
         <div className="case-requirements__header">
           <h2 className="case-requirements__title">Requerimientos</h2>
-          <p className="case-requirements__subtitle">Ocurrió un error al cargar la información.</p>
+          <p className="case-requirements__subtitle">OcurriÃ³ un error al cargar la informaciÃ³n.</p>
         </div>
         <div className="case-requirements__error">
           <div className="case-requirements__error-icon-wrapper">
@@ -182,13 +205,210 @@ export const CaseRequirements: React.FC<CaseRequirementsProps> = ({ caseId }) =>
     );
   }
 
+  const handleSaveNewItem = async () => {
+    setItemFormError(null);
+    if (!addItemForm.description.trim()) {
+      setItemFormError('La descripciÃ³n es obligatoria.');
+      return;
+    }
+    setIsAddingItem(true);
+    try {
+      await requirementsService.createProcurementItem(caseId, addItemForm);
+      await loadProcurementItems();
+      setShowAddItemForm(false);
+      setAddItemForm({ item_number: '', description: '', quantity: 1, unit: 'UNIDAD' });
+    } catch (err) {
+      if (err instanceof AppError) {
+        setItemFormError(err.message);
+      } else {
+        setItemFormError('Error al crear Ã­tem.');
+      }
+    } finally {
+      setIsAddingItem(false);
+    }
+  };
+
+  const handleEditItem = async (itemId: number) => {
+    setItemFormError(null);
+    try {
+      await requirementsService.updateProcurementItem(caseId, itemId, editItemForm);
+      await loadProcurementItems();
+      setEditingItemId(null);
+    } catch (err) {
+      if (err instanceof AppError) {
+        setItemFormError(err.message);
+      } else {
+        setItemFormError('Error al actualizar Ã­tem.');
+      }
+    }
+  };
+
+  const handleDeleteItem = async (itemId: number) => {
+    if (!window.confirm('Â¿EstÃ¡ seguro de eliminar este Ã­tem?')) return;
+    try {
+      await requirementsService.deleteProcurementItem(caseId, itemId);
+      await loadProcurementItems();
+    } catch (err) {
+      alert('Error al eliminar Ã­tem');
+    }
+  };
+
   return (
     <div className="case-requirements">
+      <div className="case-requirements__header-wrapper mt-4">
+        <div className="case-requirements__header">
+          <h2 className="case-requirements__title">Ãtems de ContrataciÃ³n</h2>
+          <p className="case-requirements__subtitle">
+            Bienes o servicios econÃ³micos a cotizar.
+          </p>
+        </div>
+        {!showAddItemForm && (
+          <Button leftIcon={<Plus size={18} />} onClick={() => setShowAddItemForm(true)}>
+            Agregar Ãtem
+          </Button>
+        )}
+      </div>
+
+      <div className="case-requirements__list mb-6">
+        {showAddItemForm && (
+          <div className="case-requirements__card case-requirements__card--new">
+            <h3 className="case-requirements__form-title">Nuevo Ãtem</h3>
+            {itemFormError && (
+              <div className="case-requirements__mutation-error">
+                <AlertCircle size={16} /> {itemFormError}
+              </div>
+            )}
+            <div className="case-requirements__form">
+              <div className="case-requirements__form-grid">
+                <div className="case-requirements__field">
+                  <label className="case-requirements__label">DescripciÃ³n</label>
+                  <input
+                    type="text"
+                    className="case-requirements__input"
+                    value={addItemForm.description}
+                    onChange={e => setAddItemForm({...addItemForm, description: e.target.value})}
+                    disabled={isAddingItem}
+                  />
+                </div>
+                <div className="case-requirements__field">
+                  <label className="case-requirements__label">Cantidad</label>
+                  <input
+                    type="number"
+                    className="case-requirements__input"
+                    value={addItemForm.quantity}
+                    onChange={e => setAddItemForm({...addItemForm, quantity: parseFloat(e.target.value) || 0})}
+                    disabled={isAddingItem}
+                  />
+                </div>
+                <div className="case-requirements__field">
+                  <label className="case-requirements__label">Unidad</label>
+                  <input
+                    type="text"
+                    className="case-requirements__input"
+                    value={addItemForm.unit}
+                    onChange={e => setAddItemForm({...addItemForm, unit: e.target.value})}
+                    disabled={isAddingItem}
+                  />
+                </div>
+              </div>
+              <div className="case-requirements__edit-actions mt-2">
+                <Button variant="outline" size="sm" onClick={() => setShowAddItemForm(false)} disabled={isAddingItem}>
+                  Cancelar
+                </Button>
+                <Button size="sm" onClick={handleSaveNewItem} disabled={isAddingItem || !addItemForm.description.trim()}>
+                  Guardar
+                </Button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {procurementItems.length === 0 && !showAddItemForm ? (
+          <div className="case-requirements__card case-requirements__empty">
+            <p>No hay Ã­tems de contrataciÃ³n registrados.</p>
+          </div>
+        ) : (
+          procurementItems.map(item => (
+            <div key={item.id} className="case-requirements__card">
+              {editingItemId === item.id ? (
+                <div className="case-requirements__form">
+                  <div className="case-requirements__form-grid">
+                    <div className="case-requirements__field">
+                      <label className="case-requirements__label">DescripciÃ³n</label>
+                      <input
+                        type="text"
+                        className="case-requirements__input"
+                        value={editItemForm.description}
+                        onChange={e => setEditItemForm({...editItemForm, description: e.target.value})}
+                      />
+                    </div>
+                    <div className="case-requirements__field">
+                      <label className="case-requirements__label">Cantidad</label>
+                      <input
+                        type="number"
+                        className="case-requirements__input"
+                        value={editItemForm.quantity}
+                        onChange={e => setEditItemForm({...editItemForm, quantity: parseFloat(e.target.value) || 0})}
+                      />
+                    </div>
+                    <div className="case-requirements__field">
+                      <label className="case-requirements__label">Unidad</label>
+                      <input
+                        type="text"
+                        className="case-requirements__input"
+                        value={editItemForm.unit}
+                        onChange={e => setEditItemForm({...editItemForm, unit: e.target.value})}
+                      />
+                    </div>
+                  </div>
+                  <div className="case-requirements__edit-actions mt-2">
+                    <Button variant="outline" size="sm" onClick={() => setEditingItemId(null)}>
+                      Cancelar
+                    </Button>
+                    <Button size="sm" onClick={() => handleEditItem(item.id)}>
+                      Guardar
+                    </Button>
+                  </div>
+                </div>
+              ) : (
+                <div className="case-requirements__status-row">
+                  <div className="case-requirements__requirement-meta flex items-center gap-2">
+                    {item.status === 'REVIEW_REQUIRED' && (
+                      <Badge variant="danger">REQUIERE REVISIÃ“N</Badge>
+                    )}
+                    <p className="case-requirements__description">
+                      <strong>{item.quantity !== null ? item.quantity : '?'} {item.unit || 'POR DEFINIR'}</strong> - {item.description}
+                    </p>
+                  </div>
+                  <div className="flex gap-2">
+                    <Button variant="ghost" size="sm" onClick={() => {
+                      setEditingItemId(item.id);
+                      setEditItemForm({
+                        item_number: item.item_number || '',
+                        description: item.description,
+                        quantity: item.quantity !== null ? item.quantity : 1,
+                        unit: item.unit || 'UNIDAD',
+                        status: 'VALIDATED'
+                      } as any);
+                    }}>
+                      <Edit2 size={16} />
+                    </Button>
+                    <Button variant="ghost" size="sm" onClick={() => handleDeleteItem(item.id)}>
+                      <Trash2 size={16} className="text-red-500" />
+                    </Button>
+                  </div>
+                </div>
+              )}
+            </div>
+          ))
+        )}
+      </div>
+
       <div className="case-requirements__header-wrapper">
         <div className="case-requirements__header">
           <h2 className="case-requirements__title">Requerimientos Estructurados</h2>
           <p className="case-requirements__subtitle">
-            Revisión y estructuración de las condiciones extraídas del documento de requerimiento.
+            RevisiÃ³n y estructuraciÃ³n de las condiciones extraÃ­das del documento de requerimiento.
           </p>
         </div>
         {!showAddForm && (
@@ -217,7 +437,7 @@ export const CaseRequirements: React.FC<CaseRequirementsProps> = ({ caseId }) =>
                     value={addForm.requirement_type}
                     onChange={e => setAddForm({...addForm, requirement_type: e.target.value})}
                     disabled={isAdding}
-                    placeholder="Ej: Especificaciones Técnicas"
+                    placeholder="Ej: Especificaciones TÃ©cnicas"
                   />
                 </div>
                 <div className="case-requirements__field">
@@ -234,7 +454,7 @@ export const CaseRequirements: React.FC<CaseRequirementsProps> = ({ caseId }) =>
                 </div>
               </div>
               <div className="case-requirements__field">
-                <label className="case-requirements__label">Descripción</label>
+                <label className="case-requirements__label">DescripciÃ³n</label>
                 <textarea
                   className="case-requirements__input case-requirements__input--textarea"
                   rows={2}
@@ -310,12 +530,12 @@ export const CaseRequirements: React.FC<CaseRequirementsProps> = ({ caseId }) =>
                         value={editForm.reason}
                         onChange={e => setEditForm({...editForm, reason: e.target.value})}
                         disabled={savingId === req.id}
-                        placeholder="Ej: Corrección manual..."
+                        placeholder="Ej: CorrecciÃ³n manual..."
                       />
                     </div>
                   </div>
                   <div className="case-requirements__field">
-                    <label className="case-requirements__label">Descripción</label>
+                    <label className="case-requirements__label">DescripciÃ³n</label>
                     <textarea
                       className="case-requirements__input case-requirements__input--textarea"
                       rows={2}

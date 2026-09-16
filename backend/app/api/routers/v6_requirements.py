@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, HTTPException
+﻿from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from app.core.database import get_db
 from app.api.auth import get_current_active_user, verify_case_access
@@ -75,7 +75,27 @@ def extract_requirements(
         CaseRequirementMatrix.source_document_id == req.document_id
     ).all()
 
-    if existing_reqs:
+    from app.models.v6.case_procurement_item import CaseProcurementItem
+    existing_items = db.query(CaseProcurementItem).filter(
+        CaseProcurementItem.case_id == case_id,
+        CaseProcurementItem.source_document_id == req.document_id
+    ).all()
+
+    if existing_reqs and existing_items:
+        return existing_reqs
+
+    if existing_reqs and not existing_items:
+        # We only need to process items
+        extraction_service.process_text_and_propose(
+            db=db,
+            case_id=case_id,
+            user_id=current_user.id,
+            tenant_id=current_user.tenant_id,
+            text=doc.text_extracted,
+            document_name=doc.original_filename,
+            document_id=doc.id,
+            skip_requirements=True
+        )
         return existing_reqs
 
     return extraction_service.process_text_and_propose(
@@ -188,13 +208,14 @@ class ProcurementItemResponse(BaseModel):
     case_id: int
     item_number: Optional[str] = None
     description: str
-    quantity: float
-    unit: str
+    quantity: Optional[float] = None
+    unit: Optional[str] = None
+    status: str
     source_document_id: Optional[int] = None
     source_page: Optional[int] = None
     source_requirement_id: Optional[int] = None
     confidence: Optional[float] = None
-    
+
     class Config:
         from_attributes = True
 
@@ -206,3 +227,77 @@ def get_procurement_items(
 ):
     from app.models.v6.case_procurement_item import CaseProcurementItem
     return db.query(CaseProcurementItem).filter(CaseProcurementItem.case_id == case_id).all()
+
+class ProcurementItemCreate(BaseModel):
+    item_number: Optional[str] = None
+    description: str
+    quantity: Optional[float] = None
+    unit: Optional[str] = None
+    status: Optional[str] = "VALIDATED"
+
+@router.post("/cases/{case_id}/procurement-items", response_model=ProcurementItemResponse)
+def create_procurement_item(
+    case_id: int,
+    item_data: ProcurementItemCreate,
+    case: CaseFile = Depends(verify_case_access),
+    db: Session = Depends(get_db)
+):
+    from app.models.v6.case_procurement_item import CaseProcurementItem
+    item = CaseProcurementItem(
+        case_id=case_id,
+        item_number=item_data.item_number,
+        description=item_data.description,
+        quantity=item_data.quantity,
+        unit=item_data.unit,
+        status=item_data.status
+    )
+    db.add(item)
+    db.commit()
+    db.refresh(item)
+    return item
+
+@router.put("/cases/{case_id}/procurement-items/{item_id}", response_model=ProcurementItemResponse)
+def update_procurement_item(
+    case_id: int,
+    item_id: int,
+    item_data: ProcurementItemCreate,
+    case: CaseFile = Depends(verify_case_access),
+    db: Session = Depends(get_db)
+):
+    from app.models.v6.case_procurement_item import CaseProcurementItem
+    item = db.query(CaseProcurementItem).filter(
+        CaseProcurementItem.case_id == case_id,
+        CaseProcurementItem.id == item_id
+    ).first()
+    if not item:
+        raise HTTPException(status_code=404, detail="Item not found")
+
+    item.item_number = item_data.item_number
+    item.description = item_data.description
+    item.quantity = item_data.quantity
+    item.unit = item_data.unit
+    if item_data.status:
+        item.status = item_data.status
+
+    db.commit()
+    db.refresh(item)
+    return item
+
+@router.delete("/cases/{case_id}/procurement-items/{item_id}")
+def delete_procurement_item(
+    case_id: int,
+    item_id: int,
+    case: CaseFile = Depends(verify_case_access),
+    db: Session = Depends(get_db)
+):
+    from app.models.v6.case_procurement_item import CaseProcurementItem
+    item = db.query(CaseProcurementItem).filter(
+        CaseProcurementItem.case_id == case_id,
+        CaseProcurementItem.id == item_id
+    ).first()
+    if not item:
+        raise HTTPException(status_code=404, detail="Item not found")
+
+    db.delete(item)
+    db.commit()
+    return {"message": "Deleted"}

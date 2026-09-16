@@ -1,4 +1,4 @@
-import { v6Client } from './v6Client';
+﻿import { v6Client } from './v6Client';
 import type { RequirementResponse, RequirementCreate, RequirementUpdate } from './requirements.types';
 import { handleApiError } from '../apiError';
 
@@ -41,10 +41,34 @@ export const requirementsService = {
       throw handleApiError(error);
     }
   },
-  
+
   getProcurementItems: async (caseId: string): Promise<any[]> => {
     try {
       return await v6Client.get<any[]>(requirementsPaths.procurementItems(caseId));
+    } catch (error) {
+      throw handleApiError(error);
+    }
+  },
+
+  createProcurementItem: async (caseId: string, data: any): Promise<any> => {
+    try {
+      return await v6Client.post<any, any>(requirementsPaths.procurementItems(caseId), data);
+    } catch (error) {
+      throw handleApiError(error);
+    }
+  },
+
+  updateProcurementItem: async (caseId: string, itemId: number, data: any): Promise<any> => {
+    try {
+      return await v6Client.put<any, any>(`${requirementsPaths.procurementItems(caseId)}/${itemId}`, data);
+    } catch (error) {
+      throw handleApiError(error);
+    }
+  },
+
+  deleteProcurementItem: async (caseId: string, itemId: number): Promise<void> => {
+    try {
+      await v6Client.delete(`${requirementsPaths.procurementItems(caseId)}/${itemId}`);
     } catch (error) {
       throw handleApiError(error);
     }

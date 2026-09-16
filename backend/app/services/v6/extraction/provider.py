@@ -13,8 +13,23 @@ class RequirementCandidate(BaseModel):
     confidence: float
     needs_review: bool = False
 
+class ProcurementItemCandidate(BaseModel):
+    item_number: str
+    description: str
+    quantity: Optional[float] = None
+    unit: Optional[str] = None
+    source_document: str
+    source_page: int
+    source_fragment: str
+    confidence: float
+    needs_review: bool = False
+
+class ExtractionResult(BaseModel):
+    requirements: List[RequirementCandidate] = []
+    items: List[ProcurementItemCandidate] = []
+
 class RequirementExtractionProvider(ABC):
     @abstractmethod
-    def extract(self, text: str, source_document: str, source_page: int = 1) -> List[RequirementCandidate]:
-        """Extracts candidate requirements from text."""
+    def extract(self, text: str, source_document: str, source_page: int = 1) -> ExtractionResult:
+        """Extracts candidate requirements and items from text."""
         pass
