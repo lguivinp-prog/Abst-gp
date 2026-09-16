@@ -75,11 +75,13 @@ export const CaseSelection: React.FC<CaseSelectionProps> = ({ caseId }) => {
         {offers.length === 0 ? (
           <p>No hay ofertas registradas.</p>
         ) : (
-          offers.map(offer => (
+          offers.map(offer => {
+            const isOfferComplete = offer.status === 'APPROVED' && offer.price !== null && offer.price !== undefined;
+            return (
             <div key={offer.id} className="v6-eval-card p-4 border rounded mb-4">
-              <h3 className="font-bold">Proveedor ID: {offer.supplier_id}</h3>
-              <p>Precio: {offer.price || 'No definido'}</p>
-              <p>Estado de Oferta: {offer.status}</p>
+              <h3 className="font-bold">{offer.supplier?.business_name || `Proveedor (RUC: ${offer.supplier?.ruc})` || 'Proveedor'}</h3>
+              <p>Precio: {offer.price ? `${offer.currency || 'PEN'} ${offer.price.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}` : 'No definido'}</p>
+              <p>Estado de Oferta: {offer.status === 'APPROVED' ? 'APROBADA' : offer.status === 'PENDING' ? 'PENDIENTE' : offer.status}</p>
               
               {!selection && (
                 <div className="mt-4">
@@ -93,15 +95,17 @@ export const CaseSelection: React.FC<CaseSelectionProps> = ({ caseId }) => {
                   />
                   <Button 
                     onClick={() => handlePropose(offer.id)} 
-                    disabled={submitting}
+                    disabled={submitting || !isOfferComplete}
                     variant="primary"
+                    title={!isOfferComplete ? "La oferta debe estar aprobada y tener un precio definido." : ""}
                   >
                     Proponer Selección
                   </Button>
                 </div>
               )}
             </div>
-          ))
+            );
+          })
         )}
       </div>
     </div>

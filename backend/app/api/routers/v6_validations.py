@@ -51,7 +51,8 @@ def get_case_validations(
         return []
 
     validations = db.query(ValidationRequest).filter(
-        ValidationRequest.supplier_id.in_(supplier_ids)
+        ValidationRequest.supplier_id.in_(supplier_ids),
+        ValidationRequest.case_id == case_id
     ).all()
 
     return validations
@@ -77,11 +78,12 @@ def create_case_validation_request(
     if req.source == "ALL":
         from app.services.v6.integrations.validation_orchestrator import SupplierValidationOrchestrator
         orchestrator = SupplierValidationOrchestrator()
-        orchestrator.run_async_validation(db, supplier_id, current_user.id)
+        orchestrator.run_async_validation(db, case_id, supplier_id, current_user.id)
         return {"status": "SUCCESS", "message": "All validations triggered"}
     
     return ValidationService.request_validation(
         db=db,
+        case_id=case_id,
         supplier_id=supplier_id,
         source=req.source,
         user_id=current_user.id,

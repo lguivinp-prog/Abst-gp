@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { DollarSign, Trash2, Edit2, Check, X, FileText, AlertCircle, Building2 } from 'lucide-react';
+import { FileText, Building2, Check, X, AlertCircle, Trash2, Edit2 } from 'lucide-react';
 import { Button } from '../../../components/ui/Button';
 import { Badge } from '../../../components/ui/Badge';
 import { offerService } from '../../../api/v6/offer.service';
@@ -186,7 +186,9 @@ export const CaseOffers: React.FC<CaseOffersProps> = ({ caseId }) => {
                       <div className="form-group">
                         <label>Precio Ofertado (Opcional)</label>
                         <div className="input-with-icon">
-                          <DollarSign size={16} />
+                          <span className="text-gray-500 font-medium mr-2">
+                            {(editData.currency || 'PEN') === 'USD' ? 'US$' : 'S/'}
+                          </span>
                           <input
                             type="number"
                             name="price"
@@ -244,7 +246,7 @@ export const CaseOffers: React.FC<CaseOffersProps> = ({ caseId }) => {
                       <div className="detail-item price">
                         <span className="label">Precio:</span>
                         <span className="value">
-                          {offer.price ? `${offer.currency || 'PEN'} ${offer.price.toLocaleString('es-PE', {minimumFractionDigits: 2})}` : 'No especificado'}
+                          {offer.price ? `${(offer.currency || 'PEN') === 'USD' ? 'US$' : 'S/'} ${offer.price.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}` : 'No especificado'}
                         </span>
                       </div>
                       <div className="detail-item">

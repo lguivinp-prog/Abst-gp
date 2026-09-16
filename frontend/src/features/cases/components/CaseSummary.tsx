@@ -1,13 +1,16 @@
 import React from 'react';
 import { Card, CardHeader, CardTitle, CardContent } from '../../../components/ui/Card';
 import type { Case } from '../../../types';
-import { FileText, Tag, Calendar, Activity, AlertCircle } from 'lucide-react';
+import { FileText, Tag, Calendar, Activity, AlertCircle, UploadCloud, ArrowRight } from 'lucide-react';
+import { Button } from '../../../components/ui/Button';
+import { useRequirementDocument } from '../hooks/useRequirementDocument';
 
 interface CaseSummaryProps {
   caseData: Case;
+  onNavigate?: (tab: string) => void;
 }
 
-export const CaseSummary: React.FC<CaseSummaryProps> = ({ caseData }) => {
+export const CaseSummary: React.FC<CaseSummaryProps> = ({ caseData, onNavigate }) => {
   const formatDate = (dateString?: string) => {
     if (!dateString) return null;
     try {
@@ -18,6 +21,7 @@ export const CaseSummary: React.FC<CaseSummaryProps> = ({ caseData }) => {
     }
   };
 
+  const { blobUrl, isLoading, isNotAvailable } = useRequirementDocument(caseData.id?.toString());
   const creationDate = formatDate(caseData.created_at);
 
   return (
@@ -55,7 +59,9 @@ export const CaseSummary: React.FC<CaseSummaryProps> = ({ caseData }) => {
             <Activity size={16} className="text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{caseData.status}</div>
+            <div className="text-2xl font-bold">
+              {(caseData.status as string) === 'CREATED' ? 'CREADO' : (caseData.status as string) === 'PENDING' ? 'PENDIENTE' : (caseData.status as string) === 'APPROVED' ? 'APROBADA' : (caseData.status as string) === 'OBSERVED' ? 'OBSERVADA' : (caseData.status as string) === 'REJECTED' ? 'RECHAZADA' : caseData.status}
+            </div>
           </CardContent>
         </Card>
 
@@ -90,7 +96,35 @@ export const CaseSummary: React.FC<CaseSummaryProps> = ({ caseData }) => {
       
       <div className="mt-8">
         <h3 className="text-lg font-medium mb-4">Información Adicional</h3>
-        <p className="text-sm text-gray-500">Navegue por las pestañas superiores para ver requerimientos, evaluar cotizaciones y realizar validaciones.</p>
+        <p className="text-sm text-gray-500 mb-6">Navegue por las pestañas superiores para ver requerimientos, evaluar cotizaciones y realizar validaciones.</p>
+        
+        {!isLoading && (
+          <div className="flex items-center p-4 bg-blue-50 border border-blue-200 rounded-md shadow-sm w-full md:w-1/2">
+            {isNotAvailable ? (
+              <div className="flex-1">
+                <h4 className="text-sm font-semibold text-blue-800">Requerimiento no cargado</h4>
+                <p className="text-sm text-blue-600 mt-1">Este expediente aún no tiene un documento de requerimiento asociado.</p>
+              </div>
+            ) : blobUrl ? (
+              <div className="flex-1">
+                <h4 className="text-sm font-semibold text-green-800">Requerimiento procesado</h4>
+                <p className="text-sm text-green-600 mt-1">El documento ha sido cargado y está listo para revisión.</p>
+              </div>
+            ) : null}
+            
+            <div className="ml-4">
+              {(isNotAvailable || !blobUrl) ? (
+                <Button onClick={() => onNavigate && onNavigate('documentos')} className="flex items-center gap-2">
+                  <UploadCloud size={16} /> Cargar requerimiento
+                </Button>
+              ) : (
+                <Button onClick={() => onNavigate && onNavigate('requerimiento')} className="flex items-center gap-2 bg-green-600 hover:bg-green-700 text-white">
+                  <ArrowRight size={16} /> Revisar requerimiento
+                </Button>
+              )}
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );

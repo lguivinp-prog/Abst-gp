@@ -72,7 +72,13 @@ export const CaseValidations: React.FC<CaseValidationsProps> = ({ caseId }) => {
     }
   };
 
-    const getStatusBadge = (status: string) => {
+    const getStatusBadge = (status: string, requestedAt?: string) => {
+      if (status === 'PENDING' && requestedAt) {
+        const age = Date.now() - new Date(requestedAt).getTime();
+        if (age > 5 * 60 * 1000) {
+          return <Badge variant="warning"><Clock size={14} className="mr-1" /> PENDIENTE — DEMORA EXCEDIDA</Badge>;
+        }
+      }
       switch (status) {
         case 'PASSED':
         case 'VERIFIED': return <Badge variant="success"><ShieldCheck size={14} className="mr-1" /> VALIDADO</Badge>;
@@ -102,9 +108,27 @@ export const CaseValidations: React.FC<CaseValidationsProps> = ({ caseId }) => {
           <h2>Validaciones Externas</h2>
           <p>Solicite y consulte integraciones externas (SUNAT, RNP, FUP) para los proveedores de este expediente.</p>
         </div>
-        <Button onClick={() => setShowForm(!showForm)}>
-          {showForm ? 'Cancelar' : 'Nueva Validación'}
-        </Button>
+        <div className="case-validations-actions flex gap-2">
+          <Button onClick={async () => {
+            setIsSubmitting(true);
+            try {
+              for (const sup of suppliers) {
+                await validationService.createValidation(caseId, sup.id, { source: 'ALL' });
+              }
+              await loadData();
+            } catch (err) {
+              if (err instanceof AppError) setError(err.message);
+              else setError('Error al orquestar validaciones.');
+            } finally {
+              setIsSubmitting(false);
+            }
+          }} disabled={isSubmitting || suppliers.length === 0} className="bg-blue-600 hover:bg-blue-700 text-white">
+            {isSubmitting ? 'Ejecutando...' : 'Ejecutar Validaciones'}
+          </Button>
+          <Button variant="outline" onClick={() => setShowForm(!showForm)}>
+            {showForm ? 'Cancelar' : 'Nueva Validación Manual'}
+          </Button>
+        </div>
       </div>
 
       {error && <div className="case-validations-error"><AlertCircle size={16} /> {error}</div>}
@@ -162,7 +186,7 @@ export const CaseValidations: React.FC<CaseValidationsProps> = ({ caseId }) => {
                   {val.supplier?.ruc && <span className="supplier-ruc">RUC: {val.supplier.ruc}</span>}
                 </div>
                 <div className="validation-status">
-                  {getStatusBadge(val.status)}
+                  {getStatusBadge(val.status, val.requested_at)}
                 </div>
               </div>
 

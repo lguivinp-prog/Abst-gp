@@ -9,6 +9,7 @@ class ValidationRequest(Base):
     
     id = Column(Integer, primary_key=True, index=True)
     supplier_id = Column(Integer, ForeignKey("suppliers.id", ondelete="CASCADE"), nullable=False, index=True)
+    case_id = Column(Integer, ForeignKey("case_files.id", ondelete="CASCADE"), nullable=True, index=True)
     source = Column(String(50), nullable=False) # SUNAT, RNP, FUP, CIIU
     status = Column(String(50), nullable=False, default="PENDING") # PENDING, RUNNING, PASSED, WARNING, BLOCKED, ERROR
     requested_by = Column(Integer, ForeignKey("users.id", ondelete="SET NULL"), nullable=True)

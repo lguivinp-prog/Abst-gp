@@ -1,4 +1,5 @@
 from sqlalchemy.orm import Session
+from sqlalchemy.sql import func
 from app.models.v6.supplier_profile import SupplierProfile
 from app.models.v6.validation_request import ValidationRequest
 from app.models.v6.supplier import Supplier
@@ -15,7 +16,7 @@ class SupplierValidationOrchestrator:
         self.fup = FUPProvider()
         self.ciiu = CIIUProvider()
         
-    def run_async_validation(self, db: Session, supplier_id: int, user_id: int = None, fallback_evidence: Dict[str, Dict[str, Any]] = None):
+    def run_async_validation(self, db: Session, case_id: int, supplier_id: int, user_id: int = None, fallback_evidence: Dict[str, Dict[str, Any]] = None):
         """
         Orchestrates external validations asynchronously.
         fallback_evidence is a dict like {"SUNAT": {...}, "RNP": {...}, "FUP": {...}}
@@ -50,12 +51,14 @@ class SupplierValidationOrchestrator:
         for name, res in [("SUNAT", sunat_res), ("RNP", rnp_res), ("FUP", fup_res), ("CIIU", ciiu_res)]:
             req = ValidationRequest(
                 supplier_id=supplier_id,
+                case_id=case_id,
                 source=name,
                 status=res.status,
                 requested_by=user_id,
                 response_payload=res.payload,
                 response_schema_version=res.schema_version,
-                response_hash=res.hash
+                response_hash=res.hash,
+                completed_at=func.now()
             )
             db.add(req)
             

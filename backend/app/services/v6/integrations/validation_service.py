@@ -6,9 +6,10 @@ import json
 
 class ValidationService:
     @staticmethod
-    def request_validation(db: Session, supplier_id: int, source: str, user_id: int, tenant_id: str) -> ValidationRequest:
+    def request_validation(db: Session, case_id: int, supplier_id: int, source: str, user_id: int, tenant_id: str) -> ValidationRequest:
         req = ValidationRequest(
             supplier_id=supplier_id,
+            case_id=case_id,
             source=source,
             status="PENDING",
             requested_by=user_id

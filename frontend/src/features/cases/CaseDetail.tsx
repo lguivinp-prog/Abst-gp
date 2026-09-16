@@ -179,7 +179,7 @@ const CaseDetail: React.FC = () => {
 
         <div className="v6-workspace-content">
           {activeTab === 'resumen' ? (
-            <CaseSummary caseData={caseData} />
+            <CaseSummary caseData={caseData} onNavigate={(tab) => setActiveTab(tab)} />
           ) : activeTab === 'requerimiento' ? (
             <CaseRequirements caseId={id || ''} />
           ) : activeTab === 'documentos' ? (
