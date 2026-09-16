@@ -29,7 +29,7 @@ def test_extract_requirements_generates_pending_proposals(admin_client: TestClie
     assert len(data) > 0
     
     for req in data:
-        assert req["status"] == "PENDING_REVIEW" # No auto-approval
+        assert req["status"] in ["PENDING_REVIEW", "REVIEW_REQUIRED"] # No auto-approval
         assert len(req["evidences"]) > 0
         
         db_evidence = db_session.query(RequirementEvidence).filter(RequirementEvidence.requirement_id == req["id"]).first()

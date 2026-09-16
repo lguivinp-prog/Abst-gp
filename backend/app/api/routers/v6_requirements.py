@@ -1,4 +1,4 @@
-﻿from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from app.core.database import get_db
 from app.api.auth import get_current_active_user, verify_case_access
@@ -249,7 +249,8 @@ def create_procurement_item(
         description=item_data.description,
         quantity=item_data.quantity,
         unit=item_data.unit,
-        status=item_data.status
+        status=item_data.status,
+        is_manual_edit=True
     )
     db.add(item)
     db.commit()
@@ -276,6 +277,7 @@ def update_procurement_item(
     item.description = item_data.description
     item.quantity = item_data.quantity
     item.unit = item_data.unit
+    item.is_manual_edit = True
     if item_data.status:
         item.status = item_data.status
 

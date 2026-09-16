@@ -1,4 +1,4 @@
-﻿import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Edit2, Save, X, Plus, AlertCircle, RefreshCw, Trash2 } from 'lucide-react';
 import { requirementsService } from '../../../api/v6/requirements.service';
 import type { RequirementResponse, RequirementUpdate, RequirementCreate, UpdateRequirementStatus } from '../../../api/v6/requirements.types';
@@ -375,6 +375,9 @@ export const CaseRequirements: React.FC<CaseRequirementsProps> = ({ caseId }) =>
                   <div className="case-requirements__requirement-meta flex items-center gap-2">
                     {item.status === 'REVIEW_REQUIRED' && (
                       <Badge variant="danger">REQUIERE REVISIÃ“N</Badge>
+                    )}
+                    {item.status === 'VALIDATED' && (
+                      <Badge variant="success">VALIDATED</Badge>
                     )}
                     <p className="case-requirements__description">
                       <strong>{item.quantity !== null ? item.quantity : '?'} {item.unit || 'POR DEFINIR'}</strong> - {item.description}

@@ -25,7 +25,7 @@ def test_noise_rejection(extractor):
     ]
     for text in noise_examples:
         candidates = extractor.extract(text, "test.pdf")
-        assert len(candidates) == 0, f"Failed: Noise '{text}' was extracted"
+        assert len(candidates.requirements) == 0, f"Failed: Noise '{text}' was extracted"
 
 def test_valid_requirements_retention(extractor):
     valid_examples = [
@@ -42,7 +42,7 @@ def test_valid_requirements_retention(extractor):
     ]
     for text in valid_examples:
         candidates = extractor.extract(text, "test.pdf")
-        assert len(candidates) > 0, f"Failed: Valid requirement '{text}' was rejected"
+        assert len(candidates.requirements) > 0, f"Failed: Valid requirement '{text}' was rejected"
 
 def test_line_reconstruction(extractor):
     fragmented_texts = [
@@ -70,7 +70,7 @@ def test_line_reconstruction(extractor):
     ]
     for text, expected_count in fragmented_texts:
         candidates = extractor.extract(text, "test.pdf")
-        assert len(candidates) == expected_count
+        assert len(candidates.requirements) == expected_count
 
 def test_technical_attributes(extractor):
     attributes_text = (
@@ -82,7 +82,7 @@ def test_technical_attributes(extractor):
         "- Diámetro: 50 mm"
     )
     candidates = extractor.extract(attributes_text, "test.pdf")
-    assert len(candidates) == 6
+    assert len(candidates.requirements) == 6
 
 def test_finalidad_publica_header(extractor):
     # Tests that the header is rejected, but the actual requirement following it is retained
@@ -95,8 +95,8 @@ def test_finalidad_publica_header(extractor):
     # 'FINALIDAD PÚBLICA' should be rejected.
     # 'La presente contratación...' doesn't have required keywords, so it might be rejected.
     # 'El proveedor deberá entregar...' must be extracted.
-    assert any("deberá entregar" in c.description for c in candidates)
-    assert not any(c.description == "FINALIDAD PÚBLICA" for c in candidates)
+    assert any("deberá entregar" in c.description for c in candidates.requirements)
+    assert not any(c.description == "FINALIDAD PÚBLICA" for c in candidates.requirements)
 
 def test_metrics(extractor):
     corpus = [
@@ -125,7 +125,7 @@ def test_metrics(extractor):
     tp = fp = tn = fn = 0
     for text, should_extract in corpus:
         candidates = extractor.extract(text, "test.pdf")
-        extracted = len(candidates) > 0
+        extracted = len(candidates.requirements) > 0
         if extracted and should_extract:
             tp += 1
         elif extracted and not should_extract:

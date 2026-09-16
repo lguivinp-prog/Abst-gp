@@ -151,22 +151,40 @@ export const CaseDocuments: React.FC<CaseDocumentsProps> = ({ caseId }) => {
                 )}
               </div>
 
-              {doc.extraction_ready && (
-                <div className="case-documents__extract-action">
-                  <button
-                    className="case-documents__extract-btn"
-                    onClick={() => handleExtract(doc.id)}
-                    disabled={extractingId !== null}
-                  >
-                    {extractingId === doc.id ? 'Extrayendo...' : 'Extraer requerimientos'}
-                  </button>
-                  {extractMessage?.id === doc.id && (
-                    <div className={`case-documents__extract-msg case-documents__extract-msg--${extractMessage.type}`}>
-                      {extractMessage.text}
-                    </div>
-                  )}
-                </div>
-              )}
+              <div className="case-documents__actions-row" style={{ display: 'flex', gap: '8px', alignItems: 'center', marginTop: '8px' }}>
+                <button
+                  className="case-documents__extract-btn"
+                  style={{ backgroundColor: '#f3f4f6', color: '#374151', border: '1px solid #d1d5db' }}
+                  onClick={async () => {
+                    try {
+                      const blob = await documentsService.getDocumentContent(caseId, doc.id);
+                      const url = URL.createObjectURL(blob);
+                      window.open(url, '_blank');
+                    } catch (err) {
+                      alert('Error al abrir el PDF');
+                    }
+                  }}
+                >
+                  Ver PDF
+                </button>
+
+                {doc.extraction_ready && (
+                  <div className="case-documents__extract-action" style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                    <button
+                      className="case-documents__extract-btn"
+                      onClick={() => handleExtract(doc.id)}
+                      disabled={extractingId !== null}
+                    >
+                      {extractingId === doc.id ? 'Extrayendo...' : 'Extraer requerimientos'}
+                    </button>
+                    {extractMessage?.id === doc.id && (
+                      <div className={`case-documents__extract-msg case-documents__extract-msg--${extractMessage.type}`}>
+                        {extractMessage.text}
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
             </div>
           </div>
         ))}

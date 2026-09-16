@@ -13,5 +13,13 @@ export const documentsService = {
     } catch (error) {
       throw handleApiError(error);
     }
+  },
+  getDocumentContent: async (caseId: string, documentId: number): Promise<Blob> => {
+    try {
+      // @ts-ignore
+      return await v6Client.get<Blob>(`/cases/${caseId}/documents/${documentId}/content`, { responseType: 'blob' });
+    } catch (error) {
+      throw handleApiError(error);
+    }
   }
 };
