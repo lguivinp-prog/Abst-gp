@@ -1,5 +1,5 @@
 from app.models.base import Base
-from sqlalchemy import Column, Integer, String, DateTime, ForeignKey, Float, Table
+from sqlalchemy import Column, Integer, String, DateTime, ForeignKey, Float, Table, Numeric
 from sqlalchemy.sql import func
 from sqlalchemy.orm import relationship
 
@@ -21,6 +21,7 @@ class SupplierOffer(Base):
     evaluation_status = Column(String(50), nullable=False, default="PENDING") # PENDING, UNDER_REVIEW, HAS_CONFLICTS, READY, APPROVED
     price = Column(Float, nullable=True)
     currency = Column(String(3), nullable=False, default="PEN")
+    total_amount = Column(Numeric(precision=18, scale=2), nullable=True)
     source_document = Column(String, nullable=True) # Legacy text field
     created_at = Column(DateTime(timezone=True), server_default=func.now(), nullable=False)
 
@@ -28,10 +29,4 @@ class SupplierOffer(Base):
     supplier = relationship("Supplier", foreign_keys=[supplier_id])
     documents = relationship("SupplierOfferDocument", backref="offer", cascade="all, delete-orphan")
     items = relationship("SupplierOfferItem", backref="offer", cascade="all, delete-orphan")
-
-    @property
-    def total_amount(self):
-        if self.items and len(self.items) > 0:
-            return sum([item.subtotal for item in self.items])
-        return self.price
 

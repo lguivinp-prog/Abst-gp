@@ -28,6 +28,7 @@ services:
     container_name: abst_api
     restart: unless-stopped
     environment:
+      - APP_ENV=local
       - DATABASE_URL=postgresql://${POSTGRES_USER:-abst_user}:${POSTGRES_PASSWORD:-abst_password}@db:5432/${POSTGRES_DB:-v49_db}
       - REDIS_URL=redis://redis:6379/0
       - SECRET_KEY=${SECRET_KEY:-supersecretkey_change_in_production}
@@ -48,6 +49,7 @@ services:
     restart: unless-stopped
     command: ["rq", "worker", "-u", "redis://redis:6379/0", "default"]
     environment:
+      - APP_ENV=local
       - DATABASE_URL=postgresql://${POSTGRES_USER:-abst_user}:${POSTGRES_PASSWORD:-abst_password}@db:5432/${POSTGRES_DB:-v49_db}
       - REDIS_URL=redis://redis:6379/0
       - SECRET_KEY=${SECRET_KEY:-supersecretkey_change_in_production}
@@ -67,6 +69,7 @@ services:
     restart: unless-stopped
     command: ["rq", "worker", "-u", "redis://redis:6379/0", "ocr_tasks"]
     environment:
+      - APP_ENV=local
       - DATABASE_URL=postgresql://${POSTGRES_USER:-abst_user}:${POSTGRES_PASSWORD:-abst_password}@db:5432/${POSTGRES_DB:-v49_db}
       - REDIS_URL=redis://redis:6379/0
       - SECRET_KEY=${SECRET_KEY:-supersecretkey_change_in_production}

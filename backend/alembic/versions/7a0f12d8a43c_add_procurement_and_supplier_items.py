@@ -56,7 +56,11 @@ def upgrade() -> None:
     op.create_index(op.f('ix_supplier_offer_items_procurement_item_id'), 'supplier_offer_items', ['procurement_item_id'], unique=False)
     op.create_index(op.f('ix_supplier_offer_items_supplier_offer_id'), 'supplier_offer_items', ['supplier_offer_id'], unique=False)
 
+    # 3. Add total_amount to supplier_offers
+    op.add_column('supplier_offers', sa.Column('total_amount', sa.Numeric(precision=18, scale=2), nullable=True))
+
 def downgrade() -> None:
+    op.drop_column('supplier_offers', 'total_amount')
     op.drop_index(op.f('ix_supplier_offer_items_supplier_offer_id'), table_name='supplier_offer_items')
     op.drop_index(op.f('ix_supplier_offer_items_procurement_item_id'), table_name='supplier_offer_items')
     op.drop_index(op.f('ix_supplier_offer_items_id'), table_name='supplier_offer_items')
