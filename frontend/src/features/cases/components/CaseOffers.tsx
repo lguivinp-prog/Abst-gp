@@ -1,4 +1,4 @@
-﻿import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { FileText, Building2, Check, X, AlertCircle, Trash2, Edit2 } from 'lucide-react';
 import { Button } from '../../../components/ui/Button';
 import { Badge } from '../../../components/ui/Badge';
@@ -203,50 +203,89 @@ export const CaseOffers: React.FC<CaseOffersProps> = ({ caseId }) => {
 
                 <div className="case-offer-body">
                   {isEditing ? (
-                    <div className="case-offer-edit-form">
-                      {procurementItems.length === 0 && (
-                        <div className="form-group">
-                          <label>Precio Ofertado (Opcional)</label>
-                          <div className="input-with-icon">
-                            <span className="text-gray-500 font-medium mr-2">
-                              {(editData.currency || 'PEN') === 'USD' ? 'US$' : 'S/'}
-                            </span>
-                            <input
-                              type="number"
-                              name="price"
-                              step="0.01"
-                              value={editData.price || ''}
-                              onChange={handleInputChange}
-                              placeholder="Ej. 1500.00"
-                            />
-                            <select
-                              name="currency"
-                              value={editData.currency || 'PEN'}
-                              onChange={handleInputChange}
-                              className="ml-2 border rounded p-1"
-                            >
-                              <option value="PEN">PEN</option>
-                              <option value="USD">USD</option>
-                            </select>
+                    <div className="offer-edit">
+                      {/* FILA 1 — METADATOS DE OFERTA */}
+                      <div className="offer-meta-row" style={{ display: 'grid', gridTemplateColumns: 'repeat(2, minmax(0, 1fr))', gap: '16px', width: '100%' }}>
+                        {procurementItems.length === 0 && (
+                          <div className="form-group">
+                            <label>Precio Ofertado (Opcional)</label>
+                            <div className="input-with-icon">
+                              <span className="text-gray-500 font-medium mr-2">
+                                {(editData.currency || 'PEN') === 'USD' ? 'US$' : 'S/'}
+                              </span>
+                              <input
+                                type="number"
+                                name="price"
+                                step="0.01"
+                                value={editData.price || ''}
+                                onChange={handleInputChange}
+                                placeholder="Ej. 1500.00"
+                              />
+                              <select
+                                name="currency"
+                                value={editData.currency || 'PEN'}
+                                onChange={handleInputChange}
+                                className="ml-2 border rounded p-1"
+                              >
+                                <option value="PEN">PEN</option>
+                                <option value="USD">USD</option>
+                              </select>
+                            </div>
                           </div>
+                        )}
+                        <div className="form-group">
+                          <label>Estado de la Oferta</label>
+                          <select name="status" value={editData.status || offer.status} onChange={handleInputChange} className="w-full border rounded p-2">
+                            <option value="PENDING">PENDIENTE</option>
+                            <option value="APPROVED">APROBADA</option>
+                            <option value="OBSERVED">OBSERVADA</option>
+                            <option value="REJECTED">RECHAZADA</option>
+                          </select>
                         </div>
-                      )}
-                      <div className="form-group mt-4">
-                        <label>Ãtems Cotizados</label>
+
+                        <div className="form-group">
+                          <label>Documento Fuente (Cotización)</label>
+                          <input
+                            type="file"
+                            accept=".pdf"
+                            onChange={e => {
+                              if (e.target.files && e.target.files.length > 0) {
+                                setSelectedFile(e.target.files[0]);
+                              }
+                            }}
+                            className="w-full border rounded p-2"
+                          />
+                          {offer.documents && offer.documents.length > 0 && !selectedFile && (
+                            <div className="text-xs text-green-600 mt-1">✓ Documento adjunto previamente</div>
+                          )}
+                        </div>
+                      </div>
+
+                      {/* FILA 2 — ÍTEMS COTIZADOS */}
+                      <div className="offer-items-section" style={{ display: 'block', width: '100%', gridColumn: '1 / -1', minWidth: '0', marginTop: '24px' }}>
+                        <h3 style={{ fontSize: '1rem', fontWeight: 600, marginBottom: '16px' }}>Ítems Cotizados</h3>
                         {procurementItems.some(pi => pi.status === 'REVIEW_REQUIRED' || pi.quantity === null || !pi.unit) ? (
                           <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded relative" role="alert">
                             <strong className="font-bold">AcciÃ³n Requerida: </strong>
                             <span className="block sm:inline">Revise y complete los Ã­tems de contrataciÃ³n antes de registrar precios.</span>
                           </div>
                         ) : procurementItems.length > 0 ? (
-                          <div className="border rounded overflow-hidden">
-                            <table className="w-full text-sm">
+                          <div className="offer-items-table-wrapper" style={{ width: '100%', minWidth: '0', overflowX: 'auto', border: '1px solid var(--color-border)', borderRadius: '4px' }}>
+                            <table className="w-full text-sm" style={{ width: '100%', minWidth: '850px', tableLayout: 'fixed' }}>
+                              <colgroup>
+                                <col style={{ width: '44%' }} />
+                                <col style={{ width: '10%' }} />
+                                <col style={{ width: '12%' }} />
+                                <col style={{ width: '18%' }} />
+                                <col style={{ width: '16%' }} />
+                              </colgroup>
                               <thead className="bg-gray-50 text-gray-700">
                                 <tr>
-                                  <th className="px-3 py-2 text-left font-medium">Ãtem</th>
+                                  <th className="px-3 py-2 text-left font-medium">Ítem</th>
                                   <th className="px-3 py-2 text-left font-medium">Cantidad</th>
                                   <th className="px-3 py-2 text-left font-medium">Unidad</th>
                                   <th className="px-3 py-2 text-left font-medium">Precio Unit.</th>
+                                  <th className="px-3 py-2 text-right font-medium">Subtotal</th>
                                 </tr>
                               </thead>
                               <tbody>
@@ -254,7 +293,7 @@ export const CaseOffers: React.FC<CaseOffersProps> = ({ caseId }) => {
                                   const currentItem = editData.items?.find(it => it.procurement_item_id === pi.id);
                                   return (
                                     <tr key={pi.id} className="border-t border-gray-100">
-                                      <td className="px-3 py-2">{pi.description}</td>
+                                      <td className="px-3 py-2" style={{ whiteSpace: 'normal', overflowWrap: 'normal', wordBreak: 'normal' }}>{pi.description}</td>
                                       <td className="px-3 py-2">{pi.quantity}</td>
                                       <td className="px-3 py-2">{pi.unit}</td>
                                       <td className="px-3 py-2">
@@ -262,21 +301,40 @@ export const CaseOffers: React.FC<CaseOffersProps> = ({ caseId }) => {
                                           type="number"
                                           step="0.01"
                                           min="0"
-                                          value={currentItem?.unit_price || ''}
+                                          value={currentItem?.unit_price ?? ''}
                                           onChange={(e) => {
-                                            const val = e.target.value ? parseFloat(e.target.value) : 0;
-                                            setEditData(prev => ({
-                                              ...prev,
-                                              items: prev.items?.map(it =>
-                                                it.procurement_item_id === pi.id
-                                                  ? { ...it, unit_price: val }
-                                                  : it
-                                              )
-                                            }));
+                                            const rawVal = e.target.value;
+                                            // Allows the user to type decimals normally
+                                            if (rawVal === '') {
+                                              setEditData(prev => ({
+                                                ...prev,
+                                                items: prev.items?.map(it =>
+                                                  it.procurement_item_id === pi.id
+                                                    ? { ...it, unit_price: null as any }
+                                                    : it
+                                                )
+                                              }));
+                                            } else {
+                                              const val = parseFloat(rawVal);
+                                              setEditData(prev => ({
+                                                ...prev,
+                                                items: prev.items?.map(it =>
+                                                  it.procurement_item_id === pi.id
+                                                    ? { ...it, unit_price: isNaN(val) ? 0 : val }
+                                                    : it
+                                                )
+                                              }));
+                                            }
                                           }}
                                           className="w-full border rounded p-1 text-right"
+                                          style={{ width: '100%', boxSizing: 'border-box' }}
                                           placeholder="0.00"
                                         />
+                                      </td>
+                                      <td className="px-3 py-2 text-right">
+                                        {pi.quantity != null && currentItem?.unit_price != null
+                                          ? (pi.quantity * currentItem.unit_price).toFixed(2)
+                                          : '0.00'}
                                       </td>
                                     </tr>
                                   );
@@ -289,31 +347,7 @@ export const CaseOffers: React.FC<CaseOffersProps> = ({ caseId }) => {
                         )}
                       </div>
 
-                      <div className="form-group mt-4">
-                        <label>Documento Fuente (CotizaciÃ³n)</label>
-                        <input
-                          type="file"
-                          accept=".pdf"
-                          onChange={e => {
-                            if (e.target.files && e.target.files.length > 0) {
-                              setSelectedFile(e.target.files[0]);
-                            }
-                          }}
-                        />
-                        {offer.documents && offer.documents.length > 0 && !selectedFile && (
-                          <div className="text-xs text-green-600 mt-1">âœ“ Documento adjunto previamente</div>
-                        )}
-                      </div>
-                      <div className="form-group">
-                        <label>Estado</label>
-                        <select name="status" value={editData.status || offer.status} onChange={handleInputChange}>
-                          <option value="PENDING">PENDIENTE</option>
-                          <option value="APPROVED">APROBADA</option>
-                          <option value="OBSERVED">OBSERVADA</option>
-                          <option value="REJECTED">RECHAZADA</option>
-                        </select>
-                      </div>
-                      <div className="edit-actions">
+                      <div className="offer-actions" style={{ display: 'flex', justifyContent: 'flex-end', gap: '12px', marginTop: '24px', paddingTop: '16px', borderTop: '1px solid var(--color-border)' }}>
                         <Button type="button" variant="ghost" onClick={handleCancelEdit} disabled={isSubmitting}>
                           <X size={16} /> Cancelar
                         </Button>
