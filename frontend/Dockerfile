@@ -18,15 +18,15 @@ RUN echo 'server { \
     resolver 127.0.0.11 valid=5s; \
     set $api_upstream api:8000; \
     location /auth/ { \
-        proxy_pass http://$api_upstream/auth/; \
+        proxy_pass http://$api_upstream; \
         proxy_set_header Host $host; \
     } \
     location /api/ { \
-        proxy_pass http://$api_upstream/api/; \
+        proxy_pass http://$api_upstream; \
         proxy_set_header Host $host; \
     } \
     location /cases/ { \
-        proxy_pass http://$api_upstream/cases/; \
+        proxy_pass http://$api_upstream; \
         proxy_set_header Host $host; \
     } \
     location / { \

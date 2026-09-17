@@ -1,12 +1,32 @@
 import re
 from typing import Dict, Any, List
 
+def is_template_instruction(text: str) -> bool:
+    # Normalize text for checking
+    normalized = text.strip()
+    # Remove common bullet points like U+F0B7, hyphen, etc at the start
+    normalized = re.sub(r'^[\uf0b7\-\u2022\s]+', '', normalized)
+    normalized = " ".join(normalized.split()).casefold()
+
+    instruction_patterns = [
+        r'\[\s*en caso corresponda\b.*?(?:\]|$)',
+        r'\[\s*de preverse.*?(?:\]|$)',
+        r'^condiciones de la garant[ií]a\s*:\s*indicar',
+        r'^per[ií]odo de garant[ií]a\s*:\s*por tiempo',
+        r'^inicio del c[oó]mputo.*?a partir de',
+        r'^\d+\.\d+\s+garant[ií]a comercial$'
+    ]
+    for pattern in instruction_patterns:
+        if re.search(pattern, normalized):
+            return True
+    return False
+
 def extract_requirements_from_text(text: str, source_document: str = "doc") -> Dict[str, Any]:
     # Mocking a deterministic local extraction of requirements
     requirements = []
 
     # Plazo de entrega
-    plazo_match = re.search(r'(?i)plazo(?: de entrega)?(?: m[áa]ximo)?\s*:?\s*(\d+)\s*(d[íi]as|meses)', text)
+    plazo_match = re.search(r'(?i)plazo(?: de entrega)?(?: m[aá]ximo)?\s*:?\s*(\d+)\s*(d[ií]as|meses)', text)
     if plazo_match:
         requirements.append({
             "key": "PLAZO_ENTREGA",
@@ -24,7 +44,7 @@ def extract_requirements_from_text(text: str, source_document: str = "doc") -> D
         })
 
     # Garantía
-    garantia_match = re.search(r'(?i)garant[íi]a(?: m[íi]nima)?\s*:?\s*(\d+)\s*(meses|a[ñn]os)', text)
+    garantia_match = re.search(r'(?i)garant[ií]a(?: m[ií]nima)?\s*:?\s*(\d+)\s*(meses|a[nñ]os)', text)
     if garantia_match:
         requirements.append({
             "key": "GARANTIA",
@@ -42,7 +62,7 @@ def extract_requirements_from_text(text: str, source_document: str = "doc") -> D
         })
 
     # Vida útil
-    vida_match = re.search(r'(?i)vida [úu]til(?: m[íi]nima)?\s*:?\s*(\d+)\s*(a[ñn]os|meses)', text)
+    vida_match = re.search(r'(?i)vida [uú]til(?: m[ií]nima)?\s*:?\s*(\d+)\s*(a[nñ]os|meses)', text)
     if vida_match:
         requirements.append({
             "key": "VIDA_UTIL",
@@ -65,7 +85,7 @@ def extract_offer_terms_from_text(text: str, source_document: str = "doc") -> Di
     terms = []
 
     # Plazo ofertado
-    plazo_match = re.search(r'(?i)plazo(?: ofertado| de entrega)?\s*:?\s*(\d+)\s*(d[íi]as|meses)', text)
+    plazo_match = re.search(r'(?i)plazo(?: ofertado| de entrega)?\s*:?\s*(\d+)\s*(d[ií]as|meses)', text)
     if plazo_match:
         terms.append({
             "key": "PLAZO_ENTREGA",
@@ -83,7 +103,7 @@ def extract_offer_terms_from_text(text: str, source_document: str = "doc") -> Di
         })
 
     # Garantía
-    garantia_match = re.search(r'(?i)garant[íi]a(?: ofertada)?\s*:?\s*(\d+)\s*(meses|a[ñn]os)', text)
+    garantia_match = re.search(r'(?i)garant[ií]a(?: ofertada)?\s*:?\s*(\d+)\s*(meses|a[nñ]os)', text)
     if garantia_match:
         terms.append({
             "key": "GARANTIA",
@@ -101,7 +121,7 @@ def extract_offer_terms_from_text(text: str, source_document: str = "doc") -> Di
         })
 
     # Vida útil
-    vida_match = re.search(r'(?i)vida [úu]til(?: ofertada)?\s*:?\s*(\d+)\s*(a[ñn]os|meses)', text)
+    vida_match = re.search(r'(?i)vida [uú]til(?: ofertada)?\s*:?\s*(\d+)\s*(a[nñ]os|meses)', text)
     if vida_match:
         terms.append({
             "key": "VIDA_UTIL",

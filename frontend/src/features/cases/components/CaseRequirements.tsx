@@ -119,7 +119,7 @@ export const CaseRequirements: React.FC<CaseRequirementsProps> = ({ caseId }) =>
   const handleSaveEdit = async (id: number) => {
     setMutationError(null);
     if (!editForm.reason.trim()) {
-      setMutationError('Debe ingresar un motivo para la modificaciÃ³n.');
+      setMutationError('Debe ingresar un motivo para la modificación.');
       return;
     }
 
@@ -142,7 +142,7 @@ export const CaseRequirements: React.FC<CaseRequirementsProps> = ({ caseId }) =>
   const handleSaveNew = async () => {
     setFormError(null);
     if (!addForm.requirement_type.trim() || !addForm.description.trim()) {
-      setFormError('El tipo de requerimiento y la descripciÃ³n son obligatorios.');
+      setFormError('El tipo de requerimiento y la descripción son obligatorios.');
       return;
     }
 
@@ -193,7 +193,7 @@ export const CaseRequirements: React.FC<CaseRequirementsProps> = ({ caseId }) =>
       <div className="case-requirements">
         <div className="case-requirements__header">
           <h2 className="case-requirements__title">Requerimientos</h2>
-          <p className="case-requirements__subtitle">OcurriÃ³ un error al cargar la informaciÃ³n.</p>
+          <p className="case-requirements__subtitle">Ocurrió un error al cargar la información.</p>
         </div>
         <div className="case-requirements__error">
           <div className="case-requirements__error-icon-wrapper">
@@ -211,7 +211,7 @@ export const CaseRequirements: React.FC<CaseRequirementsProps> = ({ caseId }) =>
   const handleSaveNewItem = async () => {
     setItemFormError(null);
     if (!addItemForm.description.trim()) {
-      setItemFormError('La descripciÃ³n es obligatoria.');
+      setItemFormError('La descripción es obligatoria.');
       return;
     }
     setIsAddingItem(true);
@@ -224,7 +224,7 @@ export const CaseRequirements: React.FC<CaseRequirementsProps> = ({ caseId }) =>
       if (err instanceof AppError) {
         setItemFormError(err.message);
       } else {
-        setItemFormError('Error al crear Ã­tem.');
+        setItemFormError('Error al crear ítem.');
       }
     } finally {
       setIsAddingItem(false);
@@ -241,18 +241,18 @@ export const CaseRequirements: React.FC<CaseRequirementsProps> = ({ caseId }) =>
       if (err instanceof AppError) {
         setItemFormError(err.message);
       } else {
-        setItemFormError('Error al actualizar Ã­tem.');
+        setItemFormError('Error al actualizar ítem.');
       }
     }
   };
 
   const handleDeleteItem = async (itemId: number) => {
-    if (!window.confirm('Â¿EstÃ¡ seguro de eliminar este Ã­tem?')) return;
+    if (!window.confirm('¿Está seguro de eliminar este ítem?')) return;
     try {
       await requirementsService.deleteProcurementItem(caseId, itemId);
       await loadProcurementItems();
     } catch (err) {
-      alert('Error al eliminar Ã­tem');
+      alert('Error al eliminar ítem');
     }
   };
 
@@ -263,14 +263,14 @@ export const CaseRequirements: React.FC<CaseRequirementsProps> = ({ caseId }) =>
     <div className="case-requirements">
       <div className="case-requirements__header-wrapper mt-4">
         <div className="case-requirements__header">
-          <h2 className="case-requirements__title">Ãtems de ContrataciÃ³n</h2>
+          <h2 className="case-requirements__title">Ítems de Contratación</h2>
           <p className="case-requirements__subtitle">
-            Bienes o servicios econÃ³micos a cotizar.
+            Bienes o servicios económicos a cotizar.
           </p>
         </div>
         {!showAddItemForm && (
           <Button leftIcon={<Plus size={18} />} onClick={() => setShowAddItemForm(true)}>
-            Agregar Ãtem
+            Agregar Ítem
           </Button>
         )}
       </div>
@@ -278,7 +278,7 @@ export const CaseRequirements: React.FC<CaseRequirementsProps> = ({ caseId }) =>
       <div className="case-requirements__list mb-6">
         {showAddItemForm && (
           <div className="case-requirements__card case-requirements__card--new">
-            <h3 className="case-requirements__form-title">Nuevo Ãtem</h3>
+            <h3 className="case-requirements__form-title">Nuevo Ítem</h3>
             {itemFormError && (
               <div className="case-requirements__mutation-error">
                 <AlertCircle size={16} /> {itemFormError}
@@ -287,7 +287,7 @@ export const CaseRequirements: React.FC<CaseRequirementsProps> = ({ caseId }) =>
             <div className="case-requirements__form">
               <div className="case-requirements__form-grid">
                 <div className="case-requirements__field">
-                  <label className="case-requirements__label">DescripciÃ³n</label>
+                  <label className="case-requirements__label">Descripción</label>
                   <input
                     type="text"
                     className="case-requirements__input"
@@ -331,7 +331,7 @@ export const CaseRequirements: React.FC<CaseRequirementsProps> = ({ caseId }) =>
 
         {procurementItems.length === 0 && !showAddItemForm ? (
           <div className="case-requirements__card case-requirements__empty">
-            <p>No hay Ã­tems de contrataciÃ³n registrados.</p>
+            <p>No hay ítems de contratación registrados.</p>
           </div>
         ) : (
           procurementItems.map(item => (
@@ -340,7 +340,7 @@ export const CaseRequirements: React.FC<CaseRequirementsProps> = ({ caseId }) =>
                 <div className="case-requirements__form">
                   <div className="case-requirements__form-grid">
                     <div className="case-requirements__field">
-                      <label className="case-requirements__label">DescripciÃ³n</label>
+                      <label className="case-requirements__label">Descripción</label>
                       <input
                         type="text"
                         className="case-requirements__input"
@@ -380,7 +380,7 @@ export const CaseRequirements: React.FC<CaseRequirementsProps> = ({ caseId }) =>
                 <div className="case-requirements__status-row">
                   <div className="case-requirements__requirement-meta flex items-center gap-2">
                     {item.status === 'REVIEW_REQUIRED' && (
-                      <Badge variant="danger">REQUIERE REVISIÃ“N</Badge>
+                      <Badge variant="danger">REQUIERE REVISIÓN</Badge>
                     )}
                     {item.status === 'VALIDATED' && (
                       <Badge variant="success">VALIDATED</Badge>
@@ -417,7 +417,7 @@ export const CaseRequirements: React.FC<CaseRequirementsProps> = ({ caseId }) =>
         <div className="case-requirements__header">
           <h2 className="case-requirements__title">Condiciones Contractuales del Requerimiento</h2>
           <p className="case-requirements__subtitle">
-            Condiciones extraÃ­das automÃ¡ticamente (Plazo, GarantÃ­a, Vida Ãštil, etc.)
+            Condiciones extraídas automáticamente (Plazo, Garantía, Vida Útil, etc.)
           </p>
         </div>
       </div>
@@ -432,14 +432,14 @@ export const CaseRequirements: React.FC<CaseRequirementsProps> = ({ caseId }) =>
             <table className="w-full text-sm text-left border-collapse">
               <thead className="bg-gray-50 border-b">
                 <tr>
-                  <th className="p-3 font-semibold">CondiciÃ³n</th>
+                  <th className="p-3 font-semibold">Condición</th>
                   <th className="p-3 font-semibold">Valor</th>
                   <th className="p-3 font-semibold">Regla</th>
                   <th className="p-3 font-semibold">Fuente</th>
-                  <th className="p-3 font-semibold">PÃ¡gina</th>
+                  <th className="p-3 font-semibold">Página</th>
                   <th className="p-3 font-semibold">Confianza</th>
                   <th className="p-3 font-semibold">Estado</th>
-                  <th className="p-3 font-semibold">AcciÃ³n</th>
+                  <th className="p-3 font-semibold">Acción</th>
                 </tr>
               </thead>
               <tbody className="divide-y">
@@ -472,7 +472,7 @@ export const CaseRequirements: React.FC<CaseRequirementsProps> = ({ caseId }) =>
         <div className="case-requirements__header">
           <h2 className="case-requirements__title">Requerimientos Estructurados</h2>
           <p className="case-requirements__subtitle">
-            RevisiÃ³n y estructuraciÃ³n de las condiciones extraÃ­das del documento de requerimiento.
+            Revisión y estructuración de las condiciones extraídas del documento de requerimiento.
           </p>
         </div>
         {!showAddForm && (
@@ -501,7 +501,7 @@ export const CaseRequirements: React.FC<CaseRequirementsProps> = ({ caseId }) =>
                     value={addForm.requirement_type}
                     onChange={e => setAddForm({...addForm, requirement_type: e.target.value})}
                     disabled={isAdding}
-                    placeholder="Ej: Especificaciones TÃ©cnicas"
+                    placeholder="Ej: Especificaciones Técnicas"
                   />
                 </div>
                 <div className="case-requirements__field">
@@ -518,7 +518,7 @@ export const CaseRequirements: React.FC<CaseRequirementsProps> = ({ caseId }) =>
                 </div>
               </div>
               <div className="case-requirements__field">
-                <label className="case-requirements__label">DescripciÃ³n</label>
+                <label className="case-requirements__label">Descripción</label>
                 <textarea
                   className="case-requirements__input case-requirements__input--textarea"
                   rows={2}
@@ -594,12 +594,12 @@ export const CaseRequirements: React.FC<CaseRequirementsProps> = ({ caseId }) =>
                         value={editForm.reason}
                         onChange={e => setEditForm({...editForm, reason: e.target.value})}
                         disabled={savingId === req.id}
-                        placeholder="Ej: CorrecciÃ³n manual..."
+                        placeholder="Ej: Corrección manual..."
                       />
                     </div>
                   </div>
                   <div className="case-requirements__field">
-                    <label className="case-requirements__label">DescripciÃ³n</label>
+                    <label className="case-requirements__label">Descripción</label>
                     <textarea
                       className="case-requirements__input case-requirements__input--textarea"
                       rows={2}
@@ -620,7 +620,7 @@ export const CaseRequirements: React.FC<CaseRequirementsProps> = ({ caseId }) =>
                   </div>
 
                   <div className="case-requirements__field">
-                    <label className="case-requirements__label">Valor numÃ©rico</label>
+                    <label className="case-requirements__label">Valor numérico</label>
                     <input
                       type="number"
                       className="case-requirements__input"
@@ -648,8 +648,8 @@ export const CaseRequirements: React.FC<CaseRequirementsProps> = ({ caseId }) =>
                       disabled={savingId === req.id}
                     >
                       <option value="">Seleccionar...</option>
-                      <option value="MIN">MÃ­nimo (MIN)</option>
-                      <option value="MAX">MÃ¡ximo (MAX)</option>
+                      <option value="MIN">Mínimo (MIN)</option>
+                      <option value="MAX">Máximo (MAX)</option>
                       <option value="EXACT">Exacto (EXACT)</option>
                       <option value="RANGE">Rango (RANGE)</option>
                     </select>
