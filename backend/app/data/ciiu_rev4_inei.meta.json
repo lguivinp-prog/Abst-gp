@@ -1,0 +1,8 @@
+{
+  "source": "INEI",
+  "version": "CIIU Rev. 4",
+  "class_count": 419,
+  "source_url": "https://proyectos.inei.gob.pe/CIIU/frm_lista_notas.asp",
+  "generated_at": "2026-09-17T11:33:04.852023Z",
+  "sha256": "e47733866347c6b3dc61675a8f8ce85d4ba676d6591b3386fcba7451fdbdfe07"
+}

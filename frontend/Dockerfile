@@ -15,16 +15,18 @@ COPY --from=build /app/dist /usr/share/nginx/html
 RUN echo 'server { \
     listen 80; \
     client_max_body_size 10M; \
+    resolver 127.0.0.11 valid=5s; \
+    set $api_upstream api:8000; \
     location /auth/ { \
-        proxy_pass http://api:8000/auth/; \
+        proxy_pass http://$api_upstream/auth/; \
         proxy_set_header Host $host; \
     } \
     location /api/ { \
-        proxy_pass http://api:8000/api/; \
+        proxy_pass http://$api_upstream/api/; \
         proxy_set_header Host $host; \
     } \
     location /cases/ { \
-        proxy_pass http://api:8000/cases/; \
+        proxy_pass http://$api_upstream/cases/; \
         proxy_set_header Host $host; \
     } \
     location / { \

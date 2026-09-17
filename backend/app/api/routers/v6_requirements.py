@@ -30,12 +30,17 @@ class RequirementResponse(BaseModel):
     id: int
     case_id: int
     requirement_type: str
+    key: Optional[str] = None
     description: str
     value: Optional[str] = None
+    numeric_value: Optional[float] = None
+    unit: Optional[str] = None
+    comparator: Optional[str] = None
     mandatory: bool
     status: str
     source_document_id: Optional[int] = None
     evidences: List[EvidenceResponse] = []
+    is_manual_edit: Optional[bool] = False
 
     class Config:
         from_attributes = True
@@ -44,6 +49,9 @@ class RequirementUpdate(BaseModel):
     status: str # VALIDATED, MODIFIED_BY_USER, OBSERVED, REJECTED
     description: Optional[str] = None
     value: Optional[str] = None
+    numeric_value: Optional[float] = None
+    unit: Optional[str] = None
+    comparator: Optional[str] = None
     reason: str
 
 class RequirementCreate(BaseModel):
@@ -174,10 +182,17 @@ def update_requirement(
         raise HTTPException(status_code=400, detail="Invalid status")
 
     req.status = update_data.status
+    req.is_manual_edit = True
     if update_data.description:
         req.description = update_data.description
     if update_data.value is not None:
         req.value = update_data.value
+    if update_data.numeric_value is not None:
+        req.numeric_value = update_data.numeric_value
+    if update_data.unit is not None:
+        req.unit = update_data.unit
+    if update_data.comparator is not None:
+        req.comparator = update_data.comparator
 
     req.validated_by = current_user.id
     req.validated_at = datetime.now(timezone.utc)

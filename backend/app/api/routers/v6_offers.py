@@ -1,4 +1,4 @@
-﻿from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from app.core.database import get_db
 from app.api.auth import get_current_active_user, verify_case_access
@@ -209,3 +209,69 @@ def delete_offer(
     db.delete(offer)
     db.commit()
     return {"message": "Offer deleted"}
+
+@router.post("/cases/{case_id}/offers/{offer_id}/terms/extract")
+def extract_offer_terms(
+    case_id: int,
+    offer_id: int,
+    text: str,
+    document_name: str,
+    case: CaseFile = Depends(verify_case_access),
+    current_user: User = Depends(get_current_active_user),
+    db: Session = Depends(get_db)
+):
+    from app.models.v6.supplier_offer import SupplierOffer
+    from app.models.v6.supplier_offer_contract_term import SupplierOfferContractTerm
+    from app.services.v6.extraction.contract_extractor import extract_offer_terms_from_text
+
+    offer = db.query(SupplierOffer).filter(SupplierOffer.case_id == case_id, SupplierOffer.id == offer_id).first()
+    if not offer:
+        raise HTTPException(status_code=404, detail="Offer not found")
+
+    result = extract_offer_terms_from_text(text, source_document=document_name)
+
+    # Check idempotency
+    existing_terms = db.query(SupplierOfferContractTerm).filter_by(supplier_offer_id=offer.id).all()
+    for existing in existing_terms:
+        if getattr(existing, 'is_manual_edit', False):
+            continue
+        db.delete(existing)
+    db.flush()
+
+    for term_data in result.get("terms", []):
+        term = SupplierOfferContractTerm(
+            supplier_offer_id=offer.id,
+            key=term_data["key"],
+            value_text=str(term_data["numeric_value"]) if term_data["numeric_value"] is not None else None,
+            numeric_value=term_data["numeric_value"],
+            unit=term_data["unit"],
+            source_document=term_data["source_document_id"],
+            source_page=term_data["source_page"],
+            source_quote=term_data["source_quote"],
+            confidence=term_data["confidence"],
+            extraction_method="local_regex",
+            review_status="REVIEW_REQUIRED" if term_data["confidence"] < 0.85 else "PENDING_REVIEW",
+            is_manual_edit=False
+        )
+        db.add(term)
+
+    db.commit()
+    return {"message": "Extraction complete"}
+
+@router.get("/cases/{case_id}/offers/{offer_id}/terms")
+def get_offer_terms(
+    case_id: int,
+    offer_id: int,
+    case: CaseFile = Depends(verify_case_access),
+    current_user: User = Depends(get_current_active_user),
+    db: Session = Depends(get_db)
+):
+    from app.models.v6.supplier_offer import SupplierOffer
+    from app.models.v6.supplier_offer_contract_term import SupplierOfferContractTerm
+
+    offer = db.query(SupplierOffer).filter(SupplierOffer.case_id == case_id, SupplierOffer.id == offer_id).first()
+    if not offer:
+        raise HTTPException(status_code=404, detail="Offer not found")
+
+    terms = db.query(SupplierOfferContractTerm).filter_by(supplier_offer_id=offer.id).all()
+    return terms

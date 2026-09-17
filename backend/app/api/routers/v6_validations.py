@@ -1,4 +1,5 @@
 from fastapi import APIRouter, Depends, HTTPException
+from fastapi.responses import Response
 from sqlalchemy.orm import Session
 from app.core.database import get_db
 from app.api.auth import get_current_active_user, verify_case_access
@@ -106,7 +107,7 @@ def create_case_validation_request(
     if req.source == "ALL":
         from app.services.v6.integrations.validation_orchestrator import SupplierValidationOrchestrator
         orchestrator = SupplierValidationOrchestrator()
-        orchestrator.run_async_validation(db, case_id, supplier_id, current_user.id)
+        orchestrator.run_async_validation(db, supplier_id, current_user.id, case_id=case_id)
         # Return the latest created for this supplier to satisfy any client expecting an object
         val = db.query(ValidationRequest).filter_by(supplier_id=supplier_id).order_by(ValidationRequest.id.desc()).first()
         return val

@@ -17,6 +17,9 @@ export interface RequirementResponse {
   mandatory: boolean;
   status: string;
   source_document_id?: number;
+  numeric_value?: number | null;
+  unit?: string | null;
+  comparator?: string | null;
   evidences: EvidenceResponse[];
 }
 
@@ -31,6 +34,9 @@ export interface RequirementUpdate {
   status: UpdateRequirementStatus;
   description?: string | null;
   value?: string | null;
+  numeric_value?: number | null;
+  unit?: string | null;
+  comparator?: string | null;
   reason: string;
 }
 

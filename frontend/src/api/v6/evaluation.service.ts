@@ -7,6 +7,8 @@ export const evaluationPaths = {
   offerList: (caseId: string | number, offerId: string | number) => `/cases/${caseId}/offers/${offerId}/evaluations`,
   evaluate: (caseId: string | number, offerId: string | number) => `/cases/${caseId}/offers/${offerId}/evaluate`,
   update: (caseId: string | number, evalId: string | number) => `/cases/${caseId}/evaluations/${evalId}`,
+  contractualList: (caseId: string | number) => `/cases/${caseId}/evaluations/contractual`,
+  vfm: (caseId: string | number) => `/cases/${caseId}/evaluations/vfm`,
 };
 
 export const evaluationService = {
@@ -37,6 +39,22 @@ export const evaluationService = {
   updateEvaluation: async (caseId: string, evalId: number, data: EvaluationUpdate): Promise<EvaluationResponse> => {
     try {
       return await v6Client.put<EvaluationResponse, EvaluationUpdate>(evaluationPaths.update(caseId, evalId), data);
+    } catch (error) {
+      throw handleApiError(error);
+    }
+  },
+
+  getContractualEvaluations: async (caseId: string): Promise<any[]> => {
+    try {
+      return await v6Client.get<any[]>(evaluationPaths.contractualList(caseId));
+    } catch (error) {
+      throw handleApiError(error);
+    }
+  },
+
+  getVFMRanking: async (caseId: string): Promise<any[]> => {
+    try {
+      return await v6Client.get<any[]>(evaluationPaths.vfm(caseId));
     } catch (error) {
       throw handleApiError(error);
     }

@@ -10,6 +10,9 @@ from sqlalchemy.orm import Session
 
 def test_external_validation_hybrid_fallback(db_session: Session):
     # API keys are missing in the environment by default, so it triggers fallback logic
+    from app.models.v6.ciiu_catalog import CiiuCatalog
+    db_session.add(CiiuCatalog(codigo="4711", descripcion="Venta", version="4", fuente="INEI"))
+
     supplier = Supplier(ruc="20555555555", business_name="Supplier S.A.", tenant_id="mega_tenant")
     db_session.add(supplier)
     db_session.commit()
@@ -23,7 +26,11 @@ def test_external_validation_hybrid_fallback(db_session: Session):
 
     # 2. Run with Fallback (Simulating parsed Anexo 4 data)
     fallback = {
-        "SUNAT": {"estado": "ACTIVO"},
+        "SUNAT": {
+            "estado": "ACTIVO",
+            "condicion": "HABIDO",
+            "actividades_economicas": [{"descripcion_sunat": "4711 Venta", "tipo": "PRINCIPAL"}]
+        },
         "FUP": {"sancionado": False},
         "RNP": {"vigente": True}
     }
@@ -42,10 +49,10 @@ def test_external_validation_hybrid_fallback(db_session: Session):
         .all()
     )
 
-    assert len(reqs) == 6
+    assert len(reqs) == 10
 
-    first_run = reqs[:3]
-    second_run = reqs[-3:]
+    first_run = reqs[:5]
+    second_run = reqs[-5:]
 
     assert any(
         r.status in ["WARNING", "MANUAL_REQUIRED"]
@@ -59,6 +66,9 @@ def test_external_validation_hybrid_fallback(db_session: Session):
 
 def test_anexo4_auto_trigger(db_session: Session):
     # Setup
+    from app.models.v6.ciiu_catalog import CiiuCatalog
+    db_session.add(CiiuCatalog(codigo="4711", descripcion="Venta", version="4", fuente="INEI"))
+
     supplier = Supplier(ruc="10444444444", business_name="Supplier 2", tenant_id="mega_tenant")
     case = CaseFile(title="Case External", contract_type="BIENES", tenant_id="mega_tenant")
     db_session.add_all([supplier, case])
@@ -69,7 +79,11 @@ def test_anexo4_auto_trigger(db_session: Session):
     db_session.commit()
 
     fallback_data = {
-        "SUNAT": {"estado": "ACTIVO"},
+        "SUNAT": {
+            "estado": "ACTIVO",
+            "condicion": "HABIDO",
+            "actividades_economicas": [{"descripcion_sunat": "4711 Venta", "tipo": "PRINCIPAL"}]
+        },
         "FUP": {"sancionado": False},
         "RNP": {"vigente": True}
     }
@@ -86,10 +100,12 @@ def test_anexo4_auto_trigger(db_session: Session):
 
     # Validation orchestrator should have been triggered synchronously (mocked celery)
     profile = db_session.query(SupplierProfile).filter_by(supplier_id=supplier.id).first()
-    assert profile is not None
+    db_session.refresh(profile)
+    reqs = db_session.query(ValidationRequest).filter_by(supplier_id=supplier.id).all()
+    assert len(reqs) == 5
     assert profile.status_summary == "VERIFIED"
 
-def test_contract_validations_adapters():
+def test_contract_validations_adapters(db_session):
     import os
     os.environ["APP_ENV"] = "test"
     from app.services.v6.integrations.providers.sunat_adapter import SUNATProvider
@@ -106,8 +122,8 @@ def test_contract_validations_adapters():
     fup_res = FUPProvider().validate("20555555555")
     assert fup_res.status in ["PASSED", "WARNING", "MANUAL_REQUIRED", "ERROR"]
 
-    ciiu_res = CIIUProvider().validate(None, ["4711"], "keywords")
-    assert ciiu_res.status in ["PASSED", "WARNING", "MANUAL_REQUIRED", "ERROR"]
+    ciiu_res = CIIUProvider().validate(db_session, [{"descripcion_sunat": "4711", "tipo": "PRINCIPAL"}], False, "keywords")
+    assert ciiu_res.status in ["PASSED", "WARNING", "MANUAL_REQUIRED", "ERROR", "REVIEW_REQUIRED"]
 
 def test_rnp_real_pass(monkeypatch):
     import os

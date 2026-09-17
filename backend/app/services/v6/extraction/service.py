@@ -1,10 +1,11 @@
-from typing import List
+﻿from typing import List
 from sqlalchemy.orm import Session
 from app.models.v6.case_requirement_matrix import CaseRequirementMatrix
 from app.models.v6.requirement_evidence import RequirementEvidence
 from app.models.domain import AuditLog
 from .provider import RequirementExtractionProvider
 from .deterministic_extractor import DeterministicRequirementExtractor
+from app.services.v6.extraction.contract_extractor import extract_requirements_from_text
 import json
 
 class RequirementExtractionService:
@@ -22,6 +23,14 @@ class RequirementExtractionService:
                 if getattr(existing, 'is_manual_edit', False):
                     continue
                 db.delete(existing)
+
+            # Idempotency for Contractual terms
+            existing_reqs = db.query(CaseRequirementMatrix).filter_by(case_id=case_id, source_document_id=document_id, requirement_type="CONTRACTUAL").all()
+            for existing in existing_reqs:
+                if getattr(existing, 'is_manual_edit', False):
+                    continue
+                db.delete(existing)
+
             db.flush()
 
         result = self.extractor.extract(text=text, source_document=document_name)
@@ -73,6 +82,37 @@ class RequirementExtractionService:
                     status="SUCCESS"
                 )
                 db.add(audit)
+                created_matrices.append(req)
+
+            # Contractual Requirements
+            contract_res = extract_requirements_from_text(text, source_document=document_name)
+            for c_req in contract_res.get("requirements", []):
+                req_status = "REVIEW_REQUIRED" if c_req["confidence"] < 0.85 else "PENDING_REVIEW"
+                req = CaseRequirementMatrix(
+                    case_id=case_id,
+                    source_document_id=document_id,
+                    requirement_type="CONTRACTUAL",
+                    key=c_req["key"],
+                    description=c_req["description"],
+                    value=str(c_req["numeric_value"]) if c_req["numeric_value"] is not None else None,
+                    numeric_value=c_req["numeric_value"],
+                    unit=c_req["unit"],
+                    comparator=c_req["comparator"],
+                    mandatory=True,
+                    status=req_status,
+                    is_manual_edit=False
+                )
+                db.add(req)
+                db.flush()
+
+                evidence = RequirementEvidence(
+                    requirement_id=req.id,
+                    source_document=c_req["source_document_id"],
+                    source_page=c_req["source_page"],
+                    source_fragment=c_req["source_quote"],
+                    confidence=c_req["confidence"]
+                )
+                db.add(evidence)
                 created_matrices.append(req)
 
         # We map items by item_number to avoid duplicates when processing 5.2 (if the extractor happens to merge them)

@@ -151,3 +151,72 @@ def update_evaluation(
         updated.requirement_description = updated.requirement.description
         updated.requirement_type = updated.requirement.requirement_type
     return updated
+
+class ContractualConditionResponse(BaseModel):
+    id: int
+    supplier_offer_id: int
+    key: Optional[str] = None
+    label: Optional[str] = None
+    required_value: Optional[str] = None
+    offered_value: Optional[str] = None
+    final_value: Optional[str] = None
+    unit: Optional[str] = None
+    resolution_rule: str
+    status: str
+
+    class Config:
+        from_attributes = True
+
+@router.get("/cases/{case_id}/evaluations/contractual", response_model=List[ContractualConditionResponse])
+def get_contractual_evaluations(
+    case_id: int,
+    case: CaseFile = Depends(verify_case_access),
+    current_user: User = Depends(get_current_active_user),
+    db: Session = Depends(get_db)
+):
+    from app.models.v6.supplier_offer import SupplierOffer
+    from app.models.v6.case_requirement_matrix import CaseRequirementMatrix
+    from app.services.v6.evaluation.contractual_resolver import ContractualResolver
+    from app.models.v6.contractual_condition import ContractualCondition
+
+    offers = db.query(SupplierOffer).filter(SupplierOffer.case_id == case_id).all()
+    requirements = db.query(CaseRequirementMatrix).filter(CaseRequirementMatrix.case_id == case_id).all()
+
+    resolver = ContractualResolver(db)
+    all_conditions = []
+
+    for offer in offers:
+        # Check if already resolved
+        existing = db.query(ContractualCondition).filter_by(supplier_offer_id=offer.id).all()
+        if existing:
+            # We clear them and re-resolve to get fresh data (or we could just return existing)
+            # Since the user might have updated requirements or offers, it's safer to re-evaluate dynamically here, or we can just delete and recreate.
+            db.query(ContractualCondition).filter_by(supplier_offer_id=offer.id).delete()
+            db.flush()
+
+        conditions = resolver.resolve_offer(offer.id, requirements)
+        all_conditions.extend(conditions)
+
+    return all_conditions
+
+class VFMResponse(BaseModel):
+    supplier_offer_id: int
+    supplier_id: int
+    is_eligible: bool
+    reason: Optional[str] = None
+    total_score: Optional[float] = None
+    price: Optional[float] = None
+    vfm_ratio: Optional[float] = None
+
+@router.get("/cases/{case_id}/evaluations/vfm", response_model=List[VFMResponse])
+def get_vfm_ranking(
+    case_id: int,
+    case: CaseFile = Depends(verify_case_access),
+    current_user: User = Depends(get_current_active_user),
+    db: Session = Depends(get_db)
+):
+    from app.services.v6.evaluation.vfm_service import ValueForMoneyService
+
+    vfm_service = ValueForMoneyService(db)
+    results = vfm_service.calculate_vfm(case_id)
+    return results

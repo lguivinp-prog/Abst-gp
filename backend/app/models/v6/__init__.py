@@ -24,9 +24,11 @@ from .experience_requirement import ExperienceRequirement
 from .telemetry import InstitutionalTelemetryEvent
 from .tenant_config import TenantConfiguration, TenantConfigurationHistory
 from .structured_tables import StructuredTable, StructuredRow, StructuredCell
-
 from .case_procurement_item import CaseProcurementItem
 from .supplier_offer_item import SupplierOfferItem
+from .supplier_offer_contract_term import SupplierOfferContractTerm
+from .evaluation_factor import EvaluationFactor
+from .contractual_condition import ContractualCondition
 
 __all__ = [
     "CaseRequirementMatrix", "Supplier", "SupplierOffer", "RequirementEvidence", 
@@ -38,5 +40,7 @@ __all__ = [
     "DocumentQualityAssessment", "DocumentQualityThresholdConfig",
     "ExperienceRequirement", "InstitutionalTelemetryEvent",
     "TenantConfiguration", "TenantConfigurationHistory",
-    "StructuredTable", "StructuredRow", "StructuredCell"
+    "StructuredTable", "StructuredRow", "StructuredCell",
+    "CaseProcurementItem", "SupplierOfferItem",
+    "SupplierOfferContractTerm", "EvaluationFactor", "ContractualCondition"
 ]

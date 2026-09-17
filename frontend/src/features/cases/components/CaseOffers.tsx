@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+﻿import React, { useState, useEffect } from 'react';
 import { FileText, Building2, Check, X, AlertCircle, Trash2, Edit2 } from 'lucide-react';
 import { Button } from '../../../components/ui/Button';
 import { Badge } from '../../../components/ui/Badge';
@@ -7,6 +7,7 @@ import type { SupplierOfferResponse, SupplierOfferUpdate } from '../../../api/v6
 import { AppError } from '../../../api/apiError';
 import './CaseOffers.css';
 import type { NumericLike } from '../../../api/v6/offer.types';
+import { CaseOfferTerms } from './CaseOfferTerms';
 
 const toFiniteNumber = (value: NumericLike | null | undefined): number => {
   const parsed = typeof value === 'number' ? value : Number(value);
@@ -442,6 +443,10 @@ export const CaseOffers: React.FC<CaseOffersProps> = ({ caseId }) => {
                           </div>
                         </div>
                       )}
+
+                      {/* NEW: Condiciones Ofertadas */}
+                      <CaseOfferTerms caseId={caseId} offerId={offer.id} />
+
                     </div>
                   )}
                 </div>

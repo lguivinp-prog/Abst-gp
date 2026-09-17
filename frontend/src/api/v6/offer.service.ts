@@ -5,6 +5,8 @@ import { handleApiError } from '../apiError';
 export const offerPaths = {
   list: (caseId: string | number) => `/cases/${caseId}/offers`,
   detail: (caseId: string | number, offerId: string | number) => `/cases/${caseId}/offers/${offerId}`,
+  terms: (caseId: string | number, offerId: string | number) => `/cases/${caseId}/offers/${offerId}/terms`,
+  extractTerms: (caseId: string | number, offerId: string | number) => `/cases/${caseId}/offers/${offerId}/terms/extract`,
 };
 
 export const offerService = {
@@ -27,6 +29,22 @@ export const offerService = {
   deleteOffer: async (caseId: string, offerId: number): Promise<void> => {
     try {
       await v6Client.delete<void>(offerPaths.detail(caseId, offerId));
+    } catch (error) {
+      throw handleApiError(error);
+    }
+  },
+
+  getOfferTerms: async (caseId: string, offerId: number): Promise<any[]> => {
+    try {
+      return await v6Client.get<any[]>(offerPaths.terms(caseId, offerId));
+    } catch (error) {
+      throw handleApiError(error);
+    }
+  },
+
+  extractOfferTerms: async (caseId: string, offerId: number, text: string, document_name: string): Promise<any> => {
+    try {
+      return await v6Client.post<any, any>(offerPaths.extractTerms(caseId, offerId), { text, document_name });
     } catch (error) {
       throw handleApiError(error);
     }

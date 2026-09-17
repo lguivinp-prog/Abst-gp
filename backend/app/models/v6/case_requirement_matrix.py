@@ -9,8 +9,13 @@ class CaseRequirementMatrix(Base):
     id = Column(Integer, primary_key=True, index=True)
     case_id = Column(Integer, ForeignKey("case_files.id", ondelete="CASCADE"), nullable=False, index=True)
     requirement_type = Column(String(50), nullable=False) # e.g., TECHNICAL, LEGAL
+    key = Column(String(100), nullable=True)
     description = Column(Text, nullable=False)
     value = Column(String, nullable=True)
+    numeric_value = Column(Float, nullable=True)
+    unit = Column(String(50), nullable=True)
+    comparator = Column(String(50), nullable=True)
+    confidence = Column(Float, nullable=True)
     mandatory = Column(Boolean, default=True, nullable=False)
     status = Column(String(50), default="PENDING_REVIEW", nullable=False) # PENDING_REVIEW, VALIDATED, MODIFIED_BY_USER, OBSERVED, REJECTED
     validated_by = Column(Integer, ForeignKey("users.id", ondelete="SET NULL"), nullable=True)

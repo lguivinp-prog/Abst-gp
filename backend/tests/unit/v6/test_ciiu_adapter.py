@@ -8,14 +8,11 @@ from app.models.v6.ciiu_catalog import CiiuCatalog
 def mock_db():
     db = MagicMock()
     # Mocking two known codes and one non-existent
-    def mock_filter_by(codigo, activo):
-        if codigo == "0000":
-            return MagicMock(first=lambda: CiiuCatalog(codigo="0000", descripcion="TEST CODE", version="1", fuente="TEST", activo=True))
-        if codigo == "6201":
-            return MagicMock(first=lambda: CiiuCatalog(codigo="6201", descripcion="Actividades de programación informática", version="1", fuente="INEI", activo=True))
-        return MagicMock(first=lambda: None)
-    
-    db.query.return_value.filter_by.side_effect = mock_filter_by
+    catalog_list = [
+        CiiuCatalog(codigo="0000", descripcion="TEST CODE", version="1", fuente="TEST", activo=True),
+        CiiuCatalog(codigo="6201", descripcion="Actividades de programación informática", version="1", fuente="INEI", activo=True)
+    ]
+    db.query.return_value.all.return_value = catalog_list
     return db
 
 def test_ciiu_adapter_test_env(mock_db, monkeypatch):
@@ -23,25 +20,24 @@ def test_ciiu_adapter_test_env(mock_db, monkeypatch):
     provider = CIIUProvider()
     
     # 1. Código conocido -> descripción oficial exacta
-    res1 = provider.validate(mock_db, "0000", "some keywords")
-    assert res1.status == "PASSED"
-    assert res1.payload["descripcion"] == "TEST CODE"
+    res1 = provider.validate(mock_db, [{"descripcion_sunat": "0000", "tipo": "PRINCIPAL"}], False, "some keywords")
+    assert res1.status == "REVIEW_REQUIRED"
+    assert res1.payload["results"][0]["codigo_ciiu"] == "0000"
     
     # 2. Otro código conocido distinto -> descripción correcta
-    res2 = provider.validate(mock_db, "6201", "doesn't matter what words")
-    assert res2.status == "PASSED"
-    assert res2.payload["descripcion"] == "Actividades de programación informática"
+    res2 = provider.validate(mock_db, [{"descripcion_sunat": "6201", "tipo": "PRINCIPAL"}], False, "doesn't matter what words")
+    assert res2.status == "REVIEW_REQUIRED"
+    assert res2.payload["results"][0]["codigo_ciiu"] == "6201"
     
     # 3. Código inexistente -> no inventa resultado
-    res3 = provider.validate(mock_db, "9999", "words")
-    assert res3.status == "WARNING"
-    assert res3.payload["certeza"] == "UNKNOWN"
-    assert "no encontrado" in res3.payload["msg"]
+    res3 = provider.validate(mock_db, [{"descripcion_sunat": "9999", "tipo": "PRINCIPAL"}], False, "words")
+    assert res3.status == "REVIEW_REQUIRED"
+    assert res3.payload["results"][0]["status"] == "REVIEW_REQUIRED"
     
     # 4. Código malformado (vacío) -> error/controlado
-    res4 = provider.validate(mock_db, "", "words")
+    res4 = provider.validate(mock_db, [], False, "words")
     assert res4.status == "MANUAL_REQUIRED"
-    assert "Missing" in res4.payload["error"]
+    assert "No hay actividades de SUNAT para evaluar." in res4.payload["error"]
     
     # 5. No fuzzy matching -> It strictly matches the DB output regardless of keywords
 
@@ -49,7 +45,7 @@ def test_ciiu_adapter_runtime_env(mock_db, monkeypatch):
     monkeypatch.setenv("APP_ENV", "production")
     provider = CIIUProvider()
     
-    # 6. Runtime no utiliza test fixture (debe devolver NO_DISPONIBLE_API)
-    res = provider.validate(mock_db, "6201", "words")
-    assert res.status == "NO_DISPONIBLE_API"
-    assert "no disponible" in res.payload["error"]
+    # 6. Runtime evalua 6201 (código extraido) que tiene match_method EXACT_CODE -> PASSED
+    res = provider.validate(mock_db, [{"descripcion_sunat": "6201", "tipo": "PRINCIPAL"}], False, "words")
+    assert res.status == "REVIEW_REQUIRED" # The whole validation fails if activities_complete is False
+    assert res.payload["results"][0]["status"] == "PASSED"

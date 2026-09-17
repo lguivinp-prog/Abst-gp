@@ -1,0 +1,2516 @@
+[
+  {
+    "codigo": "0111",
+    "descripcion": "Cultivo de cereales (excepto arroz), legumbres y semillas oleaginosas",
+    "version": "CIIU Rev. 4",
+    "fuente": "INEI"
+  },
+  {
+    "codigo": "0112",
+    "descripcion": "Cultivo de arroz",
+    "version": "CIIU Rev. 4",
+    "fuente": "INEI"
+  },
+  {
+    "codigo": "0113",
+    "descripcion": "Cultivo de hortalizas y melones, raíces y tubérculos.",
+    "version": "CIIU Rev. 4",
+    "fuente": "INEI"
+  },
+  {
+    "codigo": "0114",
+    "descripcion": "Cultivo de caña de azúcar",
+    "version": "CIIU Rev. 4",
+    "fuente": "INEI"
+  },
+  {
+    "codigo": "0115",
+    "descripcion": "Cultivo de tabaco",
+    "version": "CIIU Rev. 4",
+    "fuente": "INEI"
+  },
+  {
+    "codigo": "0116",
+    "descripcion": "Cultivo de plantas de fibra",
+    "version": "CIIU Rev. 4",
+    "fuente": "INEI"
+  },
+  {
+    "codigo": "0119",
+    "descripcion": "Cultivo de otras plantas no perennes",
+    "version": "CIIU Rev. 4",
+    "fuente": "INEI"
+  },
+  {
+    "codigo": "0121",
+    "descripcion": "Cultivo de uva",
+    "version": "CIIU Rev. 4",
+    "fuente": "INEI"
+  },
+  {
+    "codigo": "0122",
+    "descripcion": "Cultivo de frutas tropicales y subtropicales",
+    "version": "CIIU Rev. 4",
+    "fuente": "INEI"
+  },
+  {
+    "codigo": "0123",
+    "descripcion": "Cultivo de  cítricos",
+    "version": "CIIU Rev. 4",
+    "fuente": "INEI"
+  },
+  {
+    "codigo": "0124",
+    "descripcion": "Cultivo de frutas de pepita y de hueso",
+    "version": "CIIU Rev. 4",
+    "fuente": "INEI"
+  },
+  {
+    "codigo": "0125",
+    "descripcion": "Cultivo de otros frutos y nueces de árboles y arbustos",
+    "version": "CIIU Rev. 4",
+    "fuente": "INEI"
+  },
+  {
+    "codigo": "0126",
+    "descripcion": "Cultivo de frutos oleaginosos",
+    "version": "CIIU Rev. 4",
+    "fuente": "INEI"
+  },
+  {
+    "codigo": "0127",
+    "descripcion": "Cultivo de plantas con las que se preparan bebidas",
+    "version": "CIIU Rev. 4",
+    "fuente": "INEI"
+  },
+  {
+    "codigo": "0128",
+    "descripcion": "Cultivo de especias y de plantas aromáticas, medicinales y farmaceuticas",
+    "version": "CIIU Rev. 4",
+    "fuente": "INEI"
+  },
+  {
+    "codigo": "0129",
+    "descripcion": "Cultivo de otras plantas no perennes",
+    "version": "CIIU Rev. 4",
+    "fuente": "INEI"
+  },
+  {
+    "codigo": "0130",
+    "descripcion": "Propagación de plantas",
+    "version": "CIIU Rev. 4",
+    "fuente": "INEI"
+  },
+  {
+    "codigo": "0141",
+    "descripcion": "Cría de ganado bovino y búfalos",
+    "version": "CIIU Rev. 4",
+    "fuente": "INEI"
+  },
+  {
+    "codigo": "0142",
+    "descripcion": "Cría de caballos y otros equinos",
+    "version": "CIIU Rev. 4",
+    "fuente": "INEI"
+  },
+  {
+    "codigo": "0143",
+    "descripcion": "Cría de camellos y otros camélidos",
+    "version": "CIIU Rev. 4",
+    "fuente": "INEI"
+  },
+  {
+    "codigo": "0144",
+    "descripcion": "Cría de ovejas y cabras",
+    "version": "CIIU Rev. 4",
+    "fuente": "INEI"
+  },
+  {
+    "codigo": "0145",
+    "descripcion": "Cría de cerdos",
+    "version": "CIIU Rev. 4",
+    "fuente": "INEI"
+  },
+  {
+    "codigo": "0146",
+    "descripcion": "Cría de aves de corral",
+    "version": "CIIU Rev. 4",
+    "fuente": "INEI"
+  },
+  {
+    "codigo": "0149",
+    "descripcion": "Cría de otros animales",
+    "version": "CIIU Rev. 4",
+    "fuente": "INEI"
+  },
+  {
+    "codigo": "0150",
+    "descripcion": "Cultivo de productos agrìcolas en combinaciòn con la crìa de animales",
+    "version": "CIIU Rev. 4",
+    "fuente": "INEI"
+  },
+  {
+    "codigo": "0161",
+    "descripcion": "Actividades de apoyo a la agricultura",
+    "version": "CIIU Rev. 4",
+    "fuente": "INEI"
+  },
+  {
+    "codigo": "0162",
+    "descripcion": "Actividades de apoyo a la ganadería",
+    "version": "CIIU Rev. 4",
+    "fuente": "INEI"
+  },
+  {
+    "codigo": "0163",
+    "descripcion": "Actividades poscosecha",
+    "version": "CIIU Rev. 4",
+    "fuente": "INEI"
+  },
+  {
+    "codigo": "0164",
+    "descripcion": "Tratamiento de semillas para propagación",
+    "version": "CIIU Rev. 4",
+    "fuente": "INEI"
+  },
+  {
+    "codigo": "0170",
+    "descripcion": "Caza ordinaria y mediante trampas y actividades de servicios conexas",
+    "version": "CIIU Rev. 4",
+    "fuente": "INEI"
+  },
+  {
+    "codigo": "0210",
+    "descripcion": "Silvicultura y otras actividades forestales",
+    "version": "CIIU Rev. 4",
+    "fuente": "INEI"
+  },
+  {
+    "codigo": "0220",
+    "descripcion": "Extracción de madera",
+    "version": "CIIU Rev. 4",
+    "fuente": "INEI"
+  },
+  {
+    "codigo": "0230",
+    "descripcion": "Recolección de productos forestales distintos de la madera",
+    "version": "CIIU Rev. 4",
+    "fuente": "INEI"
+  },
+  {
+    "codigo": "0240",
+    "descripcion": "Servicios de apoyo a la silvicultura",
+    "version": "CIIU Rev. 4",
+    "fuente": "INEI"
+  },
+  {
+    "codigo": "0311",
+    "descripcion": "Pesca marítima",
+    "version": "CIIU Rev. 4",
+    "fuente": "INEI"
+  },
+  {
+    "codigo": "0312",
+    "descripcion": "Pesca de agua dulce",
+    "version": "CIIU Rev. 4",
+    "fuente": "INEI"
+  },
+  {
+    "codigo": "0321",
+    "descripcion": "Acuicultura marítima",
+    "version": "CIIU Rev. 4",
+    "fuente": "INEI"
+  },
+  {
+    "codigo": "0322",
+    "descripcion": "Acuicultura de agua dulce",
+    "version": "CIIU Rev. 4",
+    "fuente": "INEI"
+  },
+  {
+    "codigo": "0510",
+    "descripcion": "Extracción de carbón de piedra",
+    "version": "CIIU Rev. 4",
+    "fuente": "INEI"
+  },
+  {
+    "codigo": "0520",
+    "descripcion": "Extracción de lignito",
+    "version": "CIIU Rev. 4",
+    "fuente": "INEI"
+  },
+  {
+    "codigo": "0610",
+    "descripcion": "Extracción de petróleo crudo",
+    "version": "CIIU Rev. 4",
+    "fuente": "INEI"
+  },
+  {
+    "codigo": "0620",
+    "descripcion": "Extracción de gas natural",
+    "version": "CIIU Rev. 4",
+    "fuente": "INEI"
+  },
+  {
+    "codigo": "0710",
+    "descripcion": "Extracción de minerales de hierro",
+    "version": "CIIU Rev. 4",
+    "fuente": "INEI"
+  },
+  {
+    "codigo": "0721",
+    "descripcion": "Extracción de minerales de uranio y torio",
+    "version": "CIIU Rev. 4",
+    "fuente": "INEI"
+  },
+  {
+    "codigo": "0729",
+    "descripcion": "Extracción de otros minerales metalíferos no ferrosos",
+    "version": "CIIU Rev. 4",
+    "fuente": "INEI"
+  },
+  {
+    "codigo": "0810",
+    "descripcion": "Extracción de piedra, arena y arcilla",
+    "version": "CIIU Rev. 4",
+    "fuente": "INEI"
+  },
+  {
+    "codigo": "0891",
+    "descripcion": "Extracción de minerales para la fabricación de abonos y productos químicos",
+    "version": "CIIU Rev. 4",
+    "fuente": "INEI"
+  },
+  {
+    "codigo": "0892",
+    "descripcion": "Extracción de turba",
+    "version": "CIIU Rev. 4",
+    "fuente": "INEI"
+  },
+  {
+    "codigo": "0893",
+    "descripcion": "Extracción de sal",
+    "version": "CIIU Rev. 4",
+    "fuente": "INEI"
+  },
+  {
+    "codigo": "0899",
+    "descripcion": "Explotación de otras minas y canteras n.c.p.",
+    "version": "CIIU Rev. 4",
+    "fuente": "INEI"
+  },
+  {
+    "codigo": "0910",
+    "descripcion": "Actividades de apoyo para la extracción de petróleo y gas natural",
+    "version": "CIIU Rev. 4",
+    "fuente": "INEI"
+  },
+  {
+    "codigo": "0990",
+    "descripcion": "Actividades de apoyo para otras actividades de explotación de minas y canteras",
+    "version": "CIIU Rev. 4",
+    "fuente": "INEI"
+  },
+  {
+    "codigo": "1010",
+    "descripcion": "Elaboraciòn y conservación de carne",
+    "version": "CIIU Rev. 4",
+    "fuente": "INEI"
+  },
+  {
+    "codigo": "1020",
+    "descripcion": "Elaboraciòn y conservación de pescados, crustáceos y moluscos",
+    "version": "CIIU Rev. 4",
+    "fuente": "INEI"
+  },
+  {
+    "codigo": "1030",
+    "descripcion": "Elaboraciòn y conservación de frutas,legumbres y hortalizas",
+    "version": "CIIU Rev. 4",
+    "fuente": "INEI"
+  },
+  {
+    "codigo": "1040",
+    "descripcion": "Elaboración de aceites y grasas de origen vegetal y animal",
+    "version": "CIIU Rev. 4",
+    "fuente": "INEI"
+  },
+  {
+    "codigo": "1050",
+    "descripcion": "Elaboración de productos lácteos",
+    "version": "CIIU Rev. 4",
+    "fuente": "INEI"
+  },
+  {
+    "codigo": "1061",
+    "descripcion": "Elaboración de productos de molinería.",
+    "version": "CIIU Rev. 4",
+    "fuente": "INEI"
+  },
+  {
+    "codigo": "1062",
+    "descripcion": "Elaboración de almidones y productos derivados del almidón.",
+    "version": "CIIU Rev. 4",
+    "fuente": "INEI"
+  },
+  {
+    "codigo": "1071",
+    "descripcion": "Elaboración de productos de panadería",
+    "version": "CIIU Rev. 4",
+    "fuente": "INEI"
+  },
+  {
+    "codigo": "1072",
+    "descripcion": "Elaboración de azúcar",
+    "version": "CIIU Rev. 4",
+    "fuente": "INEI"
+  },
+  {
+    "codigo": "1073",
+    "descripcion": "Elaboración de cacao y chocolate y de productos de confitería",
+    "version": "CIIU Rev. 4",
+    "fuente": "INEI"
+  },
+  {
+    "codigo": "1074",
+    "descripcion": "Elaboración de macarrones, fideos, alcuzcus y productos farináceos similares",
+    "version": "CIIU Rev. 4",
+    "fuente": "INEI"
+  },
+  {
+    "codigo": "1075",
+    "descripcion": "Elaboración de comidas y platos preparados",
+    "version": "CIIU Rev. 4",
+    "fuente": "INEI"
+  },
+  {
+    "codigo": "1079",
+    "descripcion": "Elaboración de otros productos alimenticios n.c.p.",
+    "version": "CIIU Rev. 4",
+    "fuente": "INEI"
+  },
+  {
+    "codigo": "1080",
+    "descripcion": "Elaboración de piensos preparados para animales",
+    "version": "CIIU Rev. 4",
+    "fuente": "INEI"
+  },
+  {
+    "codigo": "1101",
+    "descripcion": "Destilación, rectificación y mezcla de bebidas alcohólicas",
+    "version": "CIIU Rev. 4",
+    "fuente": "INEI"
+  },
+  {
+    "codigo": "1102",
+    "descripcion": "Elaboración de vinos",
+    "version": "CIIU Rev. 4",
+    "fuente": "INEI"
+  },
+  {
+    "codigo": "1103",
+    "descripcion": "Elaboración de bebidas malteadas y de malta",
+    "version": "CIIU Rev. 4",
+    "fuente": "INEI"
+  },
+  {
+    "codigo": "1104",
+    "descripcion": "Elaboración de bebidas no alcohólicas; producción de aguas minerales y otras aguas embotelladas",
+    "version": "CIIU Rev. 4",
+    "fuente": "INEI"
+  },
+  {
+    "codigo": "1200",
+    "descripcion": "Elaboración de productos de tabaco",
+    "version": "CIIU Rev. 4",
+    "fuente": "INEI"
+  },
+  {
+    "codigo": "1311",
+    "descripcion": "Preparación e hilatura de fibras textiles",
+    "version": "CIIU Rev. 4",
+    "fuente": "INEI"
+  },
+  {
+    "codigo": "1312",
+    "descripcion": "Tejedura de productos textiles",
+    "version": "CIIU Rev. 4",
+    "fuente": "INEI"
+  },
+  {
+    "codigo": "1313",
+    "descripcion": "Acabado de productos textiles",
+    "version": "CIIU Rev. 4",
+    "fuente": "INEI"
+  },
+  {
+    "codigo": "1391",
+    "descripcion": "Fabricación de tejidos de punto y ganchillo",
+    "version": "CIIU Rev. 4",
+    "fuente": "INEI"
+  },
+  {
+    "codigo": "1392",
+    "descripcion": "Fabricación de artículos confeccionados de materiales textiles, excepto prendas de vestir",
+    "version": "CIIU Rev. 4",
+    "fuente": "INEI"
+  },
+  {
+    "codigo": "1393",
+    "descripcion": "Fabricación de tapices y alfombras",
+    "version": "CIIU Rev. 4",
+    "fuente": "INEI"
+  },
+  {
+    "codigo": "1394",
+    "descripcion": "Fabricación de cuerdas, cordeles, bramantes y redes",
+    "version": "CIIU Rev. 4",
+    "fuente": "INEI"
+  },
+  {
+    "codigo": "1399",
+    "descripcion": "Fabricación de otros productos textiles n.c.p.",
+    "version": "CIIU Rev. 4",
+    "fuente": "INEI"
+  },
+  {
+    "codigo": "1410",
+    "descripcion": "Fabricación de prendas de vestir, excepto prendas de piel",
+    "version": "CIIU Rev. 4",
+    "fuente": "INEI"
+  },
+  {
+    "codigo": "1420",
+    "descripcion": "Fabricación de artículos de piel",
+    "version": "CIIU Rev. 4",
+    "fuente": "INEI"
+  },
+  {
+    "codigo": "1430",
+    "descripcion": "Fabricación de articulos de punto y ganchillo",
+    "version": "CIIU Rev. 4",
+    "fuente": "INEI"
+  },
+  {
+    "codigo": "1511",
+    "descripcion": "Curtido y adobo de cueros; adobo y teñido de pieles",
+    "version": "CIIU Rev. 4",
+    "fuente": "INEI"
+  },
+  {
+    "codigo": "1512",
+    "descripcion": "Fabricación de maletas, bolsos de mano, y artículos similares,y de articulos de talabartería y guarnicionería",
+    "version": "CIIU Rev. 4",
+    "fuente": "INEI"
+  },
+  {
+    "codigo": "1520",
+    "descripcion": "Fabricación de calzado",
+    "version": "CIIU Rev. 4",
+    "fuente": "INEI"
+  },
+  {
+    "codigo": "1610",
+    "descripcion": "Aserrados y acepilladura de madera",
+    "version": "CIIU Rev. 4",
+    "fuente": "INEI"
+  },
+  {
+    "codigo": "1621",
+    "descripcion": "Fabricación de hojas de madera para enchapado y tableros a base de madera",
+    "version": "CIIU Rev. 4",
+    "fuente": "INEI"
+  },
+  {
+    "codigo": "1622",
+    "descripcion": "Fabricación de partes y piezas de carpintería para edificios y construcciones",
+    "version": "CIIU Rev. 4",
+    "fuente": "INEI"
+  },
+  {
+    "codigo": "1623",
+    "descripcion": "Fabricación de recipientes de madera",
+    "version": "CIIU Rev. 4",
+    "fuente": "INEI"
+  },
+  {
+    "codigo": "1629",
+    "descripcion": "Fabricación de otros productos de madera; fabricación de artículos de corcho, paja y materiales trenzables.",
+    "version": "CIIU Rev. 4",
+    "fuente": "INEI"
+  },
+  {
+    "codigo": "1701",
+    "descripcion": "Fabricación de pasta de madera, papel y cartón",
+    "version": "CIIU Rev. 4",
+    "fuente": "INEI"
+  },
+  {
+    "codigo": "1702",
+    "descripcion": "Fabricación del papel y cartón ondulado y de envases de papel y cartón",
+    "version": "CIIU Rev. 4",
+    "fuente": "INEI"
+  },
+  {
+    "codigo": "1709",
+    "descripcion": "Fabricación de otros artículos del papel y cartón",
+    "version": "CIIU Rev. 4",
+    "fuente": "INEI"
+  },
+  {
+    "codigo": "1811",
+    "descripcion": "Impresión",
+    "version": "CIIU Rev. 4",
+    "fuente": "INEI"
+  },
+  {
+    "codigo": "1812",
+    "descripcion": "Actividades de servicios relacionadas con la impresión",
+    "version": "CIIU Rev. 4",
+    "fuente": "INEI"
+  },
+  {
+    "codigo": "1820",
+    "descripcion": "Reproducción de grabaciones",
+    "version": "CIIU Rev. 4",
+    "fuente": "INEI"
+  },
+  {
+    "codigo": "1910",
+    "descripcion": "Fabricación de productos de hornos de coque",
+    "version": "CIIU Rev. 4",
+    "fuente": "INEI"
+  },
+  {
+    "codigo": "1920",
+    "descripcion": "Fabricación de productos de la refinación del petróleo",
+    "version": "CIIU Rev. 4",
+    "fuente": "INEI"
+  },
+  {
+    "codigo": "2011",
+    "descripcion": "Fabricación de sustancias químicas básicas",
+    "version": "CIIU Rev. 4",
+    "fuente": "INEI"
+  },
+  {
+    "codigo": "2012",
+    "descripcion": "Fabricación abonos y compuestos de nitrógeno",
+    "version": "CIIU Rev. 4",
+    "fuente": "INEI"
+  },
+  {
+    "codigo": "2013",
+    "descripcion": "Fabricación de plásticos y de caucho sintético en formas primarias",
+    "version": "CIIU Rev. 4",
+    "fuente": "INEI"
+  },
+  {
+    "codigo": "2021",
+    "descripcion": "Fabricación de plaguicidas y otros productos químicos de uso agropecuario",
+    "version": "CIIU Rev. 4",
+    "fuente": "INEI"
+  },
+  {
+    "codigo": "2022",
+    "descripcion": "Fabricación de pinturas, barnices y productos de revestimiento similares, tintas de imprenta y masillas",
+    "version": "CIIU Rev. 4",
+    "fuente": "INEI"
+  },
+  {
+    "codigo": "2023",
+    "descripcion": "Fabricación de jabones y detergentes, preparados para limpiar y pulir, perfumes y preparados de tocador.",
+    "version": "CIIU Rev. 4",
+    "fuente": "INEI"
+  },
+  {
+    "codigo": "2029",
+    "descripcion": "Fabricación de otros productos químicos n.c.p.",
+    "version": "CIIU Rev. 4",
+    "fuente": "INEI"
+  },
+  {
+    "codigo": "2030",
+    "descripcion": "Fabricación de fibras artificiales",
+    "version": "CIIU Rev. 4",
+    "fuente": "INEI"
+  },
+  {
+    "codigo": "2100",
+    "descripcion": "Fabricación de productos farmacéuticos, sustancias químicas medicinales y productos botánicos de uso farmacéutico",
+    "version": "CIIU Rev. 4",
+    "fuente": "INEI"
+  },
+  {
+    "codigo": "2211",
+    "descripcion": "Fabricación de cubiertas y cámaras de caucho; recauchutado y renovación de cubiertas de caucho",
+    "version": "CIIU Rev. 4",
+    "fuente": "INEI"
+  },
+  {
+    "codigo": "2219",
+    "descripcion": "Fabricación de otros productos de caucho",
+    "version": "CIIU Rev. 4",
+    "fuente": "INEI"
+  },
+  {
+    "codigo": "2220",
+    "descripcion": "Fabricación de productos de plástico",
+    "version": "CIIU Rev. 4",
+    "fuente": "INEI"
+  },
+  {
+    "codigo": "2310",
+    "descripcion": "Fabricación de vidrio y de productos de vidrio",
+    "version": "CIIU Rev. 4",
+    "fuente": "INEI"
+  },
+  {
+    "codigo": "2391",
+    "descripcion": "Fabricación de productos refractarios",
+    "version": "CIIU Rev. 4",
+    "fuente": "INEI"
+  },
+  {
+    "codigo": "2392",
+    "descripcion": "Fabricación de materiales de construcción de arcilla",
+    "version": "CIIU Rev. 4",
+    "fuente": "INEI"
+  },
+  {
+    "codigo": "2393",
+    "descripcion": "Fabricación de otros productos de porcelana y de cerámica",
+    "version": "CIIU Rev. 4",
+    "fuente": "INEI"
+  },
+  {
+    "codigo": "2394",
+    "descripcion": "Fabricación de cemento, cal y yeso",
+    "version": "CIIU Rev. 4",
+    "fuente": "INEI"
+  },
+  {
+    "codigo": "2395",
+    "descripcion": "Fabricación de artículos de hormigón, de cemento y de yeso",
+    "version": "CIIU Rev. 4",
+    "fuente": "INEI"
+  },
+  {
+    "codigo": "2396",
+    "descripcion": "Corte, talla y acabado de la piedra",
+    "version": "CIIU Rev. 4",
+    "fuente": "INEI"
+  },
+  {
+    "codigo": "2399",
+    "descripcion": "Fabricación de otros productos minerales no metálicos n.c.p.",
+    "version": "CIIU Rev. 4",
+    "fuente": "INEI"
+  },
+  {
+    "codigo": "2410",
+    "descripcion": "Industrias básicas de hierro y acero",
+    "version": "CIIU Rev. 4",
+    "fuente": "INEI"
+  },
+  {
+    "codigo": "2420",
+    "descripcion": "Fabricación de productos primarios de metales preciosos y otros metales no ferrosos",
+    "version": "CIIU Rev. 4",
+    "fuente": "INEI"
+  },
+  {
+    "codigo": "2431",
+    "descripcion": "Fundición de hierro y acero",
+    "version": "CIIU Rev. 4",
+    "fuente": "INEI"
+  },
+  {
+    "codigo": "2432",
+    "descripcion": "Fundición de metales no ferrosos",
+    "version": "CIIU Rev. 4",
+    "fuente": "INEI"
+  },
+  {
+    "codigo": "2511",
+    "descripcion": "Fabricación de productos metálicos para uso estructural",
+    "version": "CIIU Rev. 4",
+    "fuente": "INEI"
+  },
+  {
+    "codigo": "2512",
+    "descripcion": "Fabricación de tanques, depósitos y recipientes de metal",
+    "version": "CIIU Rev. 4",
+    "fuente": "INEI"
+  },
+  {
+    "codigo": "2513",
+    "descripcion": "Fabricación de los generadores del vapor, excepto calderas de agua caliente para calefacción central",
+    "version": "CIIU Rev. 4",
+    "fuente": "INEI"
+  },
+  {
+    "codigo": "2520",
+    "descripcion": "Fabricación de armas y municiones",
+    "version": "CIIU Rev. 4",
+    "fuente": "INEI"
+  },
+  {
+    "codigo": "2591",
+    "descripcion": "Forja, prensado, estampado y laminado de metales; pulvimetalurgia",
+    "version": "CIIU Rev. 4",
+    "fuente": "INEI"
+  },
+  {
+    "codigo": "2592",
+    "descripcion": "Tratamiento y revestimiento de metales; maquinado",
+    "version": "CIIU Rev. 4",
+    "fuente": "INEI"
+  },
+  {
+    "codigo": "2593",
+    "descripcion": "Fabricación de artículos de cuchillería, herramientas de mano y artículos de ferretería",
+    "version": "CIIU Rev. 4",
+    "fuente": "INEI"
+  },
+  {
+    "codigo": "2599",
+    "descripcion": "Fabricación de otros productos elaborados de metal n.c.p.",
+    "version": "CIIU Rev. 4",
+    "fuente": "INEI"
+  },
+  {
+    "codigo": "2610",
+    "descripcion": "Fabricación de componentes y tableros electrónicos",
+    "version": "CIIU Rev. 4",
+    "fuente": "INEI"
+  },
+  {
+    "codigo": "2620",
+    "descripcion": "Fabricación de ordenadores y equipo periférico",
+    "version": "CIIU Rev. 4",
+    "fuente": "INEI"
+  },
+  {
+    "codigo": "2630",
+    "descripcion": "Fabricación de equipos de comunicaciones",
+    "version": "CIIU Rev. 4",
+    "fuente": "INEI"
+  },
+  {
+    "codigo": "2640",
+    "descripcion": "Fabricación de aparatos electrónicos de consumo",
+    "version": "CIIU Rev. 4",
+    "fuente": "INEI"
+  },
+  {
+    "codigo": "2651",
+    "descripcion": "Fabricación de equipo de medición, prueba, navegación y control",
+    "version": "CIIU Rev. 4",
+    "fuente": "INEI"
+  },
+  {
+    "codigo": "2652",
+    "descripcion": "Fabricación de relojes",
+    "version": "CIIU Rev. 4",
+    "fuente": "INEI"
+  },
+  {
+    "codigo": "2660",
+    "descripcion": "Fabricación de equipo de irradiación y equipo electrónico de uso médico y terapéutico",
+    "version": "CIIU Rev. 4",
+    "fuente": "INEI"
+  },
+  {
+    "codigo": "2670",
+    "descripcion": "Fabricación de instrumentos ópticos y equipo fotográfico",
+    "version": "CIIU Rev. 4",
+    "fuente": "INEI"
+  },
+  {
+    "codigo": "2680",
+    "descripcion": "Fabricación de soportes magnéticos y ópticos",
+    "version": "CIIU Rev. 4",
+    "fuente": "INEI"
+  },
+  {
+    "codigo": "2710",
+    "descripcion": "Fabricación de motores, generadores y transformadores eléctricos y aparatos de distribución y control de la energía eléctrica",
+    "version": "CIIU Rev. 4",
+    "fuente": "INEI"
+  },
+  {
+    "codigo": "2720",
+    "descripcion": "Fabricación de pilas, baterías y acumuladores",
+    "version": "CIIU Rev. 4",
+    "fuente": "INEI"
+  },
+  {
+    "codigo": "2731",
+    "descripcion": "Fabricación de cables de fibra óptica",
+    "version": "CIIU Rev. 4",
+    "fuente": "INEI"
+  },
+  {
+    "codigo": "2732",
+    "descripcion": "Fabricación de otros hilos y cables eléctricos",
+    "version": "CIIU Rev. 4",
+    "fuente": "INEI"
+  },
+  {
+    "codigo": "2733",
+    "descripcion": "Fabricación de dispositivos de cableado",
+    "version": "CIIU Rev. 4",
+    "fuente": "INEI"
+  },
+  {
+    "codigo": "2740",
+    "descripcion": "Fabricación de equipo eléctrico de iluminación",
+    "version": "CIIU Rev. 4",
+    "fuente": "INEI"
+  },
+  {
+    "codigo": "2750",
+    "descripcion": "Fabricación de aparatos de uso doméstico",
+    "version": "CIIU Rev. 4",
+    "fuente": "INEI"
+  },
+  {
+    "codigo": "2790",
+    "descripcion": "Fabricación de otros tipos de equipo eléctrico",
+    "version": "CIIU Rev. 4",
+    "fuente": "INEI"
+  },
+  {
+    "codigo": "2811",
+    "descripcion": "Fabricación de motores y turbinas, excepto motores para aeronaves, vehículos automotores y motocicletas",
+    "version": "CIIU Rev. 4",
+    "fuente": "INEI"
+  },
+  {
+    "codigo": "2812",
+    "descripcion": "Fabricación de equipo de propulsión de fluidos",
+    "version": "CIIU Rev. 4",
+    "fuente": "INEI"
+  },
+  {
+    "codigo": "2813",
+    "descripcion": "Fabricación de bombas, compresores, grifos y válvulas",
+    "version": "CIIU Rev. 4",
+    "fuente": "INEI"
+  },
+  {
+    "codigo": "2814",
+    "descripcion": "Fabricación de cojinetes, engranajes, trenes de engranajes y piezas de transmisión",
+    "version": "CIIU Rev. 4",
+    "fuente": "INEI"
+  },
+  {
+    "codigo": "2815",
+    "descripcion": "Fabricación de hornos, hogares y quemadores",
+    "version": "CIIU Rev. 4",
+    "fuente": "INEI"
+  },
+  {
+    "codigo": "2816",
+    "descripcion": "Fabricación de equipo de elevación y manipulación",
+    "version": "CIIU Rev. 4",
+    "fuente": "INEI"
+  },
+  {
+    "codigo": "2817",
+    "descripcion": "Fabricación de maquinaria y equipo de oficina (excepto ordenadores y equipo periférico)",
+    "version": "CIIU Rev. 4",
+    "fuente": "INEI"
+  },
+  {
+    "codigo": "2818",
+    "descripcion": "Fabricación de herramientas de mano motorizadas",
+    "version": "CIIU Rev. 4",
+    "fuente": "INEI"
+  },
+  {
+    "codigo": "2819",
+    "descripcion": "Fabricación de otros tipos de maquinaria de uso general",
+    "version": "CIIU Rev. 4",
+    "fuente": "INEI"
+  },
+  {
+    "codigo": "2821",
+    "descripcion": "Fabricación de maquinaria agropecuaria y forestal",
+    "version": "CIIU Rev. 4",
+    "fuente": "INEI"
+  },
+  {
+    "codigo": "2822",
+    "descripcion": "Fabricación de maquinaria para la conformación de metales y de máquinas herramienta",
+    "version": "CIIU Rev. 4",
+    "fuente": "INEI"
+  },
+  {
+    "codigo": "2823",
+    "descripcion": "Fabricación de maquinaria metalúrgica",
+    "version": "CIIU Rev. 4",
+    "fuente": "INEI"
+  },
+  {
+    "codigo": "2824",
+    "descripcion": "Fabricación de maquinaria para explotación de minas y canteras y para obras de construcción",
+    "version": "CIIU Rev. 4",
+    "fuente": "INEI"
+  },
+  {
+    "codigo": "2825",
+    "descripcion": "Fabricación de maquinaria para la elaboración de alimentos, bebidas y tabaco",
+    "version": "CIIU Rev. 4",
+    "fuente": "INEI"
+  },
+  {
+    "codigo": "2826",
+    "descripcion": "Fabricación de maquinaria para la elaboración de productos textiles, prendas de vestir y cueros",
+    "version": "CIIU Rev. 4",
+    "fuente": "INEI"
+  },
+  {
+    "codigo": "2829",
+    "descripcion": "Fabricación de otros tipos de maquinaria de uso especial",
+    "version": "CIIU Rev. 4",
+    "fuente": "INEI"
+  },
+  {
+    "codigo": "2910",
+    "descripcion": "Fabricación de vehículos automotores",
+    "version": "CIIU Rev. 4",
+    "fuente": "INEI"
+  },
+  {
+    "codigo": "2920",
+    "descripcion": "Fabricación de carrocerías para vehículos automotores; fabricación de remolques y semirremolques",
+    "version": "CIIU Rev. 4",
+    "fuente": "INEI"
+  },
+  {
+    "codigo": "2930",
+    "descripcion": "Fabricación de partes, piezas y accesorios para vehículos de automotores",
+    "version": "CIIU Rev. 4",
+    "fuente": "INEI"
+  },
+  {
+    "codigo": "3011",
+    "descripcion": "Construcción de buques y estructuras flotantes",
+    "version": "CIIU Rev. 4",
+    "fuente": "INEI"
+  },
+  {
+    "codigo": "3012",
+    "descripcion": "Construcción de embarcaciones de recreo y deporte",
+    "version": "CIIU Rev. 4",
+    "fuente": "INEI"
+  },
+  {
+    "codigo": "3020",
+    "descripcion": "Fabricación de locomotoras y de material rodante",
+    "version": "CIIU Rev. 4",
+    "fuente": "INEI"
+  },
+  {
+    "codigo": "3030",
+    "descripcion": "Fabricación de aeronaves y  naves espaciales y maquinaria conexa",
+    "version": "CIIU Rev. 4",
+    "fuente": "INEI"
+  },
+  {
+    "codigo": "3040",
+    "descripcion": "Fabricación de vehículos militares de combate",
+    "version": "CIIU Rev. 4",
+    "fuente": "INEI"
+  },
+  {
+    "codigo": "3091",
+    "descripcion": "Fabricación de motocicletas",
+    "version": "CIIU Rev. 4",
+    "fuente": "INEI"
+  },
+  {
+    "codigo": "3092",
+    "descripcion": "Fabricación de bicicletas y de sillones de ruedas para inválidos",
+    "version": "CIIU Rev. 4",
+    "fuente": "INEI"
+  },
+  {
+    "codigo": "3099",
+    "descripcion": "Fabricación de otros tipos de equipo de transporte n.c.p.",
+    "version": "CIIU Rev. 4",
+    "fuente": "INEI"
+  },
+  {
+    "codigo": "3100",
+    "descripcion": "Fabricación de muebles",
+    "version": "CIIU Rev. 4",
+    "fuente": "INEI"
+  },
+  {
+    "codigo": "3211",
+    "descripcion": "Fabricación de joyas y artículos conexos",
+    "version": "CIIU Rev. 4",
+    "fuente": "INEI"
+  },
+  {
+    "codigo": "3212",
+    "descripcion": "Fabricación de bisutería y artículos conexos",
+    "version": "CIIU Rev. 4",
+    "fuente": "INEI"
+  },
+  {
+    "codigo": "3220",
+    "descripcion": "Fabricación de instrumentos de música",
+    "version": "CIIU Rev. 4",
+    "fuente": "INEI"
+  },
+  {
+    "codigo": "3230",
+    "descripcion": "Fabricación de artículos de deporte",
+    "version": "CIIU Rev. 4",
+    "fuente": "INEI"
+  },
+  {
+    "codigo": "3240",
+    "descripcion": "Fabricación de juegos y juguetes",
+    "version": "CIIU Rev. 4",
+    "fuente": "INEI"
+  },
+  {
+    "codigo": "3250",
+    "descripcion": "Fabricación de instrumentos y materiales médicos y odontológicos",
+    "version": "CIIU Rev. 4",
+    "fuente": "INEI"
+  },
+  {
+    "codigo": "3290",
+    "descripcion": "Otras industrias manufactureras n.c.p.",
+    "version": "CIIU Rev. 4",
+    "fuente": "INEI"
+  },
+  {
+    "codigo": "3311",
+    "descripcion": "Reparación de productos elaborados de metal",
+    "version": "CIIU Rev. 4",
+    "fuente": "INEI"
+  },
+  {
+    "codigo": "3312",
+    "descripcion": "Reparación de maquinaria",
+    "version": "CIIU Rev. 4",
+    "fuente": "INEI"
+  },
+  {
+    "codigo": "3313",
+    "descripcion": "Reparación de equipo electrónico y óptico",
+    "version": "CIIU Rev. 4",
+    "fuente": "INEI"
+  },
+  {
+    "codigo": "3314",
+    "descripcion": "Reparación de equipo eléctrico",
+    "version": "CIIU Rev. 4",
+    "fuente": "INEI"
+  },
+  {
+    "codigo": "3315",
+    "descripcion": "Reparación de equipo de transporte, excepto vehículos automotores",
+    "version": "CIIU Rev. 4",
+    "fuente": "INEI"
+  },
+  {
+    "codigo": "3319",
+    "descripcion": "Reparación de otros tipos de equipo",
+    "version": "CIIU Rev. 4",
+    "fuente": "INEI"
+  },
+  {
+    "codigo": "3320",
+    "descripcion": "Instalación de maquinaria y equipo industriales",
+    "version": "CIIU Rev. 4",
+    "fuente": "INEI"
+  },
+  {
+    "codigo": "3510",
+    "descripcion": "Generación, transmisión y distribución de energía eléctrica",
+    "version": "CIIU Rev. 4",
+    "fuente": "INEI"
+  },
+  {
+    "codigo": "3520",
+    "descripcion": "Fabricación del gas; distribución de combustibles gaseosos por tuberías",
+    "version": "CIIU Rev. 4",
+    "fuente": "INEI"
+  },
+  {
+    "codigo": "3530",
+    "descripcion": "Suministro de vapor y aire acondicionado",
+    "version": "CIIU Rev. 4",
+    "fuente": "INEI"
+  },
+  {
+    "codigo": "3600",
+    "descripcion": "Captación, tratamiento y distribución de agua",
+    "version": "CIIU Rev. 4",
+    "fuente": "INEI"
+  },
+  {
+    "codigo": "3700",
+    "descripcion": "Evacuación de aguas residuales",
+    "version": "CIIU Rev. 4",
+    "fuente": "INEI"
+  },
+  {
+    "codigo": "3811",
+    "descripcion": "Recogida de desechos no peligrosos",
+    "version": "CIIU Rev. 4",
+    "fuente": "INEI"
+  },
+  {
+    "codigo": "3812",
+    "descripcion": "Recogida de desechos peligrosos",
+    "version": "CIIU Rev. 4",
+    "fuente": "INEI"
+  },
+  {
+    "codigo": "3821",
+    "descripcion": "Tratamiento y eliminación de desechos no peligrosos",
+    "version": "CIIU Rev. 4",
+    "fuente": "INEI"
+  },
+  {
+    "codigo": "3822",
+    "descripcion": "Tratamiento y eliminación de desechos peligrosos",
+    "version": "CIIU Rev. 4",
+    "fuente": "INEI"
+  },
+  {
+    "codigo": "3830",
+    "descripcion": "Recuperación de materiales",
+    "version": "CIIU Rev. 4",
+    "fuente": "INEI"
+  },
+  {
+    "codigo": "3900",
+    "descripcion": "Actividades de descontaminación y otros servicios de gestión de desechos",
+    "version": "CIIU Rev. 4",
+    "fuente": "INEI"
+  },
+  {
+    "codigo": "4100",
+    "descripcion": "Construcción de edificios",
+    "version": "CIIU Rev. 4",
+    "fuente": "INEI"
+  },
+  {
+    "codigo": "4210",
+    "descripcion": "Construcción de carreteras y líneas de ferrocarril",
+    "version": "CIIU Rev. 4",
+    "fuente": "INEI"
+  },
+  {
+    "codigo": "4220",
+    "descripcion": "Construcción de proyectos de servicio público",
+    "version": "CIIU Rev. 4",
+    "fuente": "INEI"
+  },
+  {
+    "codigo": "4290",
+    "descripcion": "Construcción de otras obras de ingeniería civil",
+    "version": "CIIU Rev. 4",
+    "fuente": "INEI"
+  },
+  {
+    "codigo": "4311",
+    "descripcion": "Demolición",
+    "version": "CIIU Rev. 4",
+    "fuente": "INEI"
+  },
+  {
+    "codigo": "4312",
+    "descripcion": "Preparación del terreno",
+    "version": "CIIU Rev. 4",
+    "fuente": "INEI"
+  },
+  {
+    "codigo": "4321",
+    "descripcion": "Instalaciones eléctricas",
+    "version": "CIIU Rev. 4",
+    "fuente": "INEI"
+  },
+  {
+    "codigo": "4322",
+    "descripcion": "Instalaciones de fontanería, calefacción y aire acondicionado",
+    "version": "CIIU Rev. 4",
+    "fuente": "INEI"
+  },
+  {
+    "codigo": "4329",
+    "descripcion": "Otras instalaciones para obras de construcción",
+    "version": "CIIU Rev. 4",
+    "fuente": "INEI"
+  },
+  {
+    "codigo": "4330",
+    "descripcion": "Terminación y acabado de edificios",
+    "version": "CIIU Rev. 4",
+    "fuente": "INEI"
+  },
+  {
+    "codigo": "4390",
+    "descripcion": "Otras actividades especializadas de la construcción",
+    "version": "CIIU Rev. 4",
+    "fuente": "INEI"
+  },
+  {
+    "codigo": "4510",
+    "descripcion": "Venta de vehículos automotores",
+    "version": "CIIU Rev. 4",
+    "fuente": "INEI"
+  },
+  {
+    "codigo": "4520",
+    "descripcion": "Mantenimiento y reparación de vehículos automotores",
+    "version": "CIIU Rev. 4",
+    "fuente": "INEI"
+  },
+  {
+    "codigo": "4530",
+    "descripcion": "Ventas de partes, piezas y accesorios para vehículos automotores",
+    "version": "CIIU Rev. 4",
+    "fuente": "INEI"
+  },
+  {
+    "codigo": "4540",
+    "descripcion": "Venta, mantenimiento y reparación de motocicletas y de sus partes, piezas y accesorios.",
+    "version": "CIIU Rev. 4",
+    "fuente": "INEI"
+  },
+  {
+    "codigo": "4610",
+    "descripcion": "Venta al por mayor a cambio de una retribución o por contrata",
+    "version": "CIIU Rev. 4",
+    "fuente": "INEI"
+  },
+  {
+    "codigo": "4620",
+    "descripcion": "Venta al por mayor de materias primas agropecuarias y animales vivos.",
+    "version": "CIIU Rev. 4",
+    "fuente": "INEI"
+  },
+  {
+    "codigo": "4630",
+    "descripcion": "Venta al por mayor de alimentos, bebidas y tabaco.",
+    "version": "CIIU Rev. 4",
+    "fuente": "INEI"
+  },
+  {
+    "codigo": "4641",
+    "descripcion": "Venta al por mayor de productos textiles, prendas de vestir y calzado",
+    "version": "CIIU Rev. 4",
+    "fuente": "INEI"
+  },
+  {
+    "codigo": "4649",
+    "descripcion": "Venta al por mayor de otros enseres domésticos",
+    "version": "CIIU Rev. 4",
+    "fuente": "INEI"
+  },
+  {
+    "codigo": "4651",
+    "descripcion": "Venta al por mayor de ordenadores, equipo periférico y programas de informática",
+    "version": "CIIU Rev. 4",
+    "fuente": "INEI"
+  },
+  {
+    "codigo": "4652",
+    "descripcion": "Venta al por mayor de equipo, partes y piezas electrónicos y de telecomunicaciones",
+    "version": "CIIU Rev. 4",
+    "fuente": "INEI"
+  },
+  {
+    "codigo": "4653",
+    "descripcion": "Venta al por mayor de maquinaria, equipo y materiales agropecuarios",
+    "version": "CIIU Rev. 4",
+    "fuente": "INEI"
+  },
+  {
+    "codigo": "4659",
+    "descripcion": "Venta al por mayor de otros tipos de maquinaria y equipo",
+    "version": "CIIU Rev. 4",
+    "fuente": "INEI"
+  },
+  {
+    "codigo": "4661",
+    "descripcion": "Venta al por mayor de combustibles sólidos, líquidos y gaseosos y  productos conexos",
+    "version": "CIIU Rev. 4",
+    "fuente": "INEI"
+  },
+  {
+    "codigo": "4662",
+    "descripcion": "Venta al por mayor de metales y minerales metalíferos",
+    "version": "CIIU Rev. 4",
+    "fuente": "INEI"
+  },
+  {
+    "codigo": "4663",
+    "descripcion": "Venta al por mayor de materiales de construcción, artículos de ferretería y equipo y materiales de fontanería y calefacción.",
+    "version": "CIIU Rev. 4",
+    "fuente": "INEI"
+  },
+  {
+    "codigo": "4669",
+    "descripcion": "Venta al por mayor de desperdicios, desechos, chatarra y otros productos n.c.p",
+    "version": "CIIU Rev. 4",
+    "fuente": "INEI"
+  },
+  {
+    "codigo": "4690",
+    "descripcion": "Venta al por mayor no especializada",
+    "version": "CIIU Rev. 4",
+    "fuente": "INEI"
+  },
+  {
+    "codigo": "4711",
+    "descripcion": "Venta al por menor en comercios no especializados con predominio de la venta de alimentos, bebidas o tabaco",
+    "version": "CIIU Rev. 4",
+    "fuente": "INEI"
+  },
+  {
+    "codigo": "4719",
+    "descripcion": "Otras actividades de venta al por menor en comercios no especializados",
+    "version": "CIIU Rev. 4",
+    "fuente": "INEI"
+  },
+  {
+    "codigo": "4721",
+    "descripcion": "Venta al por menor de alimentos en comercios especializados",
+    "version": "CIIU Rev. 4",
+    "fuente": "INEI"
+  },
+  {
+    "codigo": "4722",
+    "descripcion": "Venta al por menor de bebidas en comercios especializados",
+    "version": "CIIU Rev. 4",
+    "fuente": "INEI"
+  },
+  {
+    "codigo": "4723",
+    "descripcion": "Venta al por menor de productos de tabaco en comercios especializados",
+    "version": "CIIU Rev. 4",
+    "fuente": "INEI"
+  },
+  {
+    "codigo": "4730",
+    "descripcion": "Venta al por menor de combustibles para vehículos automotores en comercios especializados",
+    "version": "CIIU Rev. 4",
+    "fuente": "INEI"
+  },
+  {
+    "codigo": "4741",
+    "descripcion": "Venta al por menor de ordenadores, equipo periférico, programas informáticos y equipo de telecomunicaciones en comercios especializados",
+    "version": "CIIU Rev. 4",
+    "fuente": "INEI"
+  },
+  {
+    "codigo": "4742",
+    "descripcion": "Venta al por menor de equipo de sonido y de vídeo en comercios especializados",
+    "version": "CIIU Rev. 4",
+    "fuente": "INEI"
+  },
+  {
+    "codigo": "4751",
+    "descripcion": "Venta al por menor de productos textiles en comercios especializados",
+    "version": "CIIU Rev. 4",
+    "fuente": "INEI"
+  },
+  {
+    "codigo": "4752",
+    "descripcion": "Venta al por menor de artículos de ferretería, pinturas y productos de vidrio en comercios especializados",
+    "version": "CIIU Rev. 4",
+    "fuente": "INEI"
+  },
+  {
+    "codigo": "4753",
+    "descripcion": "Venta al por menor de tapices, alfombras y cubrimientos para paredes y pisos en comercios especializados",
+    "version": "CIIU Rev. 4",
+    "fuente": "INEI"
+  },
+  {
+    "codigo": "4759",
+    "descripcion": "Venta al por menor de aparatos eléctricos de uso doméstico,  muebles, equipo de iluminación y otros enseres domésticos en comercios especializados",
+    "version": "CIIU Rev. 4",
+    "fuente": "INEI"
+  },
+  {
+    "codigo": "4761",
+    "descripcion": "Venta al por menor de libros, periódicos y artículos de papelería en comercios especializados",
+    "version": "CIIU Rev. 4",
+    "fuente": "INEI"
+  },
+  {
+    "codigo": "4762",
+    "descripcion": "Venta al por menor de grabaciones de música y de vídeo en comercios especializados",
+    "version": "CIIU Rev. 4",
+    "fuente": "INEI"
+  },
+  {
+    "codigo": "4763",
+    "descripcion": "Venta al por menor de equipo de deporte en comercios especializados",
+    "version": "CIIU Rev. 4",
+    "fuente": "INEI"
+  },
+  {
+    "codigo": "4764",
+    "descripcion": "Venta al por menor de juegos y  juguetes en comercios especializados",
+    "version": "CIIU Rev. 4",
+    "fuente": "INEI"
+  },
+  {
+    "codigo": "4771",
+    "descripcion": "Venta al por menor de prendas de vestir, calzado y artículos de cuero en comercios especializados",
+    "version": "CIIU Rev. 4",
+    "fuente": "INEI"
+  },
+  {
+    "codigo": "4772",
+    "descripcion": "Venta al por menor de productos farmacéuticos y medicinales, cosméticos y artículos de tocador en comercios especializados",
+    "version": "CIIU Rev. 4",
+    "fuente": "INEI"
+  },
+  {
+    "codigo": "4773",
+    "descripcion": "Venta al por menor de otros productos nuevos en comercios especializados",
+    "version": "CIIU Rev. 4",
+    "fuente": "INEI"
+  },
+  {
+    "codigo": "4774",
+    "descripcion": "Venta al por menor de artículos de segunda mano",
+    "version": "CIIU Rev. 4",
+    "fuente": "INEI"
+  },
+  {
+    "codigo": "4781",
+    "descripcion": "Venta al por menor de alimentos, bebidas y tabaco en puestos de venta y mercados",
+    "version": "CIIU Rev. 4",
+    "fuente": "INEI"
+  },
+  {
+    "codigo": "4782",
+    "descripcion": "Venta al por menor de productos textiles, prendas de vestir y calzado en puestos de venta y mercados",
+    "version": "CIIU Rev. 4",
+    "fuente": "INEI"
+  },
+  {
+    "codigo": "4789",
+    "descripcion": "Venta al por menor de otros productos en puestos de venta y mercados",
+    "version": "CIIU Rev. 4",
+    "fuente": "INEI"
+  },
+  {
+    "codigo": "4791",
+    "descripcion": "Venta al por menor por correo y por Internet",
+    "version": "CIIU Rev. 4",
+    "fuente": "INEI"
+  },
+  {
+    "codigo": "4799",
+    "descripcion": "Otras actividades de venta al por menor no realizadas en comercios, puestos de venta o mercados",
+    "version": "CIIU Rev. 4",
+    "fuente": "INEI"
+  },
+  {
+    "codigo": "4911",
+    "descripcion": "Transporte interurbano de pasajeros por ferrocarril",
+    "version": "CIIU Rev. 4",
+    "fuente": "INEI"
+  },
+  {
+    "codigo": "4912",
+    "descripcion": "Transporte de carga por ferrocarril",
+    "version": "CIIU Rev. 4",
+    "fuente": "INEI"
+  },
+  {
+    "codigo": "4921",
+    "descripcion": "Transporte urbano y suburbano de pasajeros por vía terrestre",
+    "version": "CIIU Rev. 4",
+    "fuente": "INEI"
+  },
+  {
+    "codigo": "4922",
+    "descripcion": "Otras actividades de transporte por vía terrestre",
+    "version": "CIIU Rev. 4",
+    "fuente": "INEI"
+  },
+  {
+    "codigo": "4923",
+    "descripcion": "Transporte de carga por carretera",
+    "version": "CIIU Rev. 4",
+    "fuente": "INEI"
+  },
+  {
+    "codigo": "4930",
+    "descripcion": "Transporte por tuberías",
+    "version": "CIIU Rev. 4",
+    "fuente": "INEI"
+  },
+  {
+    "codigo": "5011",
+    "descripcion": "Transporte de pasajeros marítimo y de cabotaje",
+    "version": "CIIU Rev. 4",
+    "fuente": "INEI"
+  },
+  {
+    "codigo": "5012",
+    "descripcion": "Transporte de carga marítimo y de cabotaje",
+    "version": "CIIU Rev. 4",
+    "fuente": "INEI"
+  },
+  {
+    "codigo": "5021",
+    "descripcion": "Transporte de pasajeros por vías de navegación interiores",
+    "version": "CIIU Rev. 4",
+    "fuente": "INEI"
+  },
+  {
+    "codigo": "5022",
+    "descripcion": "Transporte de carga, por vías de navegación interiores",
+    "version": "CIIU Rev. 4",
+    "fuente": "INEI"
+  },
+  {
+    "codigo": "5110",
+    "descripcion": "Transporte de pasajeros por vía aérea",
+    "version": "CIIU Rev. 4",
+    "fuente": "INEI"
+  },
+  {
+    "codigo": "5120",
+    "descripcion": "Transporte de carga por vía aérea",
+    "version": "CIIU Rev. 4",
+    "fuente": "INEI"
+  },
+  {
+    "codigo": "5210",
+    "descripcion": "Almacenamiento y depósito",
+    "version": "CIIU Rev. 4",
+    "fuente": "INEI"
+  },
+  {
+    "codigo": "5221",
+    "descripcion": "Actividades de servicios vinculadas al transporte terrestre",
+    "version": "CIIU Rev. 4",
+    "fuente": "INEI"
+  },
+  {
+    "codigo": "5222",
+    "descripcion": "Actividades de servicios vinculadas al transporte acuático",
+    "version": "CIIU Rev. 4",
+    "fuente": "INEI"
+  },
+  {
+    "codigo": "5223",
+    "descripcion": "Actividades de servicios vinculadas al transporte aéreo",
+    "version": "CIIU Rev. 4",
+    "fuente": "INEI"
+  },
+  {
+    "codigo": "5224",
+    "descripcion": "Manipulación de carga",
+    "version": "CIIU Rev. 4",
+    "fuente": "INEI"
+  },
+  {
+    "codigo": "5229",
+    "descripcion": "Otras actividades de apoyo al transporte",
+    "version": "CIIU Rev. 4",
+    "fuente": "INEI"
+  },
+  {
+    "codigo": "5310",
+    "descripcion": "Actividades postales",
+    "version": "CIIU Rev. 4",
+    "fuente": "INEI"
+  },
+  {
+    "codigo": "5320",
+    "descripcion": "Actividades de mensajería",
+    "version": "CIIU Rev. 4",
+    "fuente": "INEI"
+  },
+  {
+    "codigo": "5510",
+    "descripcion": "Actividades de alojamiento para estancias cortas",
+    "version": "CIIU Rev. 4",
+    "fuente": "INEI"
+  },
+  {
+    "codigo": "5520",
+    "descripcion": "Actividades de campamentos, parques de vehículos recreativos y parques de caravanas",
+    "version": "CIIU Rev. 4",
+    "fuente": "INEI"
+  },
+  {
+    "codigo": "5590",
+    "descripcion": "Otras actividades de alojamiento",
+    "version": "CIIU Rev. 4",
+    "fuente": "INEI"
+  },
+  {
+    "codigo": "5610",
+    "descripcion": "Actividades de restaurantes y de servicio móvil de comidas",
+    "version": "CIIU Rev. 4",
+    "fuente": "INEI"
+  },
+  {
+    "codigo": "5621",
+    "descripcion": "Suministro de comidas por encargo",
+    "version": "CIIU Rev. 4",
+    "fuente": "INEI"
+  },
+  {
+    "codigo": "5629",
+    "descripcion": "Otras actividades de servicio de comidas",
+    "version": "CIIU Rev. 4",
+    "fuente": "INEI"
+  },
+  {
+    "codigo": "5630",
+    "descripcion": "Actividades de servicio de bebidas",
+    "version": "CIIU Rev. 4",
+    "fuente": "INEI"
+  },
+  {
+    "codigo": "5811",
+    "descripcion": "Edición de libros",
+    "version": "CIIU Rev. 4",
+    "fuente": "INEI"
+  },
+  {
+    "codigo": "5812",
+    "descripcion": "Edición de directorios y listas de correo",
+    "version": "CIIU Rev. 4",
+    "fuente": "INEI"
+  },
+  {
+    "codigo": "5813",
+    "descripcion": "Edición de periódicos, revistas y otras publicaciones periódicas",
+    "version": "CIIU Rev. 4",
+    "fuente": "INEI"
+  },
+  {
+    "codigo": "5819",
+    "descripcion": "Otras actividades de edición",
+    "version": "CIIU Rev. 4",
+    "fuente": "INEI"
+  },
+  {
+    "codigo": "5820",
+    "descripcion": "Edición de programas de informáticos",
+    "version": "CIIU Rev. 4",
+    "fuente": "INEI"
+  },
+  {
+    "codigo": "5911",
+    "descripcion": "Actividades de producción de películas cinematográficas, vídeos y programas de televisión",
+    "version": "CIIU Rev. 4",
+    "fuente": "INEI"
+  },
+  {
+    "codigo": "5912",
+    "descripcion": "Actividades de postproducción de películas cinematográficas, vídeos y programas de televisión",
+    "version": "CIIU Rev. 4",
+    "fuente": "INEI"
+  },
+  {
+    "codigo": "5913",
+    "descripcion": "Actividades de distribución de películas cinematográficas, vídeos y programas de televisión",
+    "version": "CIIU Rev. 4",
+    "fuente": "INEI"
+  },
+  {
+    "codigo": "5914",
+    "descripcion": "Actividades de exhibición de películas cinematográficas y cintas de vídeo",
+    "version": "CIIU Rev. 4",
+    "fuente": "INEI"
+  },
+  {
+    "codigo": "5920",
+    "descripcion": "Actividades de grabación de sonido y edición de música",
+    "version": "CIIU Rev. 4",
+    "fuente": "INEI"
+  },
+  {
+    "codigo": "6010",
+    "descripcion": "Transmisiones de radio",
+    "version": "CIIU Rev. 4",
+    "fuente": "INEI"
+  },
+  {
+    "codigo": "6020",
+    "descripcion": "Programación y transmisiones de televisión",
+    "version": "CIIU Rev. 4",
+    "fuente": "INEI"
+  },
+  {
+    "codigo": "6110",
+    "descripcion": "Actividades de telecomunicaciones alámbricas",
+    "version": "CIIU Rev. 4",
+    "fuente": "INEI"
+  },
+  {
+    "codigo": "6120",
+    "descripcion": "Actividades de telecomunicaciones inalámbricas",
+    "version": "CIIU Rev. 4",
+    "fuente": "INEI"
+  },
+  {
+    "codigo": "6130",
+    "descripcion": "Actividades de telecomunicaciones por satélite.",
+    "version": "CIIU Rev. 4",
+    "fuente": "INEI"
+  },
+  {
+    "codigo": "6190",
+    "descripcion": "Otras actividades de telecomunicación.",
+    "version": "CIIU Rev. 4",
+    "fuente": "INEI"
+  },
+  {
+    "codigo": "6201",
+    "descripcion": "Programación informática",
+    "version": "CIIU Rev. 4",
+    "fuente": "INEI"
+  },
+  {
+    "codigo": "6202",
+    "descripcion": "Consultoría de informática y de gestión de instalaciones informáticas",
+    "version": "CIIU Rev. 4",
+    "fuente": "INEI"
+  },
+  {
+    "codigo": "6209",
+    "descripcion": "Otras actividades de tecnología de la información y de servicios informáticos",
+    "version": "CIIU Rev. 4",
+    "fuente": "INEI"
+  },
+  {
+    "codigo": "6311",
+    "descripcion": "Procesamiento de datos, hospedaje y actividades conexas",
+    "version": "CIIU Rev. 4",
+    "fuente": "INEI"
+  },
+  {
+    "codigo": "6312",
+    "descripcion": "Portales Web",
+    "version": "CIIU Rev. 4",
+    "fuente": "INEI"
+  },
+  {
+    "codigo": "6391",
+    "descripcion": "Actividades de agencias de noticias",
+    "version": "CIIU Rev. 4",
+    "fuente": "INEI"
+  },
+  {
+    "codigo": "6399",
+    "descripcion": "Otras actividades de servicios de información n.c.p.",
+    "version": "CIIU Rev. 4",
+    "fuente": "INEI"
+  },
+  {
+    "codigo": "6411",
+    "descripcion": "Banca Central",
+    "version": "CIIU Rev. 4",
+    "fuente": "INEI"
+  },
+  {
+    "codigo": "6419",
+    "descripcion": "Otros tipos de intermediación monetaria.",
+    "version": "CIIU Rev. 4",
+    "fuente": "INEI"
+  },
+  {
+    "codigo": "6420",
+    "descripcion": "Actividades de sociedades de cartera",
+    "version": "CIIU Rev. 4",
+    "fuente": "INEI"
+  },
+  {
+    "codigo": "6430",
+    "descripcion": "Fondos y sociedades de inversión y entidades financieras similares",
+    "version": "CIIU Rev. 4",
+    "fuente": "INEI"
+  },
+  {
+    "codigo": "6491",
+    "descripcion": "Arrendamiento financiero",
+    "version": "CIIU Rev. 4",
+    "fuente": "INEI"
+  },
+  {
+    "codigo": "6492",
+    "descripcion": "Otras actividades de concesión de crédito",
+    "version": "CIIU Rev. 4",
+    "fuente": "INEI"
+  },
+  {
+    "codigo": "6499",
+    "descripcion": "Otras actividades de servicios financieros, excepto las de seguros y fondos de pensiones, n.c.p.",
+    "version": "CIIU Rev. 4",
+    "fuente": "INEI"
+  },
+  {
+    "codigo": "6511",
+    "descripcion": "Seguros de vida",
+    "version": "CIIU Rev. 4",
+    "fuente": "INEI"
+  },
+  {
+    "codigo": "6512",
+    "descripcion": "Seguros generales",
+    "version": "CIIU Rev. 4",
+    "fuente": "INEI"
+  },
+  {
+    "codigo": "6520",
+    "descripcion": "Reaseguros",
+    "version": "CIIU Rev. 4",
+    "fuente": "INEI"
+  },
+  {
+    "codigo": "6530",
+    "descripcion": "Fondos de pensiones",
+    "version": "CIIU Rev. 4",
+    "fuente": "INEI"
+  },
+  {
+    "codigo": "6611",
+    "descripcion": "Administración de mercados financieros",
+    "version": "CIIU Rev. 4",
+    "fuente": "INEI"
+  },
+  {
+    "codigo": "6612",
+    "descripcion": "Corretaje de valores y de contratos de productos básicos",
+    "version": "CIIU Rev. 4",
+    "fuente": "INEI"
+  },
+  {
+    "codigo": "6619",
+    "descripcion": "Otras actividades auxiliares de las actividades de servicios financieros",
+    "version": "CIIU Rev. 4",
+    "fuente": "INEI"
+  },
+  {
+    "codigo": "6621",
+    "descripcion": "Evaluación de riesgos y daños",
+    "version": "CIIU Rev. 4",
+    "fuente": "INEI"
+  },
+  {
+    "codigo": "6622",
+    "descripcion": "Actividades de agentes y corredores de seguros",
+    "version": "CIIU Rev. 4",
+    "fuente": "INEI"
+  },
+  {
+    "codigo": "6629",
+    "descripcion": "Otras actividades auxiliares de las actividades de seguros y fondos de pensiones",
+    "version": "CIIU Rev. 4",
+    "fuente": "INEI"
+  },
+  {
+    "codigo": "6630",
+    "descripcion": "Actividades de gestión de fondos",
+    "version": "CIIU Rev. 4",
+    "fuente": "INEI"
+  },
+  {
+    "codigo": "6810",
+    "descripcion": "Actividades inmobiliarias realizadas con bienes propios o arrendados",
+    "version": "CIIU Rev. 4",
+    "fuente": "INEI"
+  },
+  {
+    "codigo": "6820",
+    "descripcion": "Actividades inmobiliarias realizadas a cambio de una retribución o por contrata",
+    "version": "CIIU Rev. 4",
+    "fuente": "INEI"
+  },
+  {
+    "codigo": "6910",
+    "descripcion": "Actividades jurídicas",
+    "version": "CIIU Rev. 4",
+    "fuente": "INEI"
+  },
+  {
+    "codigo": "6920",
+    "descripcion": "Actividades de contabilidad, teneduría de libros y auditoría; consultoría fiscal",
+    "version": "CIIU Rev. 4",
+    "fuente": "INEI"
+  },
+  {
+    "codigo": "7010",
+    "descripcion": "Actividades de oficinas centrales",
+    "version": "CIIU Rev. 4",
+    "fuente": "INEI"
+  },
+  {
+    "codigo": "7020",
+    "descripcion": "Actividades de consultoría de gestión",
+    "version": "CIIU Rev. 4",
+    "fuente": "INEI"
+  },
+  {
+    "codigo": "7110",
+    "descripcion": "Actividades de arquitectura e ingeniería y actividades conexas de consultoría técnica",
+    "version": "CIIU Rev. 4",
+    "fuente": "INEI"
+  },
+  {
+    "codigo": "7120",
+    "descripcion": "Ensayos y análisis técnicos",
+    "version": "CIIU Rev. 4",
+    "fuente": "INEI"
+  },
+  {
+    "codigo": "7210",
+    "descripcion": "Investigación y desarrollo experimental en el campo de las ciencias naturales y la ingeniería",
+    "version": "CIIU Rev. 4",
+    "fuente": "INEI"
+  },
+  {
+    "codigo": "7220",
+    "descripcion": "Investigación y desarrollo experimental en el campo de las ciencias sociales y las humanidades",
+    "version": "CIIU Rev. 4",
+    "fuente": "INEI"
+  },
+  {
+    "codigo": "7310",
+    "descripcion": "Publicidad",
+    "version": "CIIU Rev. 4",
+    "fuente": "INEI"
+  },
+  {
+    "codigo": "7320",
+    "descripcion": "Estudios de mercado y encuestas de opinión pública",
+    "version": "CIIU Rev. 4",
+    "fuente": "INEI"
+  },
+  {
+    "codigo": "7410",
+    "descripcion": "Actividades especializadas de diseño",
+    "version": "CIIU Rev. 4",
+    "fuente": "INEI"
+  },
+  {
+    "codigo": "7420",
+    "descripcion": "Actividades de fotografía",
+    "version": "CIIU Rev. 4",
+    "fuente": "INEI"
+  },
+  {
+    "codigo": "7490",
+    "descripcion": "Otras actividades profesionales, científicas y técnicas n.c.p.",
+    "version": "CIIU Rev. 4",
+    "fuente": "INEI"
+  },
+  {
+    "codigo": "7500",
+    "descripcion": "Actividades veterinarias",
+    "version": "CIIU Rev. 4",
+    "fuente": "INEI"
+  },
+  {
+    "codigo": "7710",
+    "descripcion": "Alquiler y arrendamiento de vehículos automotores",
+    "version": "CIIU Rev. 4",
+    "fuente": "INEI"
+  },
+  {
+    "codigo": "7721",
+    "descripcion": "Alquiler y arrendamiento de equipo recreativo y deportivo",
+    "version": "CIIU Rev. 4",
+    "fuente": "INEI"
+  },
+  {
+    "codigo": "7722",
+    "descripcion": "Alquiler de cintas de vídeo y discos",
+    "version": "CIIU Rev. 4",
+    "fuente": "INEI"
+  },
+  {
+    "codigo": "7729",
+    "descripcion": "Alquiler y arrendamiento de otros efectos personales y enseres domésticos",
+    "version": "CIIU Rev. 4",
+    "fuente": "INEI"
+  },
+  {
+    "codigo": "7730",
+    "descripcion": "Alquiler y arrendamiento de otros tipos de maquinaria, equipo y bienes tangibles",
+    "version": "CIIU Rev. 4",
+    "fuente": "INEI"
+  },
+  {
+    "codigo": "7740",
+    "descripcion": "Arrendamiento de propiedad intelectual y productos similares, excepto obras protegidas  por derechos de autor",
+    "version": "CIIU Rev. 4",
+    "fuente": "INEI"
+  },
+  {
+    "codigo": "7810",
+    "descripcion": "Actividades de agencias de empleo",
+    "version": "CIIU Rev. 4",
+    "fuente": "INEI"
+  },
+  {
+    "codigo": "7820",
+    "descripcion": "Actividades de agencias de empleo temporal",
+    "version": "CIIU Rev. 4",
+    "fuente": "INEI"
+  },
+  {
+    "codigo": "7830",
+    "descripcion": "Otras actividades de dotación de recursos humanos",
+    "version": "CIIU Rev. 4",
+    "fuente": "INEI"
+  },
+  {
+    "codigo": "7911",
+    "descripcion": "Actividades de agencias de viajes",
+    "version": "CIIU Rev. 4",
+    "fuente": "INEI"
+  },
+  {
+    "codigo": "7912",
+    "descripcion": "Actividades de operadores turísticos",
+    "version": "CIIU Rev. 4",
+    "fuente": "INEI"
+  },
+  {
+    "codigo": "7990",
+    "descripcion": "Otros servicios de reservas y actividades conexas",
+    "version": "CIIU Rev. 4",
+    "fuente": "INEI"
+  },
+  {
+    "codigo": "8010",
+    "descripcion": "Actividades de seguridad privada",
+    "version": "CIIU Rev. 4",
+    "fuente": "INEI"
+  },
+  {
+    "codigo": "8020",
+    "descripcion": "Actividades de servicio de sistemas de seguridad",
+    "version": "CIIU Rev. 4",
+    "fuente": "INEI"
+  },
+  {
+    "codigo": "8030",
+    "descripcion": "Actividades de investigación",
+    "version": "CIIU Rev. 4",
+    "fuente": "INEI"
+  },
+  {
+    "codigo": "8110",
+    "descripcion": "Actividades combinadas de apoyo a instalaciones",
+    "version": "CIIU Rev. 4",
+    "fuente": "INEI"
+  },
+  {
+    "codigo": "8121",
+    "descripcion": "Limpieza general de edificios",
+    "version": "CIIU Rev. 4",
+    "fuente": "INEI"
+  },
+  {
+    "codigo": "8129",
+    "descripcion": "Otras actividades de limpieza de edificios e instalaciones industriales",
+    "version": "CIIU Rev. 4",
+    "fuente": "INEI"
+  },
+  {
+    "codigo": "8130",
+    "descripcion": "Actividades de paisajismo y servicios de mantenimiento conexos",
+    "version": "CIIU Rev. 4",
+    "fuente": "INEI"
+  },
+  {
+    "codigo": "8211",
+    "descripcion": "Actividades combinadas de servicios administrativos de oficina",
+    "version": "CIIU Rev. 4",
+    "fuente": "INEI"
+  },
+  {
+    "codigo": "8219",
+    "descripcion": "Fotocopiado, preparación de documentos y otras actividades especializadas de apoyo de oficina",
+    "version": "CIIU Rev. 4",
+    "fuente": "INEI"
+  },
+  {
+    "codigo": "8220",
+    "descripcion": "Actividades de centros de llamadas",
+    "version": "CIIU Rev. 4",
+    "fuente": "INEI"
+  },
+  {
+    "codigo": "8230",
+    "descripcion": "Organización de convenciones y exposiciones comerciales",
+    "version": "CIIU Rev. 4",
+    "fuente": "INEI"
+  },
+  {
+    "codigo": "8291",
+    "descripcion": "Actividades de agencias de cobro y agencias de calificación crediticia",
+    "version": "CIIU Rev. 4",
+    "fuente": "INEI"
+  },
+  {
+    "codigo": "8292",
+    "descripcion": "Actividades de envasado y empaquetado",
+    "version": "CIIU Rev. 4",
+    "fuente": "INEI"
+  },
+  {
+    "codigo": "8299",
+    "descripcion": "Otras actividades de servicios de apoyo a las empresas n.c.p",
+    "version": "CIIU Rev. 4",
+    "fuente": "INEI"
+  },
+  {
+    "codigo": "8411",
+    "descripcion": "Actividades de la administración pública en general",
+    "version": "CIIU Rev. 4",
+    "fuente": "INEI"
+  },
+  {
+    "codigo": "8412",
+    "descripcion": "Regulación de las actividades de organismos que prestan servicios sanitarios, educativos, culturales y otros servicios sociales, excepto servicios de seguridad social",
+    "version": "CIIU Rev. 4",
+    "fuente": "INEI"
+  },
+  {
+    "codigo": "8413",
+    "descripcion": "Regulación y facilitación de la actividad económica",
+    "version": "CIIU Rev. 4",
+    "fuente": "INEI"
+  },
+  {
+    "codigo": "8421",
+    "descripcion": "Relaciones exteriores",
+    "version": "CIIU Rev. 4",
+    "fuente": "INEI"
+  },
+  {
+    "codigo": "8422",
+    "descripcion": "Actividades de defensa",
+    "version": "CIIU Rev. 4",
+    "fuente": "INEI"
+  },
+  {
+    "codigo": "8423",
+    "descripcion": "Actividades de mantenimiento del orden público y de seguridad",
+    "version": "CIIU Rev. 4",
+    "fuente": "INEI"
+  },
+  {
+    "codigo": "8430",
+    "descripcion": "Actividades de planes de seguridad social de afiliación obligatoria",
+    "version": "CIIU Rev. 4",
+    "fuente": "INEI"
+  },
+  {
+    "codigo": "8510",
+    "descripcion": "Enseñanza preescolar y primaria",
+    "version": "CIIU Rev. 4",
+    "fuente": "INEI"
+  },
+  {
+    "codigo": "8521",
+    "descripcion": "Enseñanza secundaria de formación general",
+    "version": "CIIU Rev. 4",
+    "fuente": "INEI"
+  },
+  {
+    "codigo": "8522",
+    "descripcion": "Enseñanza secundaria de formación técnica y profesional",
+    "version": "CIIU Rev. 4",
+    "fuente": "INEI"
+  },
+  {
+    "codigo": "8530",
+    "descripcion": "Enseñanza superior",
+    "version": "CIIU Rev. 4",
+    "fuente": "INEI"
+  },
+  {
+    "codigo": "8541",
+    "descripcion": "Educación deportiva y recreativa",
+    "version": "CIIU Rev. 4",
+    "fuente": "INEI"
+  },
+  {
+    "codigo": "8542",
+    "descripcion": "Enseñanza cultural",
+    "version": "CIIU Rev. 4",
+    "fuente": "INEI"
+  },
+  {
+    "codigo": "8549",
+    "descripcion": "Otros tipos de enseñanza n.c.p.",
+    "version": "CIIU Rev. 4",
+    "fuente": "INEI"
+  },
+  {
+    "codigo": "8550",
+    "descripcion": "Actividades de apoyo a la enseñanza",
+    "version": "CIIU Rev. 4",
+    "fuente": "INEI"
+  },
+  {
+    "codigo": "8610",
+    "descripcion": "Actividades de hospitales",
+    "version": "CIIU Rev. 4",
+    "fuente": "INEI"
+  },
+  {
+    "codigo": "8620",
+    "descripcion": "Actividades de médicos y odontólogos",
+    "version": "CIIU Rev. 4",
+    "fuente": "INEI"
+  },
+  {
+    "codigo": "8690",
+    "descripcion": "Otras actividades de atención de la salud humana",
+    "version": "CIIU Rev. 4",
+    "fuente": "INEI"
+  },
+  {
+    "codigo": "8710",
+    "descripcion": "Actividades de atención de enfermería en instituciones",
+    "version": "CIIU Rev. 4",
+    "fuente": "INEI"
+  },
+  {
+    "codigo": "8720",
+    "descripcion": "Actividades de atención en instituciones para personas con retraso mental, enfermos mentales y toxicómanos",
+    "version": "CIIU Rev. 4",
+    "fuente": "INEI"
+  },
+  {
+    "codigo": "8730",
+    "descripcion": "Actividades de atención en instituciones para personas de edad personas con discapacidad",
+    "version": "CIIU Rev. 4",
+    "fuente": "INEI"
+  },
+  {
+    "codigo": "8790",
+    "descripcion": "Otras actividades de atención en instituciones",
+    "version": "CIIU Rev. 4",
+    "fuente": "INEI"
+  },
+  {
+    "codigo": "8810",
+    "descripcion": "Actividades de asistencia social sin alojamiento para personas de edad y personas con discapacidad",
+    "version": "CIIU Rev. 4",
+    "fuente": "INEI"
+  },
+  {
+    "codigo": "8890",
+    "descripcion": "Otras actividades de asistencia social sin alojamiento",
+    "version": "CIIU Rev. 4",
+    "fuente": "INEI"
+  },
+  {
+    "codigo": "9000",
+    "descripcion": "Actividades creativas, artísticas y de entretenimiento",
+    "version": "CIIU Rev. 4",
+    "fuente": "INEI"
+  },
+  {
+    "codigo": "9101",
+    "descripcion": "Actividades de Bibliotecas y archivos",
+    "version": "CIIU Rev. 4",
+    "fuente": "INEI"
+  },
+  {
+    "codigo": "9102",
+    "descripcion": "Actividades de museos y gestión de lugares y edificios históricos",
+    "version": "CIIU Rev. 4",
+    "fuente": "INEI"
+  },
+  {
+    "codigo": "9103",
+    "descripcion": "Actividades de jardines botánicos y zoológicos y reservas naturales",
+    "version": "CIIU Rev. 4",
+    "fuente": "INEI"
+  },
+  {
+    "codigo": "9200",
+    "descripcion": "Actividades de juegos de azar y apuestas",
+    "version": "CIIU Rev. 4",
+    "fuente": "INEI"
+  },
+  {
+    "codigo": "9311",
+    "descripcion": "Gestión de instalaciones deportivas",
+    "version": "CIIU Rev. 4",
+    "fuente": "INEI"
+  },
+  {
+    "codigo": "9312",
+    "descripcion": "Actividades de clubes deportivos",
+    "version": "CIIU Rev. 4",
+    "fuente": "INEI"
+  },
+  {
+    "codigo": "9319",
+    "descripcion": "Otras actividades deportivas",
+    "version": "CIIU Rev. 4",
+    "fuente": "INEI"
+  },
+  {
+    "codigo": "9321",
+    "descripcion": "Actividades de parques de atracciones y parques temáticos",
+    "version": "CIIU Rev. 4",
+    "fuente": "INEI"
+  },
+  {
+    "codigo": "9329",
+    "descripcion": "Otras actividades de esparcimiento y recreativas n.c.p.",
+    "version": "CIIU Rev. 4",
+    "fuente": "INEI"
+  },
+  {
+    "codigo": "9411",
+    "descripcion": "Actividades de asociaciones empresariales y de empleadores",
+    "version": "CIIU Rev. 4",
+    "fuente": "INEI"
+  },
+  {
+    "codigo": "9412",
+    "descripcion": "Actividades de asociaciones profesionales",
+    "version": "CIIU Rev. 4",
+    "fuente": "INEI"
+  },
+  {
+    "codigo": "9420",
+    "descripcion": "Actividades de sindicatos",
+    "version": "CIIU Rev. 4",
+    "fuente": "INEI"
+  },
+  {
+    "codigo": "9491",
+    "descripcion": "Actividades de organizaciones religiosas",
+    "version": "CIIU Rev. 4",
+    "fuente": "INEI"
+  },
+  {
+    "codigo": "9492",
+    "descripcion": "Actividades de organizaciones políticas",
+    "version": "CIIU Rev. 4",
+    "fuente": "INEI"
+  },
+  {
+    "codigo": "9499",
+    "descripcion": "Actividades de otras asociaciones n.c.p.",
+    "version": "CIIU Rev. 4",
+    "fuente": "INEI"
+  },
+  {
+    "codigo": "9511",
+    "descripcion": "Reparación de ordenadores y equipo periférico",
+    "version": "CIIU Rev. 4",
+    "fuente": "INEI"
+  },
+  {
+    "codigo": "9512",
+    "descripcion": "Reparación de equipos comunicacionales",
+    "version": "CIIU Rev. 4",
+    "fuente": "INEI"
+  },
+  {
+    "codigo": "9521",
+    "descripcion": "Reparación de aparatos electrónicos de consumo",
+    "version": "CIIU Rev. 4",
+    "fuente": "INEI"
+  },
+  {
+    "codigo": "9522",
+    "descripcion": "Reparación de aparatos de uso doméstico y equipo doméstico y de jardinería",
+    "version": "CIIU Rev. 4",
+    "fuente": "INEI"
+  },
+  {
+    "codigo": "9523",
+    "descripcion": "Reparación de calzado y artículos de cuero",
+    "version": "CIIU Rev. 4",
+    "fuente": "INEI"
+  },
+  {
+    "codigo": "9524",
+    "descripcion": "Reparación de muebles y accesorios domésticos",
+    "version": "CIIU Rev. 4",
+    "fuente": "INEI"
+  },
+  {
+    "codigo": "9529",
+    "descripcion": "Reparación de otros efectos personales y enseres domésticos",
+    "version": "CIIU Rev. 4",
+    "fuente": "INEI"
+  },
+  {
+    "codigo": "9601",
+    "descripcion": "Lavado y limpieza, incluida la limpieza en seco, de productos textiles y de piel",
+    "version": "CIIU Rev. 4",
+    "fuente": "INEI"
+  },
+  {
+    "codigo": "9602",
+    "descripcion": "Peluquería y otros tratamientos de belleza",
+    "version": "CIIU Rev. 4",
+    "fuente": "INEI"
+  },
+  {
+    "codigo": "9603",
+    "descripcion": "Pompas fúnebres y actividades conexas",
+    "version": "CIIU Rev. 4",
+    "fuente": "INEI"
+  },
+  {
+    "codigo": "9609",
+    "descripcion": "Otras actividades de servicios personales n.c.p.",
+    "version": "CIIU Rev. 4",
+    "fuente": "INEI"
+  },
+  {
+    "codigo": "9700",
+    "descripcion": "Actividades de los hogares como empleadores de personal doméstico",
+    "version": "CIIU Rev. 4",
+    "fuente": "INEI"
+  },
+  {
+    "codigo": "9810",
+    "descripcion": "Actividades no diferenciadas de los hogares como productores de bienes para uso propio",
+    "version": "CIIU Rev. 4",
+    "fuente": "INEI"
+  },
+  {
+    "codigo": "9820",
+    "descripcion": "Actividades no diferenciadas de los hogares como productores de servicios para uso propio",
+    "version": "CIIU Rev. 4",
+    "fuente": "INEI"
+  },
+  {
+    "codigo": "9900",
+    "descripcion": "Actividades de organizaciones y órganos extraterritoriales",
+    "version": "CIIU Rev. 4",
+    "fuente": "INEI"
+  }
+]

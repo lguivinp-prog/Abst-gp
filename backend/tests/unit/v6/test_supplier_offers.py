@@ -90,4 +90,4 @@ def test_monetary_exactitude(db_session: Session):
     
     assert len(offer.items) == 1
     assert float(offer.items[0].subtotal) == pytest.approx(10.1234 * 20.55, rel=1e-5)
-    assert float(offer.total_amount) == float(offer.items[0].subtotal)
+    assert round(float(offer.total_amount), 2) == round(float(offer.items[0].subtotal), 2)

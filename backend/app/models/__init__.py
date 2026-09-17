@@ -10,6 +10,9 @@ from .domain import (
 )
 
 from .v6.generated_output import GeneratedOutput
+from .v6.supplier_offer_contract_term import SupplierOfferContractTerm
+from .v6.evaluation_factor import EvaluationFactor
+from .v6.contractual_condition import ContractualCondition
 
 __all__ = [
     "Base",
@@ -33,5 +36,8 @@ __all__ = [
     "RequirementItem",
     "ComparisonResult",
     "RolloutTenantAssignment",
-    "BootstrapLedger"
+    "BootstrapLedger",
+    "SupplierOfferContractTerm",
+    "EvaluationFactor",
+    "ContractualCondition"
 ]
