@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Shield, ShieldAlert, ShieldCheck, Clock, AlertCircle, RefreshCw, Building2, CheckSquare } from 'lucide-react';
+import { Shield, ShieldAlert, ShieldCheck, Clock, AlertCircle, RefreshCw, Building2, CheckSquare, ChevronDown, ChevronRight } from 'lucide-react';
 import { Button } from '../../../components/ui/Button';
 import { Badge } from '../../../components/ui/Badge';
 import { validationService } from '../../../api/v6/validation.service';
@@ -28,6 +28,8 @@ export const CaseValidations: React.FC<CaseValidationsProps> = ({ caseId }) => {
   const [manualResult, setManualResult] = useState<'' | 'VALIDATED' | 'REJECTED' | 'REVIEW_REQUIRED'>('');
   const [manualObservation, setManualObservation] = useState('');
   const [manualEvidence, setManualEvidence] = useState('');
+
+  const [showHistory, setShowHistory] = useState(false);
 
   const loadData = async () => {
     setLoading(true);
@@ -92,25 +94,25 @@ export const CaseValidations: React.FC<CaseValidationsProps> = ({ caseId }) => {
     }
   };
 
-    const getStatusBadge = (status: string, requestedAt?: string) => {
-      if (status === 'PENDING' && requestedAt) {
-        const age = Date.now() - new Date(requestedAt).getTime();
-        if (age > 5 * 60 * 1000) {
-          return <Badge variant="warning"><Clock size={14} className="mr-1" /> PENDIENTE — DEMORA EXCEDIDA</Badge>;
-        }
+  const getStatusBadge = (status: string, requestedAt?: string) => {
+    if (status === 'PENDING' && requestedAt) {
+      const age = Date.now() - new Date(requestedAt).getTime();
+      if (age > 5 * 60 * 1000) {
+        return <Badge variant="warning"><Clock size={14} className="mr-1" /> PENDIENTE — DEMORA EXCEDIDA</Badge>;
       }
-      switch (status) {
-        case 'PASSED':
-        case 'VERIFIED': return <Badge variant="success"><ShieldCheck size={14} className="mr-1" /> VALIDADO</Badge>;
-        case 'WARNING': return <Badge variant="warning"><ShieldAlert size={14} className="mr-1" /> OBSERVADO</Badge>;
-        case 'MANUAL_REQUIRED':
-        case 'NO_DISPONIBLE_API': return <Badge variant="warning"><ShieldAlert size={14} className="mr-1" /> NO DISPONIBLE</Badge>;
-        case 'BLOCKED':
-        case 'ERROR': return <Badge variant="danger"><ShieldAlert size={14} className="mr-1" /> ERROR</Badge>;
-        case 'RUNNING': return <Badge variant="primary"><RefreshCw size={14} className="mr-1 spin" /> EN PROCESO</Badge>;
-        default: return <Badge variant="secondary"><Clock size={14} className="mr-1" /> PENDIENTE</Badge>;
-      }
-    };
+    }
+    switch (status) {
+      case 'PASSED':
+      case 'VERIFIED': return <Badge variant="success"><ShieldCheck size={14} className="mr-1" /> VALIDADO</Badge>;
+      case 'WARNING': return <Badge variant="warning"><ShieldAlert size={14} className="mr-1" /> OBSERVADO</Badge>;
+      case 'MANUAL_REQUIRED':
+      case 'NO_DISPONIBLE_API': return <Badge variant="warning"><ShieldAlert size={14} className="mr-1" /> NO DISPONIBLE</Badge>;
+      case 'BLOCKED':
+      case 'ERROR': return <Badge variant="danger"><ShieldAlert size={14} className="mr-1" /> ERROR</Badge>;
+      case 'RUNNING': return <Badge variant="primary"><RefreshCw size={14} className="mr-1 spin" /> EN PROCESO</Badge>;
+      default: return <Badge variant="secondary"><Clock size={14} className="mr-1" /> PENDIENTE</Badge>;
+    }
+  };
 
   const translateManualResult = (result?: string) => {
     switch(result) {
@@ -121,6 +123,46 @@ export const CaseValidations: React.FC<CaseValidationsProps> = ({ caseId }) => {
     }
   };
 
+  const sortNewest = (a: ValidationRequestResponse, b: ValidationRequestResponse) =>
+    new Date(b.requested_at).getTime() - new Date(a.requested_at).getTime();
+
+  // Logic for grouping
+  const externalValidations = validations.filter(v => v.validation_mode !== 'MANUAL');
+  const manualValidations = validations.filter(v => v.validation_mode === 'MANUAL');
+
+  const latestExternalMap = new Map<string, ValidationRequestResponse>();
+  const externalHistory: ValidationRequestResponse[] = [];
+
+  [...externalValidations].sort(sortNewest).forEach(v => {
+    const key = `${v.supplier_id}-${v.source}`;
+    if (!latestExternalMap.has(key)) {
+      latestExternalMap.set(key, v);
+    } else {
+      externalHistory.push(v);
+    }
+  });
+
+  const latestExternal = Array.from(latestExternalMap.values());
+  const maxExternalDate = latestExternal.length > 0
+    ? new Date(Math.max(...latestExternal.map(v => new Date(v.requested_at).getTime())))
+    : null;
+
+  const latestManualMap = new Map<string, ValidationRequestResponse>();
+  const manualHistory: ValidationRequestResponse[] = [];
+
+  [...manualValidations].sort(sortNewest).forEach(v => {
+    const key = `${v.supplier_id}-${v.source}`;
+    if (!latestManualMap.has(key)) {
+      latestManualMap.set(key, v);
+    } else {
+      manualHistory.push(v);
+    }
+  });
+
+  const latestManual = Array.from(latestManualMap.values());
+
+  const fullHistory = [...externalHistory, ...manualHistory].sort(sortNewest);
+
   if (loading && validations.length === 0) {
     return (
       <div className="case-validations-loading">
@@ -129,6 +171,94 @@ export const CaseValidations: React.FC<CaseValidationsProps> = ({ caseId }) => {
       </div>
     );
   }
+
+  const renderValidationCard = (val: ValidationRequestResponse, isHistory: boolean = false) => (
+    <div key={val.id} className="case-validation-card">
+      <div className="validation-header">
+        <div className="validation-supplier">
+          <Building2 size={18} />
+          <h4>{val.supplier?.business_name || `Proveedor #${val.supplier_id}`}</h4>
+          {val.supplier?.ruc && <span className="supplier-ruc">RUC: {val.supplier.ruc}</span>}
+        </div>
+        <div className="validation-status">
+          {val.validation_mode === 'MANUAL' && <Badge variant="primary" className="mr-2"><CheckSquare size={14} className="mr-1" /> MANUAL</Badge>}
+          {getStatusBadge(val.status, val.requested_at)}
+        </div>
+      </div>
+
+      <div className="validation-body">
+        <div className="validation-details">
+          <div className="detail-item">
+            <span className="label">Fuente{val.validation_mode === 'MANUAL' ? ' original' : ''}:</span>
+            <span className="value fw-bold">{val.source}</span>
+          </div>
+          <div className="detail-item">
+            <span className="label">{val.validation_mode === 'MANUAL' ? 'Registrado el' : 'Solicitado el'}:</span>
+            <span className="value">{new Date(val.requested_at).toLocaleString()}</span>
+          </div>
+          {!isHistory && val.validation_mode !== 'MANUAL' && (
+            <div className="detail-item">
+              <span className="label">Completado el:</span>
+              <span className="value">{val.completed_at ? new Date(val.completed_at).toLocaleString() : '-'}</span>
+            </div>
+          )}
+          {val.validation_mode === 'MANUAL' && val.verified_by_user_id && (
+            <div className="detail-item">
+              <span className="label">Verificado por:</span>
+              <span className="value">{val.verified_by_user?.full_name || val.verified_by_user?.username || `Usuario #${val.verified_by_user_id}`}</span>
+            </div>
+          )}
+        </div>
+
+        {!isHistory && val.validation_mode === 'MANUAL' ? (
+          <div className="validation-payload manual-payload">
+            <p><strong>Resultado:</strong> {translateManualResult(val.manual_result)}</p>
+            <p><strong>Observación:</strong> {val.manual_observation}</p>
+            {val.manual_evidence_reference && <p><strong>Evidencia:</strong> {val.manual_evidence_reference}</p>}
+          </div>
+        ) : !isHistory && val.validation_mode !== 'MANUAL' ? (
+          <>
+            {(val.status === 'NO_DISPONIBLE_API' || val.status === 'ERROR' || val.status === 'WARNING' || val.status === 'BLOCKED' || val.status === 'MANUAL_REQUIRED') && (
+              <div className="validation-payload">
+                <p className="text-sm text-amber-700 m-0">Integración externa no disponible o requiere revisión. Puede realizar una validación manual con sustento.</p>
+                {val.source === 'SUNAT' && <p className="text-sm font-medium text-amber-800 mt-1">La consulta automática de SUNAT requiere verificación interactiva.</p>}
+                {val.source === 'FUP' && <p className="text-sm font-medium text-amber-800 mt-1">No fue posible consultar automáticamente la fuente oficial en este momento.</p>}
+                {val.source === 'CIIU' && <p className="text-sm font-medium text-amber-800 mt-1">No fue posible obtener la actividad económica desde SUNAT.</p>}
+              </div>
+            )}
+            {val.status === 'PASSED' && val.response_payload && (
+              <div className="validation-payload">
+                <details>
+                  <summary className="text-sm cursor-pointer text-blue-600">Ver detalle</summary>
+                  <div className="mt-2 text-sm bg-gray-50 p-2 rounded">
+                    {val.source === 'SUNAT' && val.response_payload.estado && (
+                      <>
+                        <p><strong>Estado:</strong> {val.response_payload.estado}</p>
+                        <p><strong>Condición:</strong> {val.response_payload.condicion}</p>
+                      </>
+                    )}
+                    {val.source === 'RNP' && val.response_payload.registro && (
+                      <>
+                        <p><strong>Registro:</strong> {val.response_payload.registro}</p>
+                        {val.response_payload.bienes !== undefined && <p><strong>Bienes:</strong> {val.response_payload.bienes ? 'Sí' : 'No'}</p>}
+                        {val.response_payload.servicios !== undefined && <p><strong>Servicios:</strong> {val.response_payload.servicios ? 'Sí' : 'No'}</p>}
+                        {val.response_payload.vigencia && val.response_payload.vigencia !== "Datos extraidos de html publico" && val.response_payload.vigencia !== "Datos extraídos de html público" && <p><strong>Vigencia:</strong> {val.response_payload.vigencia}</p>}
+                      </>
+                    )}
+                    {val.source === 'CIIU' && val.response_payload.ciiu && (
+                      <>
+                        <p><strong>CIIU Extraído:</strong> {val.response_payload.ciiu.join(', ')}</p>
+                      </>
+                    )}
+                  </div>
+                </details>
+              </div>
+            )}
+          </>
+        ) : null}
+      </div>
+    </div>
+  );
 
   return (
     <div className="case-validations-container">
@@ -152,7 +282,7 @@ export const CaseValidations: React.FC<CaseValidationsProps> = ({ caseId }) => {
               setIsSubmitting(false);
             }
           }} disabled={isSubmitting || suppliers.length === 0} className="bg-blue-600 hover:bg-blue-700 text-white">
-            {isSubmitting ? 'Ejecutando...' : 'Ejecutar Validaciones'}
+            {isSubmitting ? 'Ejecutando...' : 'Ejecutar Validaciones Automáticas'}
           </Button>
           <Button variant="outline" onClick={() => {
             setShowForm(!showForm);
@@ -245,58 +375,40 @@ export const CaseValidations: React.FC<CaseValidationsProps> = ({ caseId }) => {
 
       {validations.length > 0 && (
         <div className="case-validations-list">
-          {validations.map(val => (
-            <div key={val.id} className="case-validation-card">
-              <div className="validation-header">
-                <div className="validation-supplier">
-                  <Building2 size={18} />
-                  <h4>{val.supplier?.business_name || `Proveedor #${val.supplier_id}`}</h4>
-                  {val.supplier?.ruc && <span className="supplier-ruc">RUC: {val.supplier.ruc}</span>}
-                </div>
-                <div className="validation-status">
-                  {val.validation_mode === 'MANUAL' && <Badge variant="primary" className="mr-2"><CheckSquare size={14} className="mr-1" /> MANUAL</Badge>}
-                  {getStatusBadge(val.status, val.requested_at)}
-                </div>
-              </div>
+          <div className="flex justify-between items-end border-b pb-2 mt-4 mb-3">
+            <h3 className="section-title m-0 border-0 pb-0">VALIDACIONES AUTOMÁTICAS</h3>
+            {maxExternalDate && (
+              <span className="text-sm text-gray-500 font-medium">Última validación automática: {maxExternalDate.toLocaleString()}</span>
+            )}
+          </div>
+          {latestExternal.length === 0 && (
+            <p className="text-gray-500 italic text-sm mb-4">No hay validaciones automáticas registradas.</p>
+          )}
+          {latestExternal.map(val => renderValidationCard(val))}
 
-              <div className="validation-body">
-                <div className="validation-details">
-                  <div className="detail-item">
-                    <span className="label">Fuente:</span>
-                    <span className="value fw-bold">{val.source}</span>
-                  </div>
-                  <div className="detail-item">
-                    <span className="label">Solicitado el:</span>
-                    <span className="value">{new Date(val.requested_at).toLocaleString()}</span>
-                  </div>
-                  <div className="detail-item">
-                    <span className="label">Completado el:</span>
-                    <span className="value">{val.completed_at ? new Date(val.completed_at).toLocaleString() : '-'}</span>
-                  </div>
-                  {val.validation_mode === 'MANUAL' && val.verified_by_user_id && (
-                    <div className="detail-item">
-                      <span className="label">Verificado por:</span>
-                      <span className="value">{val.verified_by_user?.full_name || val.verified_by_user?.username || `Usuario #${val.verified_by_user_id}`}</span>
-                    </div>
-                  )}
-                </div>
+          <h3 className="section-title mt-6 mb-3 border-b pb-2">VALIDACIONES MANUALES</h3>
+          {latestManual.length === 0 && (
+            <p className="text-gray-500 italic text-sm mb-4">No hay validaciones manuales registradas.</p>
+          )}
+          {latestManual.map(val => renderValidationCard(val))}
 
-                {val.validation_mode === 'MANUAL' ? (
-                  <div className="validation-payload manual-payload">
-                    <p><strong>Resultado:</strong> {translateManualResult(val.manual_result)}</p>
-                    <p><strong>Observación:</strong> {val.manual_observation}</p>
-                    {val.manual_evidence_reference && <p><strong>Evidencia:</strong> {val.manual_evidence_reference}</p>}
-                  </div>
-                ) : (
-                  (val.status === 'NO_DISPONIBLE_API' || val.status === 'ERROR' || val.status === 'WARNING' || val.status === 'BLOCKED') && (
-                    <div className="validation-payload">
-                      <p className="text-sm text-amber-700 m-0">Integración externa no disponible. Puede realizar una validación manual con sustento.</p>
-                    </div>
-                  )
-                )}
-              </div>
+          {fullHistory.length > 0 && (
+            <div className="mt-8 border rounded-lg overflow-hidden bg-white shadow-sm">
+              <button
+                className="w-full px-4 py-3 flex items-center justify-between text-gray-700 hover:bg-gray-50 transition-colors font-medium border-b"
+                onClick={() => setShowHistory(!showHistory)}
+              >
+                <span>Ver historial de validaciones ({fullHistory.length})</span>
+                {showHistory ? <ChevronDown size={20} /> : <ChevronRight size={20} />}
+              </button>
+
+              {showHistory && (
+                <div className="p-4 bg-gray-50">
+                  {fullHistory.map(val => renderValidationCard(val, true))}
+                </div>
+              )}
             </div>
-          ))}
+          )}
         </div>
       )}
     </div>

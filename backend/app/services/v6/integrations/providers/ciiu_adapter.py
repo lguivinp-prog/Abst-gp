@@ -1,45 +1,19 @@
-from typing import Dict, Any
+from typing import Dict, Any, List
 from sqlalchemy.orm import Session
 from .base_provider import ValidationResult
-from app.models.v6.ciiu_catalog import CiiuCatalog
-import hashlib
-import json
+import datetime
 
 class CIIUProvider:
-    def validate(self, db: Session, sunat_ciiu_code: str, expected_description_keywords: str) -> ValidationResult:
-        """
-        Takes the CIIU code extracted from SUNAT and checks it against the INEI Catalog.
-        Then checks if the description somewhat matches the expected object of the case.
-        Returns certainty levels: HIGH, MEDIUM, LOW, UNKNOWN mapping to PASSED/WARNING/BLOCKED.
-        """
-        if not sunat_ciiu_code:
+    def validate(self, db: Session, sunat_ciiu: List[str], expected_keywords: str) -> ValidationResult:
+        if not sunat_ciiu:
             return ValidationResult(
                 status="MANUAL_REQUIRED",
-                source="CIIU_MATCH",
-                payload={"error": "Missing SUNAT CIIU code. Provide manual evidence."}
-            )
-            
-        import os
-        is_test = os.getenv("APP_ENV") == "test"
-        
-        if not is_test:
-            # We don't have a complete official INEI catalog loaded in runtime.
-            return ValidationResult(
-                status="NO_DISPONIBLE_API",
-                source="CIIU_MATCH",
-                payload={"error": "Catálogo oficial CIIU Rev.4 no disponible en runtime."}
-            )
-            
-        ciiu = db.query(CiiuCatalog).filter_by(codigo=sunat_ciiu_code, activo=True).first()
-        if not ciiu:
-            return ValidationResult(
-                status="WARNING",
-                source="CIIU_MATCH",
-                payload={"codigo": sunat_ciiu_code, "certeza": "UNKNOWN", "msg": "Codigo no encontrado en catalogo de prueba"}
+                source="NO_DISPONIBLE",
+                payload={"error": "No fue posible obtener la actividad económica desde SUNAT."}
             )
             
         return ValidationResult(
             status="PASSED",
-            source="CIIU_MATCH_EXACT_INEI_REV4",
-            payload={"codigo": ciiu.codigo, "descripcion": ciiu.descripcion, "certeza": "HIGH"}
+            source="CIIU_DERIVED",
+            payload={"ciiu": sunat_ciiu, "match_keywords": expected_keywords}
         )

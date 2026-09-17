@@ -85,7 +85,7 @@ def get_case_validations(
 
     return validations
 
-@router.post("/cases/{case_id}/suppliers/{supplier_id}/validations", response_model=ValidationRequestResponse)
+@router.post("/cases/{case_id}/suppliers/{supplier_id}/validations")
 def create_case_validation_request(
     case_id: int,
     supplier_id: int,
@@ -107,7 +107,9 @@ def create_case_validation_request(
         from app.services.v6.integrations.validation_orchestrator import SupplierValidationOrchestrator
         orchestrator = SupplierValidationOrchestrator()
         orchestrator.run_async_validation(db, case_id, supplier_id, current_user.id)
-        return {"status": "SUCCESS", "message": "All validations triggered"}
+        # Return the latest created for this supplier to satisfy any client expecting an object
+        val = db.query(ValidationRequest).filter_by(supplier_id=supplier_id).order_by(ValidationRequest.id.desc()).first()
+        return val
 
     return ValidationService.request_validation(
         db=db,

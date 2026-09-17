@@ -19,6 +19,5 @@ pdf2image>=1.17.0
 pdfplumber>=0.11.0
 reportlab>=4.2.0
 numpy
-
-
 pytesseract
+requests>=2.32.0
