@@ -98,7 +98,7 @@ class SelectionService:
 
     @staticmethod
     def approve_selection(db: Session, case_id: int, supervisor_id: int, tenant_id: str):
-        attempt = db.query(SupplierSelectionAttempt).filter_by(case_id=case_id, status="PROPOSED").first()
+        attempt = db.query(SupplierSelectionAttempt).filter_by(case_id=case_id, status="UNDER_REVIEW").first()
         if not attempt:
             raise ValueError("No proposed selection found for this case")
 
