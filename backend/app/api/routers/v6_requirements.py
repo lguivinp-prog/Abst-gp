@@ -9,6 +9,8 @@ from pydantic import BaseModel
 from typing import List, Optional
 import json
 from datetime import datetime, timezone
+from sqlalchemy.orm import selectinload
+from app.services.v6.extraction.requirement_classifier import classify_requirement
 
 router = APIRouter()
 extraction_service = RequirementExtractionService()
@@ -42,6 +44,12 @@ class RequirementResponse(BaseModel):
     evidences: List[EvidenceResponse] = []
     is_manual_edit: Optional[bool] = False
 
+    category: Optional[str] = None
+    phase: Optional[str] = None
+    procurement_item_id: Optional[int] = None
+    flows_to_contract: bool = False
+    source_section: Optional[str] = None
+
     class Config:
         from_attributes = True
 
@@ -54,11 +62,19 @@ class RequirementUpdate(BaseModel):
     comparator: Optional[str] = None
     reason: str
 
+    category: Optional[str] = None
+    phase: Optional[str] = None
+    procurement_item_id: Optional[int] = None
+    flows_to_contract: Optional[bool] = None
+    source_section: Optional[str] = None
+
 class RequirementCreate(BaseModel):
     requirement_type: str
     description: str
     mandatory: bool = True
     value: Optional[str] = None
+    category: Optional[str] = None
+    phase: Optional[str] = None
 
 from app.api.auth import get_current_active_user, verify_case_access, require_role
 
@@ -132,13 +148,26 @@ def create_requirement(
     current_user: User = Depends(get_current_active_user),
     db: Session = Depends(get_db)
 ):
+    from app.models.v6.case_procurement_item import CaseProcurementItem, CaseProcurementItemSpecification
+    procurement_items = db.query(CaseProcurementItem).filter(CaseProcurementItem.case_id == case_id).all()
+    specifications = db.query(CaseProcurementItemSpecification).join(CaseProcurementItem).filter(CaseProcurementItem.case_id == case_id).all()
+
+    candidate_text = req_data.value if req_data.value else req_data.description
+
+    # Always classify using the deterministic logic
+    classification = classify_requirement(candidate_text, procurement_items, specifications)
+
     req = CaseRequirementMatrix(
         case_id=case_id,
         requirement_type=req_data.requirement_type,
         description=req_data.description,
         mandatory=req_data.mandatory,
         value=req_data.value,
-        status="PENDING_REVIEW"
+        status="PENDING_REVIEW" if classification.get("status") != "REVIEW_REQUIRED" else "REVIEW_REQUIRED",
+        category=classification.get("category"),
+        phase=classification.get("phase"),
+        procurement_item_id=classification.get("procurement_item_id"),
+        flows_to_contract=classification.get("flows_to_contract", True)
     )
     db.add(req)
 
@@ -194,6 +223,18 @@ def update_requirement(
     if update_data.comparator is not None:
         req.comparator = update_data.comparator
 
+    if update_data.category is not None:
+        req.category = update_data.category
+    if update_data.phase is not None:
+        req.phase = update_data.phase
+    if update_data.procurement_item_id is not None:
+        req.procurement_item_id = update_data.procurement_item_id
+    if update_data.flows_to_contract is not None:
+        req.flows_to_contract = update_data.flows_to_contract
+    if update_data.source_section is not None:
+        req.source_section = update_data.source_section
+
+
     req.validated_by = current_user.id
     req.validated_at = datetime.now(timezone.utc)
 
@@ -218,6 +259,18 @@ def update_requirement(
 
     return req
 
+class ProcurementItemSpecificationResponse(BaseModel):
+    id: int
+    name: str
+    normalized_name: Optional[str] = None
+    value: str
+    mandatory: bool = True
+    source_page: Optional[int] = None
+    confidence: Optional[float] = None
+
+    class Config:
+        from_attributes = True
+
 class ProcurementItemResponse(BaseModel):
     id: int
     case_id: int
@@ -230,6 +283,7 @@ class ProcurementItemResponse(BaseModel):
     source_page: Optional[int] = None
     source_requirement_id: Optional[int] = None
     confidence: Optional[float] = None
+    specifications: List[ProcurementItemSpecificationResponse] = []
 
     class Config:
         from_attributes = True
@@ -241,7 +295,7 @@ def get_procurement_items(
     db: Session = Depends(get_db)
 ):
     from app.models.v6.case_procurement_item import CaseProcurementItem
-    return db.query(CaseProcurementItem).filter(CaseProcurementItem.case_id == case_id).all()
+    return db.query(CaseProcurementItem).options(selectinload(CaseProcurementItem.specifications)).filter(CaseProcurementItem.case_id == case_id).all()
 
 class ProcurementItemCreate(BaseModel):
     item_number: Optional[str] = None

@@ -29,15 +29,16 @@ class DeterministicRequirementExtractor(RequirementExtractionProvider):
 
             is_header = line.isupper() and len(line) < 60
 
-            # If it's a new list item or header, commit the previous paragraph
-            if self._is_list_item(line) or is_header or line.startswith("PÃ¡g."):
+            is_kv = bool(re.match(r'^([A-ZÁÉÍÓÚÑa-záéíóúñ\s]+)\s*[:=]\s*(.+)$', line.strip()))
+
+            # If it's a new list item, header, or KV pair, commit the previous paragraph
+            if self._is_list_item(line) or is_header or line.startswith("PÃ¡g.") or is_kv:
                 if current_paragraph:
                     paragraphs.append(" ".join(current_paragraph))
                     current_paragraph = []
 
             if is_header:
                 paragraphs.append(line)
-                # Don't add to current_paragraph since it's already a paragraph
                 continue
 
             current_paragraph.append(line)
@@ -99,24 +100,40 @@ class DeterministicRequirementExtractor(RequirementExtractionProvider):
         paragraphs = self._reconstruct_paragraphs(text)
 
         # Check for item lines (e.g., "1 Tinta Negra 3 UNIDADES")
-        item_regex = re.compile(r'^(\d+)\s+(.+?)\s+(\d+(?:\.\d+)?)\s+(UNIDAD|UNIDADES|KIT|KITS|CAJA|CAJAS|GLB|GLOBAL|SERVICIO|SERVICIOS|PAQUETE|PAQUETES)\b', re.IGNORECASE)
+        item_regex = re.compile(r'^(\d+)\s+(.+?)\s+(\d+(?:\.\d+)?)\s+(UNIDAD|UNIDADES|KIT|KITS|CAJA|CAJAS|GLB|GLOBAL|SERVICIO|SERVICIOS|PAQUETE|PAQUETES|ROLLO|KG|GALON|GALONES)\b', re.IGNORECASE)
+
+        # Custom Tabular Parser for Section 5.2 format
+        active_item = None
+
+        # State variables for template instruction block
+        in_template_block = False
 
         for p in paragraphs:
+            # Handle Template Instruction Blocks [...]
+            if "[" in p and "]" not in p:
+                in_template_block = True
+                continue
+            if in_template_block:
+                if "]" in p:
+                    in_template_block = False
+                continue
+            if "[" in p and "]" in p:
+                continue
+
             # Check if paragraph is an item (Standard format)
             item_match = item_regex.search(p)
             if item_match:
-                result.items.append(
-                    ProcurementItemCandidate(
-                        item_number=item_match.group(1),
-                        description=item_match.group(2).strip(),
-                        quantity=float(item_match.group(3)),
-                        unit=item_match.group(4).upper(),
-                        source_document=source_document,
-                        source_page=source_page,
-                        source_fragment=p,
-                        confidence=0.9
-                    )
+                active_item = ProcurementItemCandidate(
+                    item_number=item_match.group(1),
+                    description=item_match.group(2).strip(),
+                    quantity=float(item_match.group(3)),
+                    unit=item_match.group(4).upper(),
+                    source_document=source_document,
+                    source_page=source_page,
+                    source_fragment=p,
+                    confidence=0.9
                 )
+                result.items.append(active_item)
                 continue
 
             # Clean list item markers for the logic
@@ -128,13 +145,53 @@ class DeterministicRequirementExtractor(RequirementExtractionProvider):
 
             # Phase 4: Identify requirement
             text_lower = clean_p.lower()
+
+            # Key-Value spec detection for active item
+            kv_match = re.match(r'^([A-ZÁÉÍÓÚÑa-záéíóúñ\s]+)\s*[:=]\s*(.+)$', clean_p)
+            if active_item and kv_match:
+                key = kv_match.group(1).strip().upper()
+                val = kv_match.group(2).strip()
+
+                if key == "MODO DE USO":
+                    result.requirements.append(
+                        RequirementCandidate(
+                            requirement_type="CONTEXT",
+                            description=f"MODO DE USO: {val}",
+                            value=None,
+                            mandatory=False,
+                            source_document=source_document,
+                            source_page=source_page,
+                            source_fragment=p,
+                            confidence=0.9
+                        )
+                    )
+                else:
+                    # Specific exclusions like TEMPLATE INSTRUCTION can be handled here if needed
+                    active_item.specifications.append(
+                        ItemSpecificationCandidate(
+                            name=key,
+                            normalized_name=key.replace(' ', '_'),
+                            value=val,
+                            mandatory="True",
+                            source_page=source_page,
+                            confidence=0.9
+                        )
+                    )
+                continue
+            elif active_item and active_item.specifications and not self._is_requirement(clean_p) and not text_lower.startswith("finalidad"):
+                # Multiline continuation for the last spec
+                if "modo de uso" not in active_item.specifications[-1].name.lower():
+                    last_spec = active_item.specifications[-1]
+                    last_spec.value += " " + clean_p
+                continue
+
             if "finalidad pública" in text_lower or "objeto de la contratación" in text_lower or "objetivo de la contratación" in text_lower:
                 result.requirements.append(
                     RequirementCandidate(
                         requirement_type="CONTEXT",
                         description=clean_p,
                         value=None,
-                        mandatory=True, # Changed from False to True based on prompt "mostrar SECCIÓN OBLIGATORIA cuando la fuente dice obligatorio"
+                        mandatory=True,
                         source_document=source_document,
                         source_page=source_page,
                         source_fragment=p,
@@ -155,77 +212,4 @@ class DeterministicRequirementExtractor(RequirementExtractionProvider):
                     )
                 )
 
-        if not result.items and "AABONGARA" in source_document.upper():
-            # Parser basado en el OCR real para la tabla destruida
-            items = []
-            # Exact items based on table 5.1
-            items_data = [
-                ("01", "ALAMBRE DE ACERO CON PÚAS 21.5 cm x 22.5 cm DE DISTANCIAMIENTO ENTRE PUAS X 200 m", "ROLLO", 10.0),
-                ("02", "GRAPA DE ACERO 3/4 in", "KG", 9.0),
-                ("03", "PINTURA ESMALTE ACRILICO", "GALON", 3.0),
-                ("04", "THINNER ACRILICO", "GALON", 2.0),
-                ("05", "JUEGO DE BROCHAS X 4 PIEZAS", "UNIDAD", 2.0),
-                ("06", "WINCHA DE METAL 50 m", "UNIDAD", 3.0)
-            ]
-
-            for no, desc, unit, qty in items_data:
-                items.append(ProcurementItemCandidate(
-                    item_number=no,
-                    description=desc,
-                    quantity=qty,
-                    unit=unit,
-                    source_document=source_document,
-                    source_page=source_page,
-                    source_fragment=f"Table 5.1 row {no}",
-                    confidence=1.0,
-                    needs_review=False,
-                    specifications=[]
-                ))
-            # Simulated extraction of specs for each item
-            def add_spec(item_num, name, val):
-                for item in items:
-                    if item.item_number == item_num:
-                        item.specifications.append(ItemSpecificationCandidate(
-                            name=name,
-                            normalized_name=name.upper().replace(' ', '_'),
-                            value=val,
-                            mandatory="True",
-                            source_page=source_page,
-                            confidence=0.9
-                        ))
-
-            # Add sample specs based on prompt
-            add_spec("01", "CARACTERÍSTICAS", "Según requerimiento")
-            add_spec("01", "COLOR", "Metálico")
-            add_spec("01", "RESISTENTE A LA CORROSIÓN", "Sí")
-            add_spec("01", "DISTANCIA ENTRE PÚAS", "21.5 cm x 22.5 cm")
-            add_spec("01", "TIPO DE PRODUCTO", "Alambre")
-            add_spec("01", "SUB TIPO DE PRODUCTO", "Con púas")
-            add_spec("01", "MATERIAL", "Acero")
-            add_spec("01", "LARGO DEL CABLE", "200 m")
-            add_spec("01", "EMPAQUE", "Rollo")
-
-            add_spec("02", "MATERIA PRIMA", "Acero")
-            add_spec("02", "TIPO", "Grapa")
-            add_spec("02", "COLOR", "Gris")
-            add_spec("02", "DIMENSIONES", "3/4 in")
-            add_spec("02", "GARANTÍA DE FÁBRICA", "1 año")
-            add_spec("02", "PRESENTACIÓN", "Caja")
-            # Item 03
-            add_spec("03", "COLOR", "Blanco")
-            add_spec("03", "ACABADO", "Brillante")
-            add_spec("03", "TIEMPO DE SECADO", "4 horas")
-
-            # Item 04
-            add_spec("04", "TIPO", "Acrílico")
-            add_spec("04", "VOLUMEN", "1 Galón")
-
-            # Item 05
-            add_spec("05", "MATERIAL", "Cerdas naturales")
-            add_spec("05", "PIEZAS", "4")
-
-            # Item 06
-            add_spec("06", "MATERIAL", "Metal")
-            add_spec("06", "LARGO", "50 m")
-            result.items = items
         return result

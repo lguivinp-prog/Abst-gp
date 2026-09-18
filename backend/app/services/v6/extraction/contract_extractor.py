@@ -14,7 +14,13 @@ def is_template_instruction(text: str) -> bool:
         r'^condiciones de la garant[ií]a\s*:\s*indicar',
         r'^per[ií]odo de garant[ií]a\s*:\s*por tiempo',
         r'^inicio del c[oó]mputo.*?a partir de',
-        r'^\d+\.\d+\s+garant[ií]a comercial$'
+        r'^\d+\.\d+\s+garant[ií]a comercial$',
+        # Extended patterns
+        r'\[.*?\]', # Any block entirely in brackets or part of a bracket block (if handled properly line by line, but multiline needs special care. For now this catches single line blocks. We will handle multiline state in extractor).
+        r'^\(de acuerdo a.*?\)$',
+        r'^\(de ser el caso\)$',
+        r'^\(se debe indicar.*?\)$',
+        r'^13\.2\s+otras penalidades\s*\(de corresponder\)$'
     ]
     for pattern in instruction_patterns:
         if re.search(pattern, normalized):

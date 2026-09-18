@@ -46,7 +46,7 @@ def test_template_instruction_filter():
     assert is_template_instruction("Período de garantía: Por tiempo") is True
     assert is_template_instruction("Inicio del cómputo a partir de") is True
     assert is_template_instruction("5.12 Garantía comercial") is True
-    
+
     assert is_template_instruction("Alcance de la garantía: Contra defectos de diseño y/o fabricación...") is False
 
 class MockExtractorResult:
@@ -97,51 +97,156 @@ def test_idempotency_and_deduplication(db_session):
     db_session.add(case_file)
     db_session.add(doc)
     db_session.commit()
-    
+
     service = RequirementExtractionService(extractor=MockProvider())
-    
+
     # First execution
     service.process_text_and_propose(db_session, case_id=1, user_id=1, tenant_id="mega_tenant", text="GARANTIA: 12 meses", document_name="doc.pdf", document_id=10)
-    
+
     reqs = db_session.query(CaseRequirementMatrix).all()
     # 1 contractual (Garantia), 1 technical (Especificación técnica real), 1 context (Contexto general)
     assert len(reqs) == 3
-    
+
     req_types = [r.requirement_type for r in reqs]
     assert "CONTRACTUAL" in req_types
     assert "TECHNICAL" in req_types
     assert "CONTEXT" in req_types
-    
+
     items = db_session.query(CaseProcurementItem).all()
     assert len(items) == 2
-    
+
     # Now modify one requirement to simulate human intervention
     req_to_modify = db_session.query(CaseRequirementMatrix).filter_by(requirement_type="CONTEXT").first()
     req_to_modify.status = "VALIDATED"
     db_session.commit()
-    
+
     item_to_modify = db_session.query(CaseProcurementItem).filter_by(item_number="1").first()
     item_to_modify.status = "VALIDATED"
     original_item_id = item_to_modify.id
     db_session.commit()
-    
+
     # Second execution (Idempotent)
     service.process_text_and_propose(db_session, case_id=1, user_id=1, tenant_id="mega_tenant", text="GARANTIA: 12 meses", document_name="doc.pdf", document_id=10)
-    
+
     # Assert requirements
     reqs_after = db_session.query(CaseRequirementMatrix).all()
     assert len(reqs_after) == 3
-    
+
     # Check that the modified requirement kept its status
     modified_req = db_session.query(CaseRequirementMatrix).filter_by(requirement_type="CONTEXT").first()
     assert modified_req.status == "VALIDATED"
-    
+
     # Assert items
     items_after = db_session.query(CaseProcurementItem).all()
     assert len(items_after) == 2
-    
+
     # Check that the item kept its ID and isn't duplicated
     modified_item_after = db_session.query(CaseProcurementItem).filter_by(item_number="1").all()
     assert len(modified_item_after) == 1
     assert modified_item_after[0].id == original_item_id
     assert modified_item_after[0].status == "VALIDATED"
+def test_template_instruction_filter_extended():
+    from app.services.v6.extraction.contract_extractor import is_template_instruction
+    assert is_template_instruction("[De preverse la garantía comercial, indicar lo siguiente: Alcance de la garantía... Condiciones... Periodo... Inicio del cómputo...]") is True
+    assert is_template_instruction("(De acuerdo a lo requerido por el area usuaria)") is True
+    assert is_template_instruction("(De ser el caso)") is True
+    assert is_template_instruction("(Se debe indicar...)") is True
+    assert is_template_instruction("13.2 Otras penalidades (de corresponder)") is True
+
+def test_deterministic_extractor_source_fidelity():
+    from app.services.v6.extraction.deterministic_extractor import DeterministicRequirementExtractor
+    text = """
+    5.2 Características técnicas
+    18 ALAMBRE DE ACERO CON PÚAS 10.0 ROLLO
+    CARACTERÍSTICAS: alambre de acero con recubrimiento de zinc (galvanizado)
+    COLOR: Plata
+    RESISTENTE A LA CORROSIÓN: Sí
+    DISTANCIA ENTRE PÚAS: 21.5 cm x 22.5 cm
+    TIPO DE PRODUCTO: Alambre
+    SUB TIPO DE PRODUCTO: Púas
+    MATERIAL: Acero
+    LARGO DEL CABLE: 200 m
+    EMPAQUE: cartón impreso
+    MODO DE USO: Para el cerco
+
+    19 GRAPA DE ACERO 3/4 in 9.0 KG
+    MATERIA PRIMA: Acero galvanizado
+    TIPO: Grapa para fijación de alambre
+    COLOR: Metálico
+    DIMENSIONES: 3,0 – 4,0 mm aprox.
+    GARANTIA DE FABRICA: 12 meses
+    PRESENTACION: Kilo
+
+    20 PINTURA ESMALTE ACRILICO 3.0 GALON
+    TIPO: Esmalte acrílico de acabado para superficies interiores y exteriores
+    PRESENTACIÓN: Galón
+    COLOR: Negro
+    GARANTIA: 12 meses
+
+    21 THINNER ACRILICO 2.0 GALON
+    TIPO: Solvente/diluyente para pinturas acrílicas
+    PRESENTACIÓN: Envase metálico o plástico resistente y herméticamente cerrado
+    OLOR: Característico a solvente
+
+    22 JUEGO DE BROCHAS X 4 PIEZAS 2.0 UNIDAD
+    TIPO: Brochas de pintura de uso general
+    PRESENTACIÓN: Juego de brochas de diferentes tamaños
+    MANGO: De material plástico o madera
+    VIROLA: Metálica, resistente a la corrosión y firmemente asegurada
+
+    23 WINCHA DE METAL 50 m 3.0 UNIDAD
+    TIPO: Cinta métrica metálica para medición de distancias
+    LONGITUD: 50 metros
+    MATERIAL DE LA CINTA: Acero
+    MANIVELA: Retráctil, para facilitar el enrollado de la cinta
+    """
+    extractor = DeterministicRequirementExtractor()
+    result = extractor.extract(text, source_document="DOC")
+
+    assert len(result.items) == 6
+
+    # Assert item 18 (ALAMBRE)
+    item_18 = next(i for i in result.items if i.item_number == "18")
+    assert len(item_18.specifications) == 9
+    specs_18 = {s.name: s.value for s in item_18.specifications}
+    assert specs_18["CARACTERÍSTICAS"] == "alambre de acero con recubrimiento de zinc (galvanizado)"
+    assert specs_18["COLOR"] == "Plata"
+    assert specs_18["EMPAQUE"] == "cartón impreso"
+
+    # Assert item 19 (GRAPA)
+    item_19 = next(i for i in result.items if i.item_number == "19")
+    assert len(item_19.specifications) == 6
+    specs_19 = {s.name: s.value for s in item_19.specifications}
+    assert specs_19["DIMENSIONES"] == "3,0 – 4,0 mm aprox."
+    assert specs_19["GARANTIA DE FABRICA"] == "12 meses"
+    assert specs_19["COLOR"] == "Metálico"
+
+    # Assert item 20 (PINTURA)
+    item_20 = next(i for i in result.items if i.item_number == "20")
+    assert len(item_20.specifications) == 4
+    specs_20 = {s.name: s.value for s in item_20.specifications}
+    assert specs_20["GARANTIA"] == "12 meses"
+    assert specs_20["TIPO"] == "Esmalte acrílico de acabado para superficies interiores y exteriores"
+    assert specs_20["COLOR"] == "Negro"
+    assert specs_20["PRESENTACIÓN"] == "Galón"
+
+    # Assert item 21
+    item_21 = next(i for i in result.items if i.item_number == "21")
+    assert len(item_21.specifications) == 3
+
+    # Assert item 22
+    item_22 = next(i for i in result.items if i.item_number == "22")
+    assert len(item_22.specifications) == 4
+    specs_22 = {s.name: s.value for s in item_22.specifications}
+    assert specs_22["MANGO"] == "De material plástico o madera"
+    assert specs_22["VIROLA"] == "Metálica, resistente a la corrosión y firmemente asegurada"
+
+    # Assert item 23
+    item_23 = next(i for i in result.items if i.item_number == "23")
+    assert len(item_23.specifications) == 4
+    specs_23 = {s.name: s.value for s in item_23.specifications}
+    assert specs_23["MATERIAL DE LA CINTA"] == "Acero"
+
+    # MODO DE USO is a context req
+    context_reqs = [r for r in result.requirements if r.requirement_type == "CONTEXT" and r.description.startswith("MODO DE USO")]
+    assert len(context_reqs) > 0
