@@ -1,4 +1,4 @@
-﻿import pytest
+import pytest
 from app.services.v6.engines.experience_extraction_engine import ExperienceExtractionEngine
 from app.services.v6.engines.experience_evaluation_engine import ExperienceEvaluationEngine
 from app.services.v6.selection.selection_service import SelectionService
@@ -13,6 +13,8 @@ from sqlalchemy.orm import Session
 def test_experience_flow(db_session: Session):
     # Setup
     tenant_id = "test_tenant"
+    from sqlalchemy import text
+    db_session.execute(text(f"INSERT INTO tenants (id, name, created_at) VALUES ('{tenant_id}', 'Test', NOW()) ON CONFLICT DO NOTHING"))
     case = CaseFile(title="Case Exp", contract_type="SERVICIOS", tenant_id=tenant_id)
     supplier = Supplier(ruc="2055", business_name="Mock S.A.", tenant_id=tenant_id)
     db_session.add_all([case, supplier])

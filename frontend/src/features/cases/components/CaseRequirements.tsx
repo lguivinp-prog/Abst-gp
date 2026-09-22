@@ -5,6 +5,7 @@ import type { RequirementResponse, RequirementUpdate, RequirementCreate, UpdateR
 import { Button } from '../../../components/ui/Button';
 import { Badge } from '../../../components/ui/Badge';
 import { AppError } from '../../../api/apiError';
+import { RequirementFunctionalBlocks } from './requirements/RequirementFunctionalBlocks';
 
 const UPDATE_STATUSES: UpdateRequirementStatus[] = [
   'VALIDATED',
@@ -119,7 +120,7 @@ export const CaseRequirements: React.FC<CaseRequirementsProps> = ({ caseId }) =>
   const handleSaveEdit = async (id: number) => {
     setMutationError(null);
     if (!editForm.reason.trim()) {
-      setMutationError('Debe ingresar un motivo para la modificaciÃ³n.');
+      setMutationError('Debe ingresar un motivo para la modificación.');
       return;
     }
 
@@ -142,7 +143,7 @@ export const CaseRequirements: React.FC<CaseRequirementsProps> = ({ caseId }) =>
   const handleSaveNew = async () => {
     setFormError(null);
     if (!addForm.requirement_type.trim() || !addForm.description.trim()) {
-      setFormError('El tipo de requerimiento y la descripciÃ³n son obligatorios.');
+      setFormError('El tipo de requerimiento y la descripción son obligatorios.');
       return;
     }
 
@@ -163,16 +164,7 @@ export const CaseRequirements: React.FC<CaseRequirementsProps> = ({ caseId }) =>
     }
   };
 
-  const getStatusBadge = (status: string) => {
-    switch (status) {
-      case 'PENDING_REVIEW': return <Badge variant="warning">Pendiente</Badge>;
-      case 'VALIDATED': return <Badge variant="success">Validado</Badge>;
-      case 'OBSERVED': return <Badge variant="danger">Observado</Badge>;
-      case 'REJECTED': return <Badge variant="danger">Rechazado</Badge>;
-      case 'MODIFIED_BY_USER': return <Badge variant="primary">Modificado</Badge>;
-      default: return <Badge variant="secondary">{status}</Badge>;
-    }
-  };
+
 
   if (loading) {
     return (
@@ -193,7 +185,7 @@ export const CaseRequirements: React.FC<CaseRequirementsProps> = ({ caseId }) =>
       <div className="case-requirements">
         <div className="case-requirements__header">
           <h2 className="case-requirements__title">Requerimientos</h2>
-          <p className="case-requirements__subtitle">OcurriÃ³ un error al cargar la informaciÃ³n.</p>
+          <p className="case-requirements__subtitle">Ocurrió un error al cargar la información.</p>
         </div>
         <div className="case-requirements__error">
           <div className="case-requirements__error-icon-wrapper">
@@ -211,7 +203,7 @@ export const CaseRequirements: React.FC<CaseRequirementsProps> = ({ caseId }) =>
   const handleSaveNewItem = async () => {
     setItemFormError(null);
     if (!addItemForm.description.trim()) {
-      setItemFormError('La descripciÃ³n es obligatoria.');
+      setItemFormError('La descripción es obligatoria.');
       return;
     }
     setIsAddingItem(true);
@@ -224,7 +216,7 @@ export const CaseRequirements: React.FC<CaseRequirementsProps> = ({ caseId }) =>
       if (err instanceof AppError) {
         setItemFormError(err.message);
       } else {
-        setItemFormError('Error al crear Ã­tem.');
+        setItemFormError('Error al crear ítem.');
       }
     } finally {
       setIsAddingItem(false);
@@ -241,36 +233,33 @@ export const CaseRequirements: React.FC<CaseRequirementsProps> = ({ caseId }) =>
       if (err instanceof AppError) {
         setItemFormError(err.message);
       } else {
-        setItemFormError('Error al actualizar Ã­tem.');
+        setItemFormError('Error al actualizar ítem.');
       }
     }
   };
 
   const handleDeleteItem = async (itemId: number) => {
-    if (!window.confirm('Â¿EstÃ¡ seguro de eliminar este Ã­tem?')) return;
+    if (!window.confirm('¿Está seguro de eliminar este ítem?')) return;
     try {
       await requirementsService.deleteProcurementItem(caseId, itemId);
       await loadProcurementItems();
     } catch (err) {
-      alert('Error al eliminar Ã­tem');
+      alert('Error al eliminar ítem');
     }
   };
-
-  const structuredReqs = requirements.filter(r => r.requirement_type !== 'CONTRACTUAL');
-  const contractualReqs = requirements.filter(r => r.requirement_type === 'CONTRACTUAL');
 
   return (
     <div className="case-requirements">
       <div className="case-requirements__header-wrapper mt-4">
         <div className="case-requirements__header">
-          <h2 className="case-requirements__title">Ãtems de ContrataciÃ³n</h2>
+          <h2 className="case-requirements__title">Ítems de Contratación</h2>
           <p className="case-requirements__subtitle">
-            Bienes o servicios econÃ³micos a cotizar.
+            Bienes o servicios económicos a cotizar.
           </p>
         </div>
         {!showAddItemForm && (
           <Button leftIcon={<Plus size={18} />} onClick={() => setShowAddItemForm(true)}>
-            Agregar Ãtem
+            Agregar Ítem
           </Button>
         )}
       </div>
@@ -278,7 +267,7 @@ export const CaseRequirements: React.FC<CaseRequirementsProps> = ({ caseId }) =>
       <div className="case-requirements__list mb-6">
         {showAddItemForm && (
           <div className="case-requirements__card case-requirements__card--new">
-            <h3 className="case-requirements__form-title">Nuevo Ãtem</h3>
+            <h3 className="case-requirements__form-title">Nuevo Ítem</h3>
             {itemFormError && (
               <div className="case-requirements__mutation-error">
                 <AlertCircle size={16} /> {itemFormError}
@@ -287,7 +276,7 @@ export const CaseRequirements: React.FC<CaseRequirementsProps> = ({ caseId }) =>
             <div className="case-requirements__form">
               <div className="case-requirements__form-grid">
                 <div className="case-requirements__field">
-                  <label className="case-requirements__label">DescripciÃ³n</label>
+                  <label className="case-requirements__label">Descripción</label>
                   <input
                     type="text"
                     className="case-requirements__input"
@@ -331,7 +320,7 @@ export const CaseRequirements: React.FC<CaseRequirementsProps> = ({ caseId }) =>
 
         {procurementItems.length === 0 && !showAddItemForm ? (
           <div className="case-requirements__card case-requirements__empty">
-            <p>No hay Ã­tems de contrataciÃ³n registrados.</p>
+            <p>No hay ítems de contratación registrados.</p>
           </div>
         ) : (
           procurementItems.map(item => (
@@ -340,7 +329,7 @@ export const CaseRequirements: React.FC<CaseRequirementsProps> = ({ caseId }) =>
                 <div className="case-requirements__form">
                   <div className="case-requirements__form-grid">
                     <div className="case-requirements__field">
-                      <label className="case-requirements__label">DescripciÃ³n</label>
+                      <label className="case-requirements__label">Descripción</label>
                       <input
                         type="text"
                         className="case-requirements__input"
@@ -380,7 +369,7 @@ export const CaseRequirements: React.FC<CaseRequirementsProps> = ({ caseId }) =>
                 <div className="case-requirements__status-row">
                   <div className="case-requirements__requirement-meta flex items-center gap-2">
                     {item.status === 'REVIEW_REQUIRED' && (
-                      <Badge variant="danger">REQUIERE REVISIÃ“N</Badge>
+                      <Badge variant="danger">REQUIERE REVISIÓN</Badge>
                     )}
                     {item.status === 'VALIDATED' && (
                       <Badge variant="success">VALIDATED</Badge>
@@ -413,69 +402,8 @@ export const CaseRequirements: React.FC<CaseRequirementsProps> = ({ caseId }) =>
         )}
       </div>
 
-      <div className="case-requirements__header-wrapper mt-8">
-        <div className="case-requirements__header">
-          <h2 className="case-requirements__title">Condiciones Contractuales del Requerimiento</h2>
-          <p className="case-requirements__subtitle">
-            Condiciones extraÃ­das automÃ¡ticamente (Plazo, GarantÃ­a, Vida Ãštil, etc.)
-          </p>
-        </div>
-      </div>
-
-      <div className="case-requirements__list mb-6">
-        {contractualReqs.length === 0 ? (
-          <div className="case-requirements__card case-requirements__empty">
-            <p>No se han identificado condiciones contractuales.</p>
-          </div>
-        ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm text-left border-collapse">
-              <thead className="bg-gray-50 border-b">
-                <tr>
-                  <th className="p-3 font-semibold">CondiciÃ³n</th>
-                  <th className="p-3 font-semibold">Valor</th>
-                  <th className="p-3 font-semibold">Regla</th>
-                  <th className="p-3 font-semibold">Fuente</th>
-                  <th className="p-3 font-semibold">PÃ¡gina</th>
-                  <th className="p-3 font-semibold">Confianza</th>
-                  <th className="p-3 font-semibold">Estado</th>
-                  <th className="p-3 font-semibold">AcciÃ³n</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y">
-                {contractualReqs.map(req => {
-                  const ev = req.evidences?.[0];
-                  return (
-                    <tr key={req.id}>
-                      <td className="p-3">{req.description}</td>
-                      <td className="p-3">{req.numeric_value !== null ? `${req.numeric_value} ${req.unit || ''}` : req.value}</td>
-                      <td className="p-3">{req.comparator || 'N/A'}</td>
-                      <td className="p-3 text-gray-500">{ev?.source_document || 'N/A'}</td>
-                      <td className="p-3 text-gray-500">{ev?.source_page || 'N/A'}</td>
-                      <td className="p-3">{ev?.confidence ? `${(ev.confidence * 100).toFixed(0)}%` : 'N/A'}</td>
-                      <td className="p-3">{getStatusBadge(req.status)}</td>
-                      <td className="p-3">
-                        <Button variant="ghost" size="sm" onClick={() => handleStartEdit(req)}>
-                          <Edit2 size={16} />
-                        </Button>
-                      </td>
-                    </tr>
-                  )
-                })}
-              </tbody>
-            </table>
-          </div>
-        )}
-      </div>
-
-      <div className="case-requirements__header-wrapper">
-        <div className="case-requirements__header">
-          <h2 className="case-requirements__title">Requerimientos Estructurados</h2>
-          <p className="case-requirements__subtitle">
-            RevisiÃ³n y estructuraciÃ³n de las condiciones extraÃ­das del documento de requerimiento.
-          </p>
-        </div>
-        {!showAddForm && (
+      <div className="case-requirements__header-wrapper mt-8 justify-end">
+        {!showAddForm && editingId === null && (
           <Button leftIcon={<Plus size={18} />} onClick={() => setShowAddForm(true)}>
             Agregar Requerimiento
           </Button>
@@ -501,7 +429,7 @@ export const CaseRequirements: React.FC<CaseRequirementsProps> = ({ caseId }) =>
                     value={addForm.requirement_type}
                     onChange={e => setAddForm({...addForm, requirement_type: e.target.value})}
                     disabled={isAdding}
-                    placeholder="Ej: Especificaciones TÃ©cnicas"
+                    placeholder="Ej: Especificaciones Técnicas"
                   />
                 </div>
                 <div className="case-requirements__field">
@@ -518,7 +446,7 @@ export const CaseRequirements: React.FC<CaseRequirementsProps> = ({ caseId }) =>
                 </div>
               </div>
               <div className="case-requirements__field">
-                <label className="case-requirements__label">DescripciÃ³n</label>
+                <label className="case-requirements__label">Descripción</label>
                 <textarea
                   className="case-requirements__input case-requirements__input--textarea"
                   rows={2}
@@ -537,7 +465,7 @@ export const CaseRequirements: React.FC<CaseRequirementsProps> = ({ caseId }) =>
                   disabled={isAdding}
                 />
               </div>
-              <div className="case-requirements__edit-actions">
+              <div className="case-requirements__edit-actions mt-2">
                 <Button variant="outline" size="sm" onClick={() => setShowAddForm(false)} disabled={isAdding}>
                   Cancelar
                 </Button>
@@ -549,145 +477,126 @@ export const CaseRequirements: React.FC<CaseRequirementsProps> = ({ caseId }) =>
           </div>
         )}
 
-        {structuredReqs.length === 0 && !showAddForm ? (
-          <div className="case-requirements__card case-requirements__empty">
-            <p>No se han identificado requerimientos estructurados para este expediente.</p>
-          </div>
-        ) : (
-          structuredReqs.map(req => (
-            <div key={req.id} className="case-requirements__card">
-              {editingId === req.id ? (
-                <div className="case-requirements__form">
-                  <div className="case-requirements__form-header">
-                    <span className="case-requirements__form-title-small">Editando Requerimiento #{req.id}</span>
-                  </div>
-                  {mutationError && (
-                    <div className="case-requirements__mutation-error">
-                      <AlertCircle size={16} /> {mutationError}
-                    </div>
-                  )}
-                  <div className="case-requirements__form-grid">
-                    <div className="case-requirements__field">
-                      <label className="case-requirements__label">Estado</label>
-                      <select
-                        className="case-requirements__input"
-                        value={editForm.status}
-                        onChange={e => {
-                          const val = e.target.value;
-                          if (isUpdateRequirementStatus(val)) {
-                            setEditForm({...editForm, status: val});
-                          }
-                        }}
-                        disabled={savingId === req.id}
-                      >
-                        <option value="VALIDATED">Validado</option>
-                        <option value="MODIFIED_BY_USER">Modificado por Usuario</option>
-                        <option value="OBSERVED">Observado</option>
-                        <option value="REJECTED">Rechazado</option>
-                      </select>
-                    </div>
-                    <div className="case-requirements__field">
-                      <label className="case-requirements__label">Motivo del Cambio (Obligatorio)</label>
-                      <input
-                        type="text"
-                        className="case-requirements__input"
-                        value={editForm.reason}
-                        onChange={e => setEditForm({...editForm, reason: e.target.value})}
-                        disabled={savingId === req.id}
-                        placeholder="Ej: CorrecciÃ³n manual..."
-                      />
-                    </div>
-                  </div>
-                  <div className="case-requirements__field">
-                    <label className="case-requirements__label">DescripciÃ³n</label>
-                    <textarea
-                      className="case-requirements__input case-requirements__input--textarea"
-                      rows={2}
-                      value={editForm.description || ''}
-                      onChange={e => setEditForm({...editForm, description: e.target.value})}
-                      disabled={savingId === req.id}
-                    />
-                  </div>
-                  <div className="case-requirements__field">
-                    <label className="case-requirements__label">Valor / Umbral</label>
-                    <input
-                      type="text"
-                      className="case-requirements__input"
-                      value={editForm.value || ''}
-                      onChange={e => setEditForm({...editForm, value: e.target.value})}
-                      disabled={savingId === req.id}
-                    />
-                  </div>
-
-                  <div className="case-requirements__field">
-                    <label className="case-requirements__label">Valor numÃ©rico</label>
-                    <input
-                      type="number"
-                      className="case-requirements__input"
-                      value={editForm.numeric_value || ''}
-                      onChange={e => setEditForm({...editForm, numeric_value: parseFloat(e.target.value)})}
-                      disabled={savingId === req.id}
-                    />
-                  </div>
-                  <div className="case-requirements__field">
-                    <label className="case-requirements__label">Unidad</label>
-                    <input
-                      type="text"
-                      className="case-requirements__input"
-                      value={editForm.unit || ''}
-                      onChange={e => setEditForm({...editForm, unit: e.target.value})}
-                      disabled={savingId === req.id}
-                    />
-                  </div>
-                  <div className="case-requirements__field">
-                    <label className="case-requirements__label">Regla (Comparator)</label>
-                    <select
-                      className="case-requirements__input"
-                      value={editForm.comparator || ''}
-                      onChange={e => setEditForm({...editForm, comparator: e.target.value})}
-                      disabled={savingId === req.id}
-                    >
-                      <option value="">Seleccionar...</option>
-                      <option value="MIN">MÃ­nimo (MIN)</option>
-                      <option value="MAX">MÃ¡ximo (MAX)</option>
-                      <option value="EXACT">Exacto (EXACT)</option>
-                      <option value="RANGE">Rango (RANGE)</option>
-                    </select>
-                  </div>
-
-                  <div className="case-requirements__edit-actions">
-                    <Button variant="outline" size="sm" onClick={handleCancelEdit} disabled={savingId === req.id}>
-                      <X size={16} className="mr-1" /> Cancelar
-                    </Button>
-                    <Button size="sm" onClick={() => handleSaveEdit(req.id)} disabled={savingId === req.id || !editForm.reason.trim()}>
-                      <Save size={16} className="mr-1" /> {savingId === req.id ? 'Guardando...' : 'Guardar'}
-                    </Button>
-                  </div>
-                </div>
-              ) : (
-                <div className="case-requirements__status-row">
-                  <div className="case-requirements__requirement-meta">
-                    <div className="case-requirements__badge-group">
-                      <span className="case-requirements__type-badge">{req.requirement_type}</span>
-                      {getStatusBadge(req.status)}
-                      {req.mandatory ? (
-                        <Badge variant="secondary">Obligatorio</Badge>
-                      ) : (
-                        <Badge variant="secondary">Opcional</Badge>
-                      )}
-                    </div>
-                    <p className="case-requirements__description">{req.description}</p>
-                    {req.value && (
-                      <p className="case-requirements__value-display"><span>Valor:</span> {req.value}</p>
-                    )}
-                  </div>
-                  <Button variant="ghost" size="sm" onClick={() => handleStartEdit(req)}>
-                    <Edit2 size={16} />
-                  </Button>
+        {editingId !== null && (
+          <div className="case-requirements__card">
+            <div className="case-requirements__form">
+              <div className="case-requirements__form-header">
+                <span className="case-requirements__form-title-small">Editando Requerimiento #{editingId}</span>
+              </div>
+              {mutationError && (
+                <div className="case-requirements__mutation-error">
+                  <AlertCircle size={16} /> {mutationError}
                 </div>
               )}
+              <div className="case-requirements__form-grid">
+                <div className="case-requirements__field">
+                  <label className="case-requirements__label">Estado</label>
+                  <select
+                    className="case-requirements__input"
+                    value={editForm.status}
+                    onChange={e => {
+                      const val = e.target.value;
+                      if (isUpdateRequirementStatus(val)) {
+                        setEditForm({...editForm, status: val});
+                      }
+                    }}
+                    disabled={savingId === editingId}
+                  >
+                    <option value="VALIDATED">Validado</option>
+                    <option value="MODIFIED_BY_USER">Modificado por Usuario</option>
+                    <option value="OBSERVED">Observado</option>
+                    <option value="REJECTED">Rechazado</option>
+                  </select>
+                </div>
+                <div className="case-requirements__field">
+                  <label className="case-requirements__label">Motivo del Cambio (Obligatorio)</label>
+                  <input
+                    type="text"
+                    className="case-requirements__input"
+                    value={editForm.reason}
+                    onChange={e => setEditForm({...editForm, reason: e.target.value})}
+                    disabled={savingId === editingId}
+                    placeholder="Ej: Corrección manual..."
+                  />
+                </div>
+              </div>
+              <div className="case-requirements__field">
+                <label className="case-requirements__label">Descripción</label>
+                <textarea
+                  className="case-requirements__input case-requirements__input--textarea"
+                  rows={2}
+                  value={editForm.description || ''}
+                  onChange={e => setEditForm({...editForm, description: e.target.value})}
+                  disabled={savingId === editingId}
+                />
+              </div>
+              <div className="case-requirements__field">
+                <label className="case-requirements__label">Valor / Umbral</label>
+                <input
+                  type="text"
+                  className="case-requirements__input"
+                  value={editForm.value || ''}
+                  onChange={e => setEditForm({...editForm, value: e.target.value})}
+                  disabled={savingId === editingId}
+                />
+              </div>
+
+              <div className="case-requirements__form-grid mt-2">
+                <div className="case-requirements__field">
+                  <label className="case-requirements__label">Valor numérico</label>
+                  <input
+                    type="number"
+                    className="case-requirements__input"
+                    value={editForm.numeric_value || ''}
+                    onChange={e => setEditForm({...editForm, numeric_value: parseFloat(e.target.value)})}
+                    disabled={savingId === editingId}
+                  />
+                </div>
+                <div className="case-requirements__field">
+                  <label className="case-requirements__label">Unidad</label>
+                  <input
+                    type="text"
+                    className="case-requirements__input"
+                    value={editForm.unit || ''}
+                    onChange={e => setEditForm({...editForm, unit: e.target.value})}
+                    disabled={savingId === editingId}
+                  />
+                </div>
+                <div className="case-requirements__field">
+                  <label className="case-requirements__label">Regla (Comparator)</label>
+                  <select
+                    className="case-requirements__input"
+                    value={editForm.comparator || ''}
+                    onChange={e => setEditForm({...editForm, comparator: e.target.value})}
+                    disabled={savingId === editingId}
+                  >
+                    <option value="">Seleccionar...</option>
+                    <option value="MIN">Mínimo (MIN)</option>
+                    <option value="MAX">Máximo (MAX)</option>
+                    <option value="EXACT">Exacto (EXACT)</option>
+                    <option value="RANGE">Rango (RANGE)</option>
+                  </select>
+                </div>
+              </div>
+
+              <div className="case-requirements__edit-actions mt-4">
+                <Button variant="outline" size="sm" onClick={handleCancelEdit} disabled={savingId === editingId}>
+                  <X size={16} className="mr-1" /> Cancelar
+                </Button>
+                <Button size="sm" onClick={() => handleSaveEdit(editingId)} disabled={savingId === editingId || !editForm.reason.trim()}>
+                  <Save size={16} className="mr-1" /> {savingId === editingId ? 'Guardando...' : 'Guardar'}
+                </Button>
+              </div>
             </div>
-          ))
+          </div>
+        )}
+
+        {editingId === null && !showAddForm && (
+          <RequirementFunctionalBlocks
+            requirements={requirements}
+            procurementItems={procurementItems}
+            onEditRequirement={handleStartEdit}
+          />
         )}
       </div>
     </div>

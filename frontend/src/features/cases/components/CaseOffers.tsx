@@ -1,4 +1,4 @@
-﻿import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { FileText, Building2, Check, X, AlertCircle, Trash2, Edit2 } from 'lucide-react';
 import { Button } from '../../../components/ui/Button';
 import { Badge } from '../../../components/ui/Badge';
@@ -122,7 +122,7 @@ export const CaseOffers: React.FC<CaseOffersProps> = ({ caseId }) => {
           const result = await response.json();
           documentIds = [result.id];
         } else {
-          throw new Error('Error al subir documento de cotizaciÃ³n');
+          throw new Error('Error al subir documento de cotización');
         }
       }
 
@@ -145,7 +145,7 @@ export const CaseOffers: React.FC<CaseOffersProps> = ({ caseId }) => {
   };
 
   const handleDeleteOffer = async (offerId: number) => {
-    if (!window.confirm('Â¿EstÃ¡ seguro de eliminar esta oferta?')) {
+    if (!window.confirm('¿Está seguro de eliminar esta oferta?')) {
       return;
     }
 
@@ -186,7 +186,7 @@ export const CaseOffers: React.FC<CaseOffersProps> = ({ caseId }) => {
         <div className="case-offers-empty">
           <FileText size={48} className="empty-icon" />
           <h3>No hay ofertas registradas</h3>
-          <p>Primero debe vincular un proveedor en la pestaÃ±a "Proveedores".</p>
+          <p>Primero debe vincular un proveedor en la pestaña "Proveedores".</p>
         </div>
       )}
 
@@ -276,8 +276,8 @@ export const CaseOffers: React.FC<CaseOffersProps> = ({ caseId }) => {
                         <h3 style={{ fontSize: '1rem', fontWeight: 600, marginBottom: '16px' }}>Ítems Cotizados</h3>
                         {procurementItems.some(pi => pi.status === 'REVIEW_REQUIRED' || pi.quantity === null || !pi.unit) ? (
                           <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded relative" role="alert">
-                            <strong className="font-bold">AcciÃ³n Requerida: </strong>
-                            <span className="block sm:inline">Revise y complete los Ã­tems de contrataciÃ³n antes de registrar precios.</span>
+                            <strong className="font-bold">Acción Requerida: </strong>
+                            <span className="block sm:inline">Revise y complete los ítems de contratación antes de registrar precios.</span>
                           </div>
                         ) : procurementItems.length > 0 ? (
                           <div className="offer-items-table-wrapper" style={{ width: '100%', minWidth: '0', overflowX: 'auto', border: '1px solid var(--color-border)', borderRadius: '4px' }}>
@@ -353,7 +353,7 @@ export const CaseOffers: React.FC<CaseOffersProps> = ({ caseId }) => {
                             </table>
                           </div>
                         ) : (
-                          <p className="text-sm text-gray-500 italic">No hay Ã­tems requeridos registrados.</p>
+                          <p className="text-sm text-gray-500 italic">No hay ítems requeridos registrados.</p>
                         )}
                       </div>
 

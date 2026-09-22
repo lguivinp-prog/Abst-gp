@@ -11,6 +11,7 @@ from app.models.domain import Tenant, RolloutTenantAssignment, SystemSettings
 import sys
 
 def ensure_safe_test_db(conn):
+    if "sqlite" in str(conn.engine.url): return
     db_name = conn.execute(text("SELECT current_database()")).scalar()
     if not db_name:
         pytest.exit("FATAL: Could not determine database name. Aborting test.")
@@ -44,7 +45,7 @@ def setup_test_db_schema():
     """Ejecuta alembic upgrade head una vez por sesión de tests"""
     with engine.connect() as conn:
         ensure_safe_test_db(conn)
-        db_name = conn.execute(text("SELECT current_database()")).scalar()
+        db_name = "sqlite" if "sqlite" in str(conn.engine.url) else conn.execute(text("SELECT current_database()")).scalar()
         print(f"\n--- Pytest running against isolated DB: {db_name} ---")
 
     # NO_USE_METADATA_CREATE_ALL

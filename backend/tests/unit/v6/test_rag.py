@@ -1,4 +1,4 @@
-﻿from app.services.v6.rag.chunking_service import DocumentChunkService
+from app.services.v6.rag.chunking_service import DocumentChunkService
 from app.services.v6.rag.embedding_provider import MockEmbeddingProvider
 from app.services.v6.rag.vector_store import DeterministicVectorStore
 from app.services.v6.rag.retrieval_service import EvidenceRetrievalService
@@ -16,6 +16,9 @@ def test_chunking_service():
 
 def test_deterministic_retrieval_isolation(db_session: Session):
     # Setup Data
+    from sqlalchemy import text
+    db_session.execute(text("INSERT INTO tenants (id, name, created_at) VALUES ('tenant_a', 'A', NOW()) ON CONFLICT DO NOTHING"))
+    db_session.execute(text("INSERT INTO tenants (id, name, created_at) VALUES ('tenant_b', 'B', NOW()) ON CONFLICT DO NOTHING"))
     case_a = CaseFile(title="Case A", contract_type="BIENES", tenant_id="tenant_a")
     case_b = CaseFile(title="Case B", contract_type="BIENES", tenant_id="tenant_a")
     case_c = CaseFile(title="Case C", contract_type="BIENES", tenant_id="tenant_b")
