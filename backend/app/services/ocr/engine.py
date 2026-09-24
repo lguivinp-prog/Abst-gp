@@ -14,7 +14,7 @@ class OCRExtractionResult(BaseModel):
     page_count: int
     ocr_used: bool
     language: str
-    confidence_avg: float
+    confidence_avg: Optional[float] = None
     errors: List[str]
     structured_document: Optional[StructuredDocument] = None
 
@@ -383,7 +383,7 @@ def process_pdf(file_path: str, force_ocr: bool = False, language: str = "spa") 
         page_count=page_count,
         ocr_used=ocr_used,
         language=language if ocr_used else 'N/A',
-        confidence_avg=0.85 if ocr_used else 1.0,
+        confidence_avg=None if ocr_used else 1.0,
         errors=errors,
         structured_document=structured_doc
     )

@@ -9,6 +9,13 @@ from app.services.v6.extraction.contract_extractor import extract_requirements_f
 from app.services.v6.extraction.requirement_classifier import classify_requirement
 import json
 
+def resolve_contract_flow(requested_flow: bool, requirement_status: str, ocr_quality_status: str = None) -> bool:
+    if requirement_status in ["REVIEW_REQUIRED", "REJECTED"]:
+        return False
+    if ocr_quality_status in ["REVIEW_REQUIRED", "FAILED", "PROCESSING"]:
+        return False
+    return bool(requested_flow)
+
 class RequirementExtractionService:
     def __init__(self, extractor: RequirementExtractionProvider = None):
         self.extractor = extractor or DeterministicRequirementExtractor()
@@ -85,6 +92,16 @@ class RequirementExtractionService:
 
         created_matrices = []
         if not skip_requirements:
+            contract_res = extract_requirements_from_text(text, source_document=document_name)
+
+            ocr_status = None
+            if (result.requirements or contract_res.get("requirements")) and document_id:
+                from app.models.domain import UploadedDocument
+                with db.no_autoflush:
+                    doc_obj = db.query(UploadedDocument).get(document_id)
+                if doc_obj:
+                    ocr_status = doc_obj.ocr_status
+
             for candidate in result.requirements:
                 classification = classify_requirement(candidate.description, all_proc_items, all_specs)
                 if classification.get("category") == "TEMPLATE_INSTRUCTION":
@@ -102,8 +119,9 @@ class RequirementExtractionService:
                 seen_descriptions.add(normalized_desc)
 
                 threshold = 0.85
-                if classification.get("status") == "REVIEW_REQUIRED":
-                    req_status = "REVIEW_REQUIRED"
+                class_status = classification.get("status")
+                if class_status in ["REVIEW_REQUIRED", "REJECTED"]:
+                    req_status = class_status
                 else:
                     req_status = "REVIEW_REQUIRED" if candidate.confidence < threshold else "PENDING_REVIEW"
 
@@ -118,7 +136,7 @@ class RequirementExtractionService:
                     category=classification.get("category"),
                     phase=classification.get("phase"),
                     procurement_item_id=classification.get("procurement_item_id"),
-                    flows_to_contract=classification.get("flows_to_contract", False)
+                    flows_to_contract=resolve_contract_flow(classification.get("flows_to_contract", False), req_status, ocr_status)
                 )
                 db.add(req)
                 db.flush()
@@ -149,7 +167,6 @@ class RequirementExtractionService:
                 db.add(audit)
                 created_matrices.append(req)
 
-            contract_res = extract_requirements_from_text(text, source_document=document_name)
             for c_req in contract_res.get("requirements", []):
                 if c_req["key"] in preserved_contractual_keys:
                     continue
@@ -169,7 +186,7 @@ class RequirementExtractionService:
                     category="CONTRACTUAL_TERM",
                     phase="CONTRACT_EXECUTION",
                     procurement_item_id=None,
-                    flows_to_contract=True
+                    flows_to_contract=resolve_contract_flow(True, req_status, ocr_status)
                 )
                 db.add(req)
                 db.flush()

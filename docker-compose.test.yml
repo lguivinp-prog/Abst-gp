@@ -90,8 +90,8 @@ services:
   worker-ocr:
     container_name: phase5_ring1_test_worker_ocr
     build:
-      context: .
-      dockerfile: Dockerfile.backend.test
+      context: ./backend
+      dockerfile: Dockerfile.ocr
     command: ["rq", "worker", "-u", "redis://redis:6379/0", "ocr_tasks"]
     restart: "no"
     environment:
