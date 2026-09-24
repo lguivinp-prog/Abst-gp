@@ -1,6 +1,11 @@
 from pydantic import BaseModel, Field
 from typing import List, Dict, Optional, Any, Union
 
+class PageClassification(BaseModel):
+    page_number: int
+    needs_ocr: bool
+    native_text_length: int
+
 class OcrElement(BaseModel):
     text: str
     confidence: float
@@ -22,6 +27,7 @@ class DocumentBlock(BaseModel):
     confidence: float = 0.0
     source_elements: List[OcrElement] = Field(default_factory=list)
     transformations: List[str] = Field(default_factory=list)
+    source: str = "ocr_v2"
 
 class DocumentPage(BaseModel):
     page_number: int
@@ -65,3 +71,4 @@ class PdfClassificationResult(BaseModel):
     text_pages: int
     image_pages: int
     details: Dict[str, Any] = Field(default_factory=dict)
+    page_results: List[PageClassification] = Field(default_factory=list)

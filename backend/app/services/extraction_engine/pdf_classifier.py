@@ -1,6 +1,6 @@
-import fitz  # PyMuPDF
+﻿import fitz  # PyMuPDF
 from typing import Dict, Any
-from app.services.extraction_engine.models.document import PdfClassificationResult
+from app.services.extraction_engine.models.document import PdfClassificationResult, PageClassification
 
 class PdfClassifier:
     def __init__(self, text_length_threshold: int = 150):
@@ -13,19 +13,28 @@ class PdfClassifier:
         pages_count = len(doc)
         text_pages = 0
         image_pages = 0
-        
+        page_results = []
         for i in range(pages_count):
             page = doc[i]
             text = page.get_text("text").strip()
-            
+            text_length = len(text)
+
             # Also check images to be more robust
             images = page.get_images(full=True)
-            
-            if len(text) > self.text_length_threshold:
+
+            if text_length > self.text_length_threshold:
                 text_pages += 1
+                needs_ocr = False
             else:
                 image_pages += 1
-                
+                needs_ocr = True
+
+            page_results.append(PageClassification(
+                page_number=i+1,
+                needs_ocr=needs_ocr,
+                native_text_length=text_length
+            ))
+
         doc.close()
 
         if pages_count == 0:
@@ -40,7 +49,7 @@ class PdfClassifier:
         else:
             doc_type = "hybrid"
             confidence = 0.90
-            
+
         return PdfClassificationResult(
             document_type=doc_type,
             confidence=confidence,
@@ -49,5 +58,6 @@ class PdfClassifier:
             image_pages=image_pages,
             details={
                 "message": "Classified using PyMuPDF text and image presence heuristics."
-            }
+            },
+            page_results=page_results
         )

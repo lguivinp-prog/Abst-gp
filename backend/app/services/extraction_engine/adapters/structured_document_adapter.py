@@ -28,7 +28,7 @@ class StructuredDocumentAdapter:
                             roman = roman_cand.upper()
                 
                 metadata = {
-                    "source": "ocr_v2",
+                    "source": getattr(block, "source", "ocr_v2"),
                     "confidence": block.confidence,
                     "bounding_box": block.bounding_box,
                     "page": block.page,
