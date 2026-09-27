@@ -69,6 +69,13 @@ echo "[E] Alembic Migrations..."
 run_compose run --rm backend-test alembic upgrade head > "$ARTIFACTS_DIR/alembic.log" 2>&1 || { RESULTS["ALEMBIC"]="FAIL"; exit 1; }
 RESULTS["ALEMBIC"]="PASS"
 
+# E.2 BOOTSTRAP SEED
+echo "[E.2] Bootstrap Base Data..."
+run_compose run --rm backend-test python scripts/seed_base.py > "$ARTIFACTS_DIR/seed.log" 2>&1 || { RESULTS["SEED"]="FAIL"; exit 1; }
+RESULTS["SEED"]="PASS"
+
+# (Seed E2E has been moved down closer to Browser E2E)
+
 # F. BACKEND SUITE
 echo "[F] Backend Suite Completa..."
 run_compose run --rm backend-test python -m pytest tests/ -v --ignore=tests/e2e > "$ARTIFACTS_DIR/pytest-full.log" 2>&1 || { RESULTS["SUITE_BACKEND"]="FAIL"; exit 1; }
@@ -95,10 +102,20 @@ run_compose up -d backend-app worker-test
 echo "Esperando a backend y worker..."
 sleep 15
 run_compose run --rm backend-test python -m pytest tests/e2e/test_full_document_pipeline.py -v > "$ARTIFACTS_DIR/api_e2e.log" 2>&1 || { RESULTS["API_E2E"]="FAIL"; exit 1; }
+if grep -q "1 skipped" "$ARTIFACTS_DIR/api_e2e.log" || ! grep -q "passed" "$ARTIFACTS_DIR/api_e2e.log"; then
+    echo "API E2E Zero-Test Defect detected (Skipped or no passes)."
+    RESULTS["API_E2E"]="FAIL"
+    exit 1
+fi
 RESULTS["API_E2E"]="PASS"
 
 # K. BROWSER E2E
 echo "[K] Browser E2E..."
+# Re-seed E2E data after Backend Suite may have truncated and corrupted the DB
+echo "[K.1] Bootstrap E2E Data para Browser..."
+run_compose run --rm -e ALLOW_E2E_SEED=true backend-test python scripts/seed_e2e.py > "$ARTIFACTS_DIR/seed_e2e.log" 2>&1 || { RESULTS["SEED_E2E"]="FAIL"; exit 1; }
+RESULTS["SEED_E2E"]="PASS"
+
 # Frontend ya debería estar corriendo en background para ser probado
 run_compose up -d frontend-test
 echo "Instalando Playwright dependencias en test container y ejecutando pruebas..."
@@ -112,7 +129,7 @@ echo "# Resumen del Gate V5.2.1 Checkpoint 3" > "$REPORT_FILE"
 echo "" >> "$REPORT_FILE"
 echo "| Gate | Estado |" >> "$REPORT_FILE"
 echo "|------|--------|" >> "$REPORT_FILE"
-GATES=("PREFLIGHT" "BUILD" "FRONTEND" "DEPENDENCIAS" "ALEMBIC" "SUITE_BACKEND" "CONCURRENCY" "ROLLBACK" "DOCUMENTAL" "API_E2E" "BROWSER_E2E")
+GATES=("PREFLIGHT" "BUILD" "FRONTEND" "DEPENDENCIAS" "ALEMBIC" "SEED" "SEED_E2E" "SUITE_BACKEND" "CONCURRENCY" "ROLLBACK" "DOCUMENTAL" "API_E2E" "BROWSER_E2E")
 for gate in "${GATES[@]}"; do
     state=${RESULTS[$gate]:-SKIPPED}
     echo "| $gate | $state |" >> "$REPORT_FILE"

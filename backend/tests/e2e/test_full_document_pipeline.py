@@ -9,7 +9,7 @@ from app.models.domain import User, Tenant
 from tests.conftest import TestingSessionLocal
 
 # Assuming backend-app runs at this hostname/port inside the compose network
-BASE_URL = os.getenv("API_BASE_URL", "http://127.0.0.1:8000")
+BASE_URL = os.getenv("API_BASE_URL", "http://backend-app:8000")
 
 @pytest.fixture(scope="module", autouse=True)
 def setup_e2e_admin_user():

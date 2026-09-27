@@ -65,6 +65,12 @@ services:
       - ../backend:/app
       - test-uploads:/app/uploads
     command: ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/api/v6/health"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+      start_period: 5s
 
   worker-test:
     build:
@@ -94,10 +100,14 @@ services:
       - ../frontend:/app
 
   browser-test:
-    image: mcr.microsoft.com/playwright:v1.42.0-jammy
+    image: mcr.microsoft.com/playwright:v1.62.1-jammy
     depends_on:
-      - frontend-test
-      - backend-app
+      backend-app:
+        condition: service_healthy
+      frontend-test:
+        condition: service_started
+      worker-test:
+        condition: service_started
     environment:
       - BASE_URL=http://frontend-test:5173
       - API_URL=http://backend-app:8000
