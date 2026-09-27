@@ -12,6 +12,12 @@ test.describe('Fase 6.5 — React 19 SRE Monitoring Dashboard E2E', () => {
         json: { access_token: ADMIN_TOKEN, token_type: 'bearer', role: 'ADMIN' },
       });
     });
+    await page.route('**/cases/', async (route) => {
+      if (route.request().resourceType() === 'document') {
+        return route.continue();
+      }
+      await route.fulfill({ json: [] });
+    });
 
     await page.route('**/admin/monitoring/workers', async (route) => {
       await route.fulfill({
@@ -162,16 +168,16 @@ test.describe('Fase 6.5 — React 19 SRE Monitoring Dashboard E2E', () => {
     await page.click('button[type="submit"]');
 
     // Verificar enlace en sidebar
-    const monitoringNav = page.locator('a[href="/monitoring"]');
-    await expect(monitoringNav).toBeVisible({ timeout: 10000 });
-    await monitoringNav.click();
+    await page.waitForURL('**/expedientes');
+    await expect(page.locator('a[href="/monitoring"]')).toBeVisible({ timeout: 10000 });
+    await page.click('a[href="/monitoring"]');
 
     // 1. Header y Breadcrumbs
     await expect(page.locator('h1:has-text("Centro de Observabilidad & SRE")')).toBeVisible();
     await expect(page.locator('.breadcrumb:has-text("Administración / Monitoreo & SRE")')).toBeVisible();
 
     // 2. Salud del Cluster de Workers
-    await expect(page.locator('h3:has-text("Estado del Clúster de Workers")')).toBeVisible();
+    await expect(page.locator('h3:has-text("Salud del Cluster de Workers")')).toBeVisible();
     await expect(page.locator('text=quotation-worker-1')).toBeVisible();
 
     // 3. Métricas de Rendimiento & SLAs
@@ -218,7 +224,7 @@ test.describe('Fase 6.5 — React 19 SRE Monitoring Dashboard E2E', () => {
     await page.fill('input[name="password"]', 'operatorpass');
     await page.click('button[type="submit"]');
 
-    await expect(page.locator('a[href="/cases"]')).toBeVisible({ timeout: 10000 });
+    await expect(page.locator('a[href="/expedientes"]')).toBeVisible({ timeout: 10000 });
     await expect(page.locator('a[href="/monitoring"]')).not.toBeVisible();
   });
 });

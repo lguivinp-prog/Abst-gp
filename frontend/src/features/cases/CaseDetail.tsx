@@ -183,7 +183,7 @@ const CaseDetail: React.FC = () => {
           ) : activeTab === 'requerimiento' ? (
             <CaseRequirements caseId={id || ''} />
           ) : activeTab === 'documentos' ? (
-            <CaseDocuments caseId={id || ''} />
+            <CaseDocuments caseId={id || ''} onRefresh={refresh} />
           ) : activeTab === 'proveedores' ? (
             <CaseSuppliers caseId={id || ''} />
           ) : activeTab === 'ofertas' ? (

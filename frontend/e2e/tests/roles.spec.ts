@@ -17,11 +17,12 @@ test.describe('Document Intelligence E2E - Matriz de Roles', () => {
     // Admin puede crear un nuevo caso y acceder a él
     await page.click('button:has-text("Nuevo Expediente")');
     await page.fill('input[name="title"]', 'Admin E2E Role Case');
-    await page.fill('input[name="contract_type"]', 'Standard');
-    await page.click('button:has-text("Crear")');
+    await page.selectOption('select[name="contract_type"]', 'bienes');
+    await page.click('button:has-text("Crear Expediente")');
 
     await expect(page.locator('text=Admin E2E Role Case').first()).toBeVisible({ timeout: 10000 });
     await page.click('text=Admin E2E Role Case');
+    await page.click('button:has-text("Documentos")');
     await expect(page.locator('input[data-testid="upload-requirement"]')).toBeVisible({ timeout: 10000 });
   });
 
@@ -77,8 +78,8 @@ test.describe('Document Intelligence E2E - Matriz de Roles', () => {
     await page.click('button[type="submit"]');
     await expect(page.locator('text=Expedientes').first()).toBeVisible({ timeout: 10000 });
 
-    await page.goto('/cases/202');
-    await expect(page.locator('text=View Only')).toBeVisible({ timeout: 10000 });
+    await page.goto('/expedientes/202');
+    await expect(page.getByRole('heading', { name: 'View Only' })).toBeVisible({ timeout: 10000 });
   });
 
   // Test Anti-IDOR
@@ -97,7 +98,7 @@ test.describe('Document Intelligence E2E - Matriz de Roles', () => {
       await route.fulfill({ status: 404, json: { detail: "Case not found" } });
     });
 
-    await page.goto('/cases/99999');
+    await page.goto('/expedientes/99999');
     
     // UI should show Not Found handled error banner
     await expect(page.locator('text=Error al cargar el caso').or(page.locator('text=Expediente no encontrado'))).toBeVisible({ timeout: 10000 });
