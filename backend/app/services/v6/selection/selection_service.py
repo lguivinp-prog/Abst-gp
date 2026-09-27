@@ -72,7 +72,7 @@ class SelectionService:
             case_id=case_id,
             supplier_offer_id=supplier_offer_id,
             justification_comment=justification,
-            proposed_by=user_id,
+            selected_by=user_id,
             status="UNDER_REVIEW"
         )
         db.add(attempt)

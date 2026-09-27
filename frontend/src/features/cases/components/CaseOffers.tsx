@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { FileText, Building2, Check, X, AlertCircle, Trash2, Edit2 } from 'lucide-react';
 import { Button } from '../../../components/ui/Button';
 import { Badge } from '../../../components/ui/Badge';
+import { v6Client } from '../../../api/v6/v6Client';
 import { offerService } from '../../../api/v6/offer.service';
 import type { SupplierOfferResponse, SupplierOfferUpdate } from '../../../api/v6/offer.types';
 import { AppError } from '../../../api/apiError';
@@ -110,24 +111,21 @@ export const CaseOffers: React.FC<CaseOffersProps> = ({ caseId }) => {
         formData.append('file', selectedFile);
         formData.append('document_type', 'oferta');
 
-        const response = await fetch(`/api/v6/cases/${caseId}/documents`, {
-          method: 'POST',
-          body: formData,
-          headers: {
-            'Authorization': `Bearer ${localStorage.getItem('token')}`
-          }
-        });
-
-        if (response.ok) {
-          const result = await response.json();
+        try {
+          const result = await v6Client.post<{id: number}>(
+            `/cases/${caseId}/documents`,
+            formData
+          );
           documentIds = [result.id];
-        } else {
+        } catch (error) {
           throw new Error('Error al subir documento de cotización');
         }
       }
 
       const updateData = { ...editData };
       if (documentIds) updateData.document_ids = documentIds;
+
+
 
       await offerService.updateOffer(caseId, offerId, updateData);
       setEditingOfferId(null);

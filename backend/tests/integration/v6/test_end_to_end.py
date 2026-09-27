@@ -29,7 +29,7 @@ def test_full_v6_end_to_end_flow(admin_client: TestClient, db_session: Session, 
     db_session.commit()
     
     # 4. Load Offer & Evidence
-    offer = SupplierOffer(case_id=case.id, supplier_id=supplier.id, status="PENDING", price=1000.0)
+    offer = SupplierOffer(case_id=case.id, supplier_id=supplier.id, status="SUBMITTED", price=1000.0)
     db_session.add(offer)
     db_session.commit()
     ev = OfferEvidence(supplier_offer_id=offer.id, document_type="Ficha Tecnica", fragment="32GB RAM")

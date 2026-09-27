@@ -30,7 +30,7 @@ def test_pilot_case_execution(admin_client: TestClient, db_session: Session, set
     offer = SupplierOffer(
         case_id=case.id,
         supplier_id=supplier.id,
-        status="PENDING",
+        status="SUBMITTED",
         price=1000.0
     )
     db_session.add(offer)

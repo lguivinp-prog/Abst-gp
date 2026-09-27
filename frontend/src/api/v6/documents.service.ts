@@ -3,7 +3,7 @@ import type { DocumentResponse } from './documents.types';
 import { handleApiError } from '../apiError';
 
 export const documentsPaths = {
-  list: (caseId: string | number) => `/cases/${caseId}/documents`,
+  list: (caseId: string | number) => `/cases/${caseId}/documents?_t=${Date.now()}`,
 };
 
 export const documentsService = {

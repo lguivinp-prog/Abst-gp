@@ -9,6 +9,10 @@ export default defineConfig({
     port: 5173,
     allowedHosts: true,
     proxy: {
+      '/api': {
+        target: process.env.VITE_API_URL || 'http://backend-app:8000',
+        changeOrigin: true,
+      },
       '/auth': {
         target: process.env.VITE_API_URL || 'http://backend-app:8000',
         changeOrigin: true,
@@ -29,6 +33,10 @@ export default defineConfig({
     port: 5173,
     allowedHosts: true,
     proxy: {
+      '/api': {
+        target: process.env.VITE_API_URL || 'http://backend-app:8000',
+        changeOrigin: true,
+      },
       '/auth': {
         target: process.env.VITE_API_URL || 'http://backend-app:8000',
         changeOrigin: true,

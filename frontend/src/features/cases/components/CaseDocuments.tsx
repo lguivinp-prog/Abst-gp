@@ -8,27 +8,44 @@ import { RequirementUpload } from './RequirementUpload';
 
 interface CaseDocumentsProps {
   caseId: string;
+  onRefresh?: () => void;
 }
 
-export const CaseDocuments: React.FC<CaseDocumentsProps> = ({ caseId }) => {
+export const CaseDocuments: React.FC<CaseDocumentsProps> = ({ caseId, onRefresh }) => {
   const [documents, setDocuments] = useState<DocumentResponse[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [extractingId, setExtractingId] = useState<number | null>(null);
   const [extractMessage, setExtractMessage] = useState<{ id: number; type: 'success' | 'error'; text: string } | null>(null);
+  const [refreshTrigger, setRefreshTrigger] = useState(0);
 
   useEffect(() => {
     let mounted = true;
+    console.log('[CaseDocuments] useEffect ran, mounted=true, refreshTrigger=', refreshTrigger);
 
     const fetchDocuments = async () => {
       try {
-        setLoading(true);
+        console.log('[CaseDocuments] fetchDocuments started');
         setError(null);
         const data = await documentsService.getDocuments(caseId);
+        console.log('[CaseDocuments] API returned data:', data);
         if (mounted) {
           setDocuments(data);
+
+          if (data.some((doc: DocumentResponse) => !doc.extraction_ready && doc.processing_status !== 'error')) {
+            console.log('[CaseDocuments] setting timeout...');
+            setTimeout(() => {
+              console.log('[CaseDocuments] timeout fired! mounted=', mounted);
+              if (mounted) setRefreshTrigger(prev => prev + 1);
+            }, 3000);
+          } else {
+            console.log('[CaseDocuments] NOT setting timeout. extraction_ready is true or error.');
+          }
+        } else {
+          console.log('[CaseDocuments] mounted is false when fetch returned!');
         }
       } catch (err) {
+        console.error('[CaseDocuments] fetch error:', err);
         if (mounted) {
           if (err instanceof AppError) {
             setError(err.message);
@@ -44,8 +61,12 @@ export const CaseDocuments: React.FC<CaseDocumentsProps> = ({ caseId }) => {
     };
 
     fetchDocuments();
-    return () => { mounted = false; };
-  }, [caseId]);
+
+    return () => {
+      console.log('[CaseDocuments] cleaning up effect, mounted=false');
+      mounted = false;
+    };
+  }, [caseId, refreshTrigger]);
 
   const handleExtract = async (docId: number) => {
     if (extractingId !== null) return;
@@ -90,13 +111,12 @@ export const CaseDocuments: React.FC<CaseDocumentsProps> = ({ caseId }) => {
           <p>No hay documentos registrados para este expediente.</p>
         </div>
         <div className="max-w-lg mx-auto">
-          <RequirementUpload 
-            caseId={caseId} 
+          <RequirementUpload
+            caseId={caseId}
             onUploadSuccess={() => {
-              // Reload page or re-fetch documents?
-              // The component will re-fetch if we just reset some state or we can just reload for now
-              window.location.reload();
-            }} 
+              setRefreshTrigger(prev => prev + 1);
+              if (onRefresh) onRefresh();
+            }}
           />
         </div>
       </div>

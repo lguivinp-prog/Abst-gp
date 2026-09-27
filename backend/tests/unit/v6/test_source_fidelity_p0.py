@@ -1,5 +1,6 @@
 import pytest
-from app.scripts.v6.audit_v3 import get_hash, generate_v3_manifest
+import re
+
 import os
 
 def test_source_fidelity_rules():
@@ -31,7 +32,7 @@ def test_source_fidelity_rules():
 
     # 7. Pago sin CCI inventado
     pago = "factura\nguía de remisión\notros documentos solicitados para el pago\npresentados en la oficina de Almacén de la Dirección Regional de Agricultura de Amazonas"
-    assert "cci" not in pago.lower()
+    assert re.search(r"(?<!\w)cci(?!\w)", pago, flags=re.IGNORECASE) is None
     assert "seguros" not in pago.lower()
     assert "transporte" not in pago.lower()
 

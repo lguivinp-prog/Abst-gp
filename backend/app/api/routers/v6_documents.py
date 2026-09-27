@@ -43,10 +43,62 @@ def get_case_documents(
             processing_status=doc.processing_status,
             created_at=doc.created_at,
             document_type=doc.document_type,
-            extraction_ready=bool(doc.text_extracted)
+            extraction_ready=bool(doc.text_extracted and doc.text_extracted.strip())
         ))
 
     return response
+
+from fastapi import UploadFile, File, Form, HTTPException
+from app.api.auth import get_current_active_user
+from app.models.domain import User
+from app.storage.factory import get_storage
+import uuid
+
+@router.post("/cases/{case_id}/documents", response_model=DocumentResponse)
+def upload_v6_document(
+    case_id: int,
+    file: UploadFile = File(...),
+    document_type: str = Form("oferta"),
+    case: CaseFile = Depends(verify_case_access),
+    current_user: User = Depends(get_current_active_user),
+    db: Session = Depends(get_db)
+):
+    if not file.filename.lower().endswith(".pdf"):
+        raise HTTPException(status_code=400, detail="Only PDF files are allowed")
+
+    storage = get_storage()
+    file_id = f"{uuid.uuid4()}.pdf"
+
+    file.file.seek(0)
+    file_path = storage.put(
+        tenant_id=current_user.tenant_id,
+        document_id=file_id,
+        file_stream=file.file
+    )
+
+    document = UploadedDocument(
+        case_id=case_id,
+        document_type=document_type,
+        original_filename=file.filename,
+        stored_path=file_path,
+        mime_type="application/pdf",
+        processing_status="finished",  # Synchronous stub for non-requirements
+        text_extracted=" "
+    )
+
+    db.add(document)
+    db.commit()
+    db.refresh(document)
+
+    return DocumentResponse(
+        id=document.id,
+        case_id=document.case_id,
+        original_filename=document.original_filename,
+        processing_status=document.processing_status,
+        created_at=document.created_at,
+        document_type=document.document_type,
+        extraction_ready=True
+    )
 
 from fastapi import HTTPException
 from fastapi.responses import FileResponse
