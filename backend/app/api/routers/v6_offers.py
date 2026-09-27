@@ -44,6 +44,14 @@ class SupplierBasic(BaseModel):
     class Config:
         from_attributes = True
 
+class SupplierOfferDocumentResponse(BaseModel):
+    id: int
+    offer_id: int
+    document_id: int
+
+    class Config:
+        from_attributes = True
+
 class SupplierOfferResponse(BaseModel):
     id: int
     case_id: int
@@ -53,7 +61,7 @@ class SupplierOfferResponse(BaseModel):
     price: Optional[float] = None
     currency: Optional[str] = "PEN"
     source_document: Optional[str] = None
-    documents: List[dict] = []
+    documents: List[SupplierOfferDocumentResponse] = []
     supplier: Optional[SupplierBasic] = None
     items: List[SupplierOfferItemResponse] = []
     total_amount: Optional[Decimal] = None

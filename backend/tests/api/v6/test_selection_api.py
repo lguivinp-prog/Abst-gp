@@ -13,7 +13,7 @@ def test_propose_and_approve_selection(admin_client: TestClient, db_session: Ses
     db_session.add(supplier)
     db_session.commit()
 
-    offer = SupplierOffer(case_id=case.id, supplier_id=supplier.id)
+    offer = SupplierOffer(case_id=case.id, supplier_id=supplier.id, status="SUBMITTED")
     db_session.add(offer)
     db_session.commit()
 
@@ -26,6 +26,7 @@ def test_propose_and_approve_selection(admin_client: TestClient, db_session: Ses
     # Verify Selection and Workflow State
     attempt = db_session.query(SupplierSelectionAttempt).filter_by(case_id=case.id).first()
     assert attempt is not None
+    assert attempt.selected_by is not None
 
     workflow = db_session.query(CaseWorkflow).filter_by(case_id=case.id).first()
     assert workflow.status == "UNDER_REVIEW"

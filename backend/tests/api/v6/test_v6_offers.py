@@ -1,4 +1,4 @@
-﻿import pytest
+import pytest
 from fastapi.testclient import TestClient
 from sqlalchemy.orm import Session
 from app.models.v6.supplier import Supplier
@@ -46,6 +46,57 @@ def test_offers_create_and_list(client: TestClient, db_session: Session, test_ca
     )
     assert update_res.status_code == 200
     assert update_res.json()["price"] == 1500.50
+
+def test_offers_update_with_documents(client: TestClient, db_session: Session, test_case_file):
+    # Create supplier
+    supplier_data = {"ruc": "11111111111", "business_name": "Test Supplier"}
+    sup_res = client.post(
+        f"/api/v6/cases/{test_case_file.id}/suppliers",
+        json=supplier_data,
+        headers={"Authorization": "Bearer test_token"}
+    )
+    assert sup_res.status_code == 200
+    supplier_id = sup_res.json()["id"]
+
+    list_res = client.get(
+        f"/api/v6/cases/{test_case_file.id}/offers",
+        headers={"Authorization": "Bearer test_token"}
+    )
+    offers = list_res.json()
+    offer_id = offers[0]["id"]
+
+    from app.models.domain import UploadedDocument
+    doc = UploadedDocument(
+        case_id=test_case_file.id,
+        document_type="oferta",
+        original_filename="offer.pdf",
+        stored_path="test/offer.pdf",
+        mime_type="application/pdf"
+    )
+    db_session.add(doc)
+    db_session.commit()
+    db_session.refresh(doc)
+
+    # Test update with document_ids
+    update_res = client.put(
+        f"/api/v6/cases/{test_case_file.id}/offers/{offer_id}",
+        json={"document_ids": [doc.id]},
+        headers={"Authorization": "Bearer test_token"}
+    )
+    assert update_res.status_code == 200
+    data = update_res.json()
+    assert len(data["documents"]) == 1
+    assert data["documents"][0]["document_id"] == doc.id
+
+    # Test update with document_ids = []
+    update_res_empty = client.put(
+        f"/api/v6/cases/{test_case_file.id}/offers/{offer_id}",
+        json={"document_ids": []},
+        headers={"Authorization": "Bearer test_token"}
+    )
+    assert update_res_empty.status_code == 200
+    data_empty = update_res_empty.json()
+    assert len(data_empty["documents"]) == 0
 
 def test_offers_cross_tenant_check(other_client: TestClient, db_session: Session, test_case_file):
     # Cross tenant check

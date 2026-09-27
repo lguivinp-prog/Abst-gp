@@ -14,9 +14,11 @@ def test_selection_propose_and_get(client: TestClient, db_session: Session, test
         json=supplier_data,
         headers={"Authorization": "Bearer test_token"}
     )
-    
+
     offer = db_session.query(SupplierOffer).filter_by(case_id=test_case_file.id).first()
-    
+    offer.status = "SUBMITTED"
+    db_session.commit()
+
     # Propose selection
     propose_res = client.post(
         f"/api/v6/cases/{test_case_file.id}/selection",
@@ -50,9 +52,11 @@ def test_selection_approve_and_result(admin_client: TestClient, db_session: Sess
         json=supplier_data,
         headers={"Authorization": "Bearer admin_token"}
     )
-    
+
     offer = db_session.query(SupplierOffer).filter_by(case_id=test_case_file.id).first()
-    
+    offer.status = "SUBMITTED"
+    db_session.commit()
+
     admin_client.post(
         f"/api/v6/cases/{test_case_file.id}/selection",
         json={
@@ -84,3 +88,29 @@ def test_selection_cross_tenant_rejected(other_client: TestClient, db_session: S
         headers={"Authorization": "Bearer other_tenant_token"}
     )
     assert cross_res.status_code in [403, 404]
+
+def test_selection_propose_pending_rejected(client: TestClient, db_session: Session, test_case_file):
+    supplier_data = {
+        "ruc": "60606060606",
+        "business_name": "Selection Supplier 3"
+    }
+    client.post(
+        f"/api/v6/cases/{test_case_file.id}/suppliers",
+        json=supplier_data,
+        headers={"Authorization": "Bearer test_token"}
+    )
+
+    offer = db_session.query(SupplierOffer).filter_by(case_id=test_case_file.id).first()
+    # Ensure offer is PENDING (default behavior)
+    assert offer.status == "PENDING"
+
+    # Propose selection should fail
+    propose_res = client.post(
+        f"/api/v6/cases/{test_case_file.id}/selection",
+        json={
+            "supplier_offer_id": offer.id,
+            "justification_comment": "Try to propose PENDING offer"
+        },
+        headers={"Authorization": "Bearer test_token"}
+    )
+    assert propose_res.status_code == 400

@@ -53,13 +53,16 @@ def test_full_integration_flow(mock_queue, admin_client):
             from app.core.database import SessionLocal
             from app.models.domain import ParsedSection, UploadedDocument
             db = SessionLocal()
-            doc = UploadedDocument(case_id=c_id, document_type="requirement", stored_path=path, original_filename="req.pdf", mime_type="application/pdf")
-            db.add(doc)
-            db.commit()
-            db.refresh(doc)
-            db.add(ParsedSection(case_id=c_id, document_id=doc.id, title="OBJETIVO", current_text="mock", review_status="pending"))
-            db.add(ParsedSection(case_id=c_id, document_id=doc.id, title="FORMA DE PAGO", current_text="mock", review_status="pending"))
-            db.commit()
+            try:
+                doc = UploadedDocument(case_id=c_id, document_type="requirement", stored_path=path, original_filename="req.pdf", mime_type="application/pdf")
+                db.add(doc)
+                db.commit()
+                db.refresh(doc)
+                db.add(ParsedSection(case_id=c_id, document_id=doc.id, title="OBJETIVO", current_text="mock", review_status="pending"))
+                db.add(ParsedSection(case_id=c_id, document_id=doc.id, title="FORMA DE PAGO", current_text="mock", review_status="pending"))
+                db.commit()
+            finally:
+                db.close()
             
         mock_prt.side_effect = dummy_prt
         mock_prt(case_id, req_pdf_path)

@@ -165,6 +165,7 @@ def test_ocr_worker_v2_end_to_end(
     class MockStructuredDoc:
         def __init__(self):
             self.confidence = 0.95
+            self.pages = []
             self.sections = []
             self.blocks = [MockBlock()]
             self.tables = []

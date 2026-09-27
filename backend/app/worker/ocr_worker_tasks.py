@@ -26,7 +26,7 @@ def process_run_v2(run_id: str):
     job = get_current_job()
     db = SessionLocal()
     worker_name = f"ocr_worker_{os.getpid()}@{socket.gethostname()}"
-    
+
     try:
         now = datetime.now(timezone.utc)
         updated = db.query(OCRProcessingRun).filter(
@@ -38,24 +38,24 @@ def process_run_v2(run_id: str):
             "heartbeat_at": now
         })
         db.commit()
-        
+
         if updated == 0:
             run = db.query(OCRProcessingRun).filter(OCRProcessingRun.run_id == run_id).first()
             if run and run.status in ('RUNNING', 'COMPLETED', 'FAILED'):
                 logger.info(f"Run {run_id} is already {run.status}. Skipping duplicate execution.")
                 return
             raise ValueError(f"Run {run_id} is not QUEUED or DISPATCHING (status: {run.status if run else 'None'})")
-            
+
         run = db.query(OCRProcessingRun).filter(OCRProcessingRun.run_id == run_id).first()
         doc = db.query(UploadedDocument).filter(UploadedDocument.id == run.uploaded_document_id).first()
-        
+
         file_path = doc.stored_path
         case_id = doc.case_id
 
         # Obtener tenant_id del caso
         case = db.query(CaseFile).filter(CaseFile.id == case_id).first()
         tenant_id = case.tenant_id if case else None
-        
+
         logger.info(f"Starting OCR V2 for run {run_id}. Role: {run.execution_role}, Worker: {worker_name}")
 
         # 1. Registrar latido de inicio V5.4
@@ -78,7 +78,7 @@ def process_run_v2(run_id: str):
                 tenant_id=tenant_id,
                 worker_name=worker_name
             )
-        
+
         stop_event = threading.Event()
         def heartbeat_worker():
             interval = int(os.environ.get("OCR_RUN_HEARTBEAT_INTERVAL_SECONDS", 15))
@@ -103,38 +103,38 @@ def process_run_v2(run_id: str):
                 except Exception:
                     pass
                 stop_event.wait(interval)
-                
+
         hb_thread = threading.Thread(target=heartbeat_worker, daemon=True)
         hb_thread.start()
-        
+
         try:
             if run.execution_role == "PRIMARY":
                 doc.processing_status = "started"
                 db.commit()
-                
+
             # 1. Run V2 Pipeline
             pipeline = OCRV2Pipeline()
             from app.storage.workspace import materialize_document
             with materialize_document(file_path) as local_temp_path:
                 structured_doc = pipeline.process_document(local_temp_path)
-            
+
             from app.core.config import settings
             from app.storage.factory import get_storage
             import io
             storage = get_storage()
-            
+
             finish_now = datetime.now(timezone.utc)
             if run.execution_role == "SHADOW":
                 # Shadow Mode: Save artifacts to isolated path using DocumentStorage
                 val_case = run.validation_case_id
-                
+
                 json_bytes = json.dumps(structured_doc.model_dump(), ensure_ascii=False, indent=2).encode('utf-8')
                 doc_path = storage.put(
                     tenant_id=f"validation_artifacts/{val_case if val_case else 'unknown'}",
                     document_id=f"{doc.id}/{run.run_id}/structured_doc_{run.run_id}.json",
                     file_stream=io.BytesIO(json_bytes)
                 )
-                    
+
                 # DO NOT overwrite UploadedDocument or ParsedSection product records
                 run.status = 'COMPLETED'
                 run.finished_at = finish_now
@@ -142,7 +142,7 @@ def process_run_v2(run_id: str):
                 run.review_threshold = settings.OCR_REVIEW_THRESHOLD
                 run.structured_document_path = doc_path
                 run.quality_status = 'APPROVED' if structured_doc.confidence >= settings.OCR_REVIEW_THRESHOLD else 'REVIEW_REQUIRED'
-                
+
                 run.metadata_ = {
                     "shadow_ocr": {
                         "engine": "v2",
@@ -152,32 +152,43 @@ def process_run_v2(run_id: str):
                     }
                 }
                 db.commit()
-                
+
             else: # PRIMARY
                 # Save structured document via DocumentStorage
                 from app.services.ocr.checksum import calculate_structured_document_checksum
                 content_dump = structured_doc.model_dump()
                 doc_checksum = calculate_structured_document_checksum(content_dump)
                 content_dump["checksum"] = doc_checksum
-                
+
                 canonical_bytes = json.dumps(content_dump, ensure_ascii=False, indent=2, sort_keys=True).encode('utf-8')
-                
+
                 doc_path = storage.put(
                     tenant_id=tenant_id,
                     document_id=f"structured_{run.run_id}.json",
                     file_stream=io.BytesIO(canonical_bytes)
                 )
-                
+
                 score = structured_doc.confidence
                 ocr_status = "APPROVED" if score >= settings.OCR_REVIEW_THRESHOLD else "REVIEW_REQUIRED"
-                
+
+                # Reconstruct full text for downstream V6 extractors that require text_extracted
+                full_text_lines = []
+                if structured_doc.pages:
+                    for page in structured_doc.pages:
+                        if hasattr(page, "elements") and page.elements:
+                            for el in page.elements:
+                                if hasattr(el, "text"):
+                                    full_text_lines.append(el.text)
+
+                doc.text_extracted = "\n".join(full_text_lines) if full_text_lines else ""
+
                 # Update product columns
                 doc.ocr_engine_used = "v2"
                 doc.ocr_score = score
                 doc.ocr_status = ocr_status
                 doc.ocr_processed_at = finish_now
                 doc.structured_document_path = doc_path
-                
+
                 trace_meta = {
                     "primary_ocr": {
                         "engine": "v2",
@@ -188,7 +199,7 @@ def process_run_v2(run_id: str):
                     "review_threshold": settings.OCR_REVIEW_THRESHOLD
                 }
                 doc.ocr_metadata = trace_meta
-                
+
                 # Update Run
                 run.status = 'COMPLETED'
                 run.finished_at = finish_now
@@ -197,7 +208,7 @@ def process_run_v2(run_id: str):
                 run.structured_document_path = doc_path
                 run.structured_document_checksum = doc_checksum
                 run.quality_status = ocr_status
-                
+
                 # Parse Sections
                 parsed_sections = StructuredDocumentAdapter.to_parsed_sections(case_id, structured_doc, run.uploaded_document_id)
                 if not parsed_sections:
@@ -206,11 +217,11 @@ def process_run_v2(run_id: str):
 
                 for sec in parsed_sections:
                     db.add(sec)
-                    
+
                 db_case = db.query(CaseFile).filter(CaseFile.id == case_id).first()
                 if db_case:
                     db_case.status = "REVIEW_SECTIONS"
-                    
+
                 doc.processing_status = "finished"
                 db.commit()
 
@@ -237,7 +248,7 @@ def process_run_v2(run_id: str):
         error_msg = str(e)
         logger.error(f"Error in OCR V2 Pipeline for run {run_id}: {error_msg}")
         logger.error(traceback.format_exc())
-        
+
         now_err = datetime.now(timezone.utc)
         run = db.query(OCRProcessingRun).filter(OCRProcessingRun.run_id == run_id).first()
         if run:
@@ -246,14 +257,14 @@ def process_run_v2(run_id: str):
             run.failure_detail = error_msg
             run.finished_at = now_err
             run.quality_status = None
-            
+
             if run.execution_role == 'PRIMARY':
                 doc = db.query(UploadedDocument).filter(UploadedDocument.id == run.uploaded_document_id).first()
                 if doc:
                     doc.processing_status = "failed"
                     doc.processing_error = error_msg
                     doc.ocr_status = "FAILED"
-                    
+
                     db_case = db.query(CaseFile).filter(CaseFile.id == doc.case_id).first()
                     if db_case:
                         db_case.status = "ERROR"
@@ -275,7 +286,7 @@ def process_run_v2(run_id: str):
                     logger.info("FALLBACK run created immediately due to task exception")
                 except Exception as fallback_e:
                     logger.error(f"Failed to create fallback: {str(fallback_e)}")
-            
+
             # Clasificación taxonómica y marcado de fallo en ProcessingJob
             if run.processing_job_id:
                 err_code, err_cat, fail_class = JobRepository.classify_error(e)

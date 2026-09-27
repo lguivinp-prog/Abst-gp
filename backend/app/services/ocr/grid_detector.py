@@ -1,7 +1,10 @@
 import fitz
 import cv2
 import numpy as np
-import pytesseract
+try:
+    import pytesseract
+except ImportError:
+    pytesseract = None
 
 def extract_tables_by_grid_page(page, page_num, zoom=300/72, debug_dir="backend/data/debug"):
 
@@ -96,7 +99,10 @@ def extract_tables_by_grid_page(page, page_num, zoom=300/72, debug_dir="backend/
 
                 if mean_val < 100:
                     inv_cell = cv2.bitwise_not(gray[cy:cy+ch, cx:cx+cw])
-                    header_text = pytesseract.image_to_string(inv_cell, config='-l spa --psm 7').strip()
+                    if pytesseract:
+                        header_text = pytesseract.image_to_string(inv_cell, config='-l spa --psm 7').strip()
+                    else:
+                        header_text = ""
 
                 c['words'] = []
                 for w_tup in words:
@@ -141,8 +147,13 @@ def extract_tables_by_grid_page(page, page_num, zoom=300/72, debug_dir="backend/
 import cv2
 import numpy as np
 import fitz
-import pytesseract
-from pytesseract import Output
+try:
+    import pytesseract
+    from pytesseract import Output
+except ImportError:
+    pytesseract = None
+    class Output:
+        DICT = "dict"
 
 class MockCell:
     def __init__(self, text):
@@ -211,7 +222,10 @@ def extract_tables_by_dark_header(page, page_num_0):
         roi_inv = cv2.bitwise_not(roi)
         roi_inv_2x = cv2.resize(roi_inv, (0,0), fx=2, fy=2, interpolation=cv2.INTER_CUBIC)
 
-        data = pytesseract.image_to_data(roi_inv_2x, lang="spa", config="--psm 6", output_type=Output.DICT)
+        if pytesseract:
+            data = pytesseract.image_to_data(roi_inv_2x, lang="spa", config="--psm 6", output_type=Output.DICT)
+        else:
+            data = {'level': [], 'text': [], 'left': [], 'top': [], 'width': [], 'height': []}
 
         words = []
         n = len(data['level'])
