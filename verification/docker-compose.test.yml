@@ -74,13 +74,13 @@ services:
 
   worker-test:
     build:
-      context: ..
-      dockerfile: Dockerfile.backend.test
+      context: ../backend
+      dockerfile: Dockerfile.ocr
     depends_on:
       redis-test:
         condition: service_healthy
     environment:
-      - DATABASE_URL=postgresql://test_user:test_password@db-test:5432/test_db
+      - DATABASE_URL=postgresql+psycopg2://test_user:test_password@db-test:5432/test_db
       - REDIS_URL=redis://redis-test:6379/1
       - SECRET_KEY=synthetic_secret_key_for_testing
       - UPLOADS_DIR=/app/uploads
