@@ -11,6 +11,8 @@ import json
 from datetime import datetime, timezone
 from sqlalchemy.orm import selectinload
 from app.services.v6.extraction.requirement_classifier import classify_requirement
+from fastapi import UploadFile, File
+from app.services.v6.requirement_ingestion_service import RequirementIngestionService
 
 router = APIRouter()
 extraction_service = RequirementExtractionService()
@@ -77,6 +79,38 @@ class RequirementCreate(BaseModel):
     phase: Optional[str] = None
 
 from app.api.auth import get_current_active_user, verify_case_access, require_role
+
+class RequirementUploadResponse(BaseModel):
+    document_id: int
+    run_id: str
+    processing_status: str
+
+@router.post("/cases/{case_id}/requirements/upload", response_model=RequirementUploadResponse)
+def upload_v6_requirement(
+    case_id: int,
+    file: UploadFile = File(...),
+    case: CaseFile = Depends(verify_case_access),
+    current_user: User = Depends(get_current_active_user),
+    db: Session = Depends(get_db)
+):
+    if not file.filename.lower().endswith(".pdf"):
+        raise HTTPException(
+            status_code=400,
+            detail="Only PDF files are allowed"
+        )
+
+    result = RequirementIngestionService.ingest_requirement(
+        db=db,
+        case_id=case_id,
+        file=file,
+        tenant_id=current_user.tenant_id
+    )
+
+    # Change case status
+    case.status = "PROCESSING_REQUIREMENT"
+    db.commit()
+
+    return RequirementUploadResponse(**result)
 
 @router.post("/cases/{case_id}/requirements/extract", response_model=List[RequirementResponse])
 def extract_requirements(
