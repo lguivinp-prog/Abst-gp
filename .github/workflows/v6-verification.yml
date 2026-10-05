@@ -1,0 +1,40 @@
+name: V6 Native API Verification
+
+on:
+  pull_request:
+    branches:
+      - refactor/v6-squash
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  verify:
+    name: Execute Canonical Gates
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Verify Docker Environment
+        run: |
+          docker --version
+          docker compose version
+
+      - name: Execute run-gates.sh
+        run: bash verification/run-gates.sh
+
+      - name: Upload Verification Artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: v6-verification-artifacts
+          path: artifacts/verification/
+          retention-days: 14
