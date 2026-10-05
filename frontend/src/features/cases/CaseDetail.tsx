@@ -181,7 +181,11 @@ const CaseDetail: React.FC = () => {
           {activeTab === 'resumen' ? (
             <CaseSummary caseData={caseData} onNavigate={(tab) => setActiveTab(tab)} />
           ) : activeTab === 'requerimiento' ? (
-            <CaseRequirements caseId={id || ''} />
+            <CaseRequirements 
+              caseId={id || ''} 
+              caseStatus={caseData?.status} 
+              onRefresh={refresh} 
+            />
           ) : activeTab === 'documentos' ? (
             <CaseDocuments caseId={id || ''} onRefresh={refresh} />
           ) : activeTab === 'proveedores' ? (

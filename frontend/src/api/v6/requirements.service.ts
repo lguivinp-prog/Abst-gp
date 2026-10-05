@@ -1,4 +1,4 @@
-﻿import { v6Client } from './v6Client';
+import { v6Client } from './v6Client';
 import type { RequirementResponse, RequirementCreate, RequirementUpdate } from './requirements.types';
 import { handleApiError } from '../apiError';
 
@@ -7,6 +7,7 @@ export const requirementsPaths = {
   detail: (caseId: string | number, reqId: string | number) => `/cases/${caseId}/requirements/${reqId}`,
   extract: (caseId: string | number) => `/cases/${caseId}/requirements/extract`,
   procurementItems: (caseId: string | number) => `/cases/${caseId}/procurement-items`,
+  confirm: (caseId: string | number) => `/cases/${caseId}/requirements/confirm`,
 };
 
 export const requirementsService = {
@@ -69,6 +70,14 @@ export const requirementsService = {
   deleteProcurementItem: async (caseId: string, itemId: number): Promise<void> => {
     try {
       await v6Client.delete(`${requirementsPaths.procurementItems(caseId)}/${itemId}`);
+    } catch (error) {
+      throw handleApiError(error);
+    }
+  },
+
+  confirmRequirements: async (caseId: string): Promise<{ message: string, status: string }> => {
+    try {
+      return await v6Client.post<{ message: string, status: string }, {}>(requirementsPaths.confirm(caseId), {});
     } catch (error) {
       throw handleApiError(error);
     }
