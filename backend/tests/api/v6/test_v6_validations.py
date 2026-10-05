@@ -3,22 +3,22 @@ from fastapi.testclient import TestClient
 from sqlalchemy.orm import Session
 from app.models.v6.validation_request import ValidationRequest
 
-def test_validations_empty_list(client: TestClient, db_session: Session, test_case_file):
+def test_validations_empty_list(client: TestClient, db_session: Session, reviewed_case_file):
     response = client.get(
-        f"/api/v6/cases/{test_case_file.id}/validations",
+        f"/api/v6/cases/{reviewed_case_file.id}/validations",
         headers={"Authorization": "Bearer test_token"}
     )
     assert response.status_code == 200
     assert response.json() == []
 
-def test_validations_create_and_list(client: TestClient, db_session: Session, test_case_file):
+def test_validations_create_and_list(client: TestClient, db_session: Session, reviewed_case_file):
     # First create a supplier (this links it to the case via SupplierOffer)
     supplier_data = {
         "ruc": "10101010101",
         "business_name": "Val Test Supplier"
     }
     sup_res = client.post(
-        f"/api/v6/cases/{test_case_file.id}/suppliers",
+        f"/api/v6/cases/{reviewed_case_file.id}/suppliers",
         json=supplier_data,
         headers={"Authorization": "Bearer test_token"}
     )
@@ -27,7 +27,7 @@ def test_validations_create_and_list(client: TestClient, db_session: Session, te
 
     # Request a validation
     val_req = client.post(
-        f"/api/v6/cases/{test_case_file.id}/suppliers/{supplier_id}/validations",
+        f"/api/v6/cases/{reviewed_case_file.id}/suppliers/{supplier_id}/validations",
         json={"source": "SUNAT"},
         headers={"Authorization": "Bearer test_token"}
     )
@@ -40,7 +40,7 @@ def test_validations_create_and_list(client: TestClient, db_session: Session, te
 
     # List validations
     list_res = client.get(
-        f"/api/v6/cases/{test_case_file.id}/validations",
+        f"/api/v6/cases/{reviewed_case_file.id}/validations",
         headers={"Authorization": "Bearer test_token"}
     )
     assert list_res.status_code == 200
@@ -50,39 +50,39 @@ def test_validations_create_and_list(client: TestClient, db_session: Session, te
 
     # Get detail
     detail_res = client.get(
-        f"/api/v6/cases/{test_case_file.id}/validations/{val_id}",
+        f"/api/v6/cases/{reviewed_case_file.id}/validations/{val_id}",
         headers={"Authorization": "Bearer test_token"}
     )
     assert detail_res.status_code == 200
     assert detail_res.json()["id"] == val_id
 
-def test_validations_supplier_not_in_case(client: TestClient, db_session: Session, test_case_file):
+def test_validations_supplier_not_in_case(client: TestClient, db_session: Session, reviewed_case_file):
     # Request validation for an unlinked supplier (e.g. supplier 999)
     val_req = client.post(
-        f"/api/v6/cases/{test_case_file.id}/suppliers/999/validations",
+        f"/api/v6/cases/{reviewed_case_file.id}/suppliers/999/validations",
         json={"source": "RNP"},
         headers={"Authorization": "Bearer test_token"}
     )
     assert val_req.status_code == 400
 
-def test_validations_cross_tenant_rejected(other_client: TestClient, db_session: Session, test_case_file):
+def test_validations_cross_tenant_rejected(other_client: TestClient, db_session: Session, reviewed_case_file):
     cross_res = other_client.get(
-        f"/api/v6/cases/{test_case_file.id}/validations",
+        f"/api/v6/cases/{reviewed_case_file.id}/validations",
         headers={"Authorization": "Bearer other_tenant_token"}
     )
     assert cross_res.status_code in [403, 404]
 
-def test_manual_validation_create_success(client: TestClient, db_session: Session, test_case_file):
+def test_manual_validation_create_success(client: TestClient, db_session: Session, reviewed_case_file):
     supplier_data = {"ruc": "20202020202", "business_name": "Manual Test Supplier"}
     sup_res = client.post(
-        f"/api/v6/cases/{test_case_file.id}/suppliers",
+        f"/api/v6/cases/{reviewed_case_file.id}/suppliers",
         json=supplier_data,
         headers={"Authorization": "Bearer test_token"}
     )
     supplier_id = sup_res.json()["id"]
 
     val_req = client.post(
-        f"/api/v6/cases/{test_case_file.id}/suppliers/{supplier_id}/validations/manual",
+        f"/api/v6/cases/{reviewed_case_file.id}/suppliers/{supplier_id}/validations/manual",
         json={
             "source": "SUNAT",
             "result": "VALIDATED",
@@ -101,10 +101,10 @@ def test_manual_validation_create_success(client: TestClient, db_session: Sessio
     assert validation["verified_at"] is not None
     assert validation["completed_at"] is not None
 
-def test_manual_validation_invalid_source_and_observation(client: TestClient, db_session: Session, test_case_file):
+def test_manual_validation_invalid_source_and_observation(client: TestClient, db_session: Session, reviewed_case_file):
     supplier_data = {"ruc": "30303030303", "business_name": "Invalid Test Supplier"}
     sup_res = client.post(
-        f"/api/v6/cases/{test_case_file.id}/suppliers",
+        f"/api/v6/cases/{reviewed_case_file.id}/suppliers",
         json=supplier_data,
         headers={"Authorization": "Bearer test_token"}
     )
@@ -112,7 +112,7 @@ def test_manual_validation_invalid_source_and_observation(client: TestClient, db
 
     # Invalid source
     res1 = client.post(
-        f"/api/v6/cases/{test_case_file.id}/suppliers/{supplier_id}/validations/manual",
+        f"/api/v6/cases/{reviewed_case_file.id}/suppliers/{supplier_id}/validations/manual",
         json={"source": "UNKNOWN", "result": "VALIDATED", "observation": "Obs"},
         headers={"Authorization": "Bearer test_token"}
     )
@@ -120,7 +120,7 @@ def test_manual_validation_invalid_source_and_observation(client: TestClient, db
 
     # Empty observation
     res2 = client.post(
-        f"/api/v6/cases/{test_case_file.id}/suppliers/{supplier_id}/validations/manual",
+        f"/api/v6/cases/{reviewed_case_file.id}/suppliers/{supplier_id}/validations/manual",
         json={"source": "SUNAT", "result": "VALIDATED", "observation": " "},
         headers={"Authorization": "Bearer test_token"}
     )
@@ -128,7 +128,7 @@ def test_manual_validation_invalid_source_and_observation(client: TestClient, db
 
     # Unlinked supplier
     res3 = client.post(
-        f"/api/v6/cases/{test_case_file.id}/suppliers/999/validations/manual",
+        f"/api/v6/cases/{reviewed_case_file.id}/suppliers/999/validations/manual",
         json={"source": "SUNAT", "result": "VALIDATED", "observation": "Obs"},
         headers={"Authorization": "Bearer test_token"}
     )

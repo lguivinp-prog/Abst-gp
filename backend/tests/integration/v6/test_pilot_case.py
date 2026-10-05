@@ -12,7 +12,7 @@ def test_pilot_case_execution(admin_client: TestClient, db_session: Session, set
     No direct DB manipulation except for setup dependencies (simulating V5.5 existing state).
     """
     # 1. Setup V5.5 Legacy Case
-    case = CaseFile(title="Pilot Case: Laptops", contract_type="BIENES", tenant_id="mega_tenant")
+    case = CaseFile(title="Pilot Case: Laptops", contract_type="BIENES", status="WAITING_QUOTATION", tenant_id="mega_tenant")
     db_session.add(case)
     db_session.commit()
     

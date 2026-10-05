@@ -41,7 +41,7 @@ def test_create_supplier_generates_audit(admin_client: TestClient, db_session: S
     assert audit is not None
 
 def test_create_supplier_offer_generates_audit(admin_client: TestClient, db_session: Session, setup_mega_tenant):
-    case = CaseFile(title="Test V6 Case", contract_type="Bienes", status="CREATED", tenant_id="mega_tenant")
+    case = CaseFile(title="Test V6 Case", contract_type="Bienes", status="WAITING_QUOTATION", tenant_id="mega_tenant")
     db_session.add(case)
     
     supplier = Supplier(ruc="20123456789", business_name="Tech Corp", tenant_id="mega_tenant")

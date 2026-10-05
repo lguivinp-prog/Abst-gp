@@ -7,7 +7,7 @@ from app.models.v6.supplier_selection import SupplierSelectionFinal, SupplierSel
 from app.models.v6.case_workflow import CaseWorkflow
 
 def test_propose_and_approve_selection(admin_client: TestClient, db_session: Session, setup_mega_tenant):
-    case = CaseFile(title="Laptop Purchase", contract_type="BIENES", tenant_id="mega_tenant")
+    case = CaseFile(title="Laptop Purchase", contract_type="BIENES", status="WAITING_QUOTATION", tenant_id="mega_tenant")
     db_session.add(case)
     supplier = Supplier(ruc="20123456789", business_name="Tech Corp", tenant_id="mega_tenant")
     db_session.add(supplier)

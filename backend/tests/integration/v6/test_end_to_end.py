@@ -14,7 +14,7 @@ def test_full_v6_end_to_end_flow(admin_client: TestClient, db_session: Session, 
     Steps: Case -> Reqs -> Supplier -> Validations -> Offer -> Evaluate -> Select -> Approve -> Output
     """
     # 1. Create CaseFile (Simulated as existing legacy domain)
-    case = CaseFile(title="E2E Servers", contract_type="BIENES", tenant_id="mega_tenant")
+    case = CaseFile(title="E2E Servers", contract_type="BIENES", status="WAITING_QUOTATION", tenant_id="mega_tenant")
     db_session.add(case)
     db_session.commit()
     
