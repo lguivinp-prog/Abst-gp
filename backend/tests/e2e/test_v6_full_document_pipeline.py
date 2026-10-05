@@ -79,6 +79,10 @@ def test_v6_full_document_pipeline(admin_client, db_session):
     assert proc_items[1]["item_number"] == "2"
     assert proc_items[1]["quantity"] == 2.0
 
+    # STEP 5.5 - CONFIRM REQUIREMENTS
+    response = admin_client.post(f"/api/v6/cases/{case_id}/requirements/confirm")
+    assert response.status_code == 200, response.text
+
     # STEP 6 — CREATE/LINK SUPPLIER
     supplier_payload = {
         "ruc": "20123456789",

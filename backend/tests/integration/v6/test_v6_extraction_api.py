@@ -46,3 +46,64 @@ El contratista deberá proveer los bienes en 5 días.
     # Assert requirements were created
     reqs = db_session.query(CaseRequirementMatrix).filter_by(case_id=case.id).all()
     assert len(reqs) >= 1
+
+def test_v6_requirement_confirmation_flow(admin_client, db_session):
+    # Setup case
+    case = CaseFile(tenant_id="mega_tenant", title="Review Flow", contract_type="BIENES", status="CREATED", created_by=1)
+    db_session.add(case)
+    db_session.commit()
+
+    # 1. Cannot confirm if not processing requirement
+    res = admin_client.post(f"/api/v6/cases/{case.id}/requirements/confirm")
+    assert res.status_code == 400
+
+    # set status to processing requirement
+    case.status = "PROCESSING_REQUIREMENT"
+    db_session.commit()
+
+    # 2. Confirm -> goes to WAITING_QUOTATION
+    res = admin_client.post(f"/api/v6/cases/{case.id}/requirements/confirm")
+    assert res.status_code == 200
+    assert res.json()["status"] == "WAITING_QUOTATION"
+
+    db_session.refresh(case)
+    assert case.status == "WAITING_QUOTATION"
+
+    # 3. Create an item -> reverts to PROCESSING_REQUIREMENT
+    item_payload = {
+        "item_number": "3",
+        "description": "Papel A4",
+        "quantity": 10,
+        "unit": "MILLARES"
+    }
+    res = admin_client.post(f"/api/v6/cases/{case.id}/procurement-items", json=item_payload)
+    assert res.status_code == 200
+    item_id = res.json()["id"]
+
+    db_session.refresh(case)
+    assert case.status == "PROCESSING_REQUIREMENT"
+
+    # 4. Confirm again
+    res = admin_client.post(f"/api/v6/cases/{case.id}/requirements/confirm")
+    assert res.status_code == 200
+
+    # 5. Update an item -> reverts to PROCESSING_REQUIREMENT
+    res = admin_client.put(f"/api/v6/cases/{case.id}/procurement-items/{item_id}", json={
+        "description": "Papel A4 Modificado",
+        "quantity": 15
+    })
+    assert res.status_code == 200
+
+    db_session.refresh(case)
+    assert case.status == "PROCESSING_REQUIREMENT"
+
+    # 6. Confirm again
+    res = admin_client.post(f"/api/v6/cases/{case.id}/requirements/confirm")
+    assert res.status_code == 200
+
+    # 7. Delete an item -> reverts to PROCESSING_REQUIREMENT
+    res = admin_client.delete(f"/api/v6/cases/{case.id}/procurement-items/{item_id}")
+    assert res.status_code == 200
+
+    db_session.refresh(case)
+    assert case.status == "PROCESSING_REQUIREMENT"

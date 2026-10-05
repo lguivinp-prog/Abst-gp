@@ -174,6 +174,24 @@ def get_requirements(
 ):
     return db.query(CaseRequirementMatrix).filter(CaseRequirementMatrix.case_id == case_id).all()
 
+@router.post("/cases/{case_id}/requirements/confirm")
+def confirm_requirements(
+    case_id: int,
+    case: CaseFile = Depends(verify_case_access),
+    current_user: User = Depends(get_current_active_user),
+    db: Session = Depends(get_db)
+):
+    if case.status == "WAITING_QUOTATION":
+        return {"message": "Requirements already confirmed", "status": case.status}
+        
+    if case.status not in ["PROCESSING_REQUIREMENT", "REVIEW_SECTIONS"]:
+        raise HTTPException(status_code=400, detail="Case is not in requirement processing state")
+    
+    case.status = "WAITING_QUOTATION"
+    db.commit()
+    db.refresh(case)
+    return {"message": "Requirements confirmed", "status": case.status}
+
 @router.post("/cases/{case_id}/requirements", response_model=RequirementResponse)
 def create_requirement(
     case_id: int,
@@ -356,6 +374,10 @@ def create_procurement_item(
         is_manual_edit=True
     )
     db.add(item)
+    
+    if case.status == "WAITING_QUOTATION":
+        case.status = "PROCESSING_REQUIREMENT"
+        
     db.commit()
     db.refresh(item)
     return item
@@ -384,6 +406,9 @@ def update_procurement_item(
     if item_data.status:
         item.status = item_data.status
 
+    if case.status == "WAITING_QUOTATION":
+        case.status = "PROCESSING_REQUIREMENT"
+
     db.commit()
     db.refresh(item)
     return item
@@ -404,5 +429,9 @@ def delete_procurement_item(
         raise HTTPException(status_code=404, detail="Item not found")
 
     db.delete(item)
+    
+    if case.status == "WAITING_QUOTATION":
+        case.status = "PROCESSING_REQUIREMENT"
+        
     db.commit()
     return {"message": "Deleted"}

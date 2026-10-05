@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Edit2, Save, X, Plus, AlertCircle, RefreshCw, Trash2 } from 'lucide-react';
+import { Edit2, Save, X, Plus, AlertCircle, RefreshCw, Trash2, CheckCircle } from 'lucide-react';
 import { requirementsService } from '../../../api/v6/requirements.service';
 import type { RequirementResponse, RequirementUpdate, RequirementCreate, UpdateRequirementStatus } from '../../../api/v6/requirements.types';
 import { Button } from '../../../components/ui/Button';
@@ -19,9 +19,11 @@ const isUpdateRequirementStatus = (value: string): value is UpdateRequirementSta
 
 interface CaseRequirementsProps {
   caseId: string;
+  caseStatus?: string;
+  onRefresh?: () => void;
 }
 
-export const CaseRequirements: React.FC<CaseRequirementsProps> = ({ caseId }) => {
+export const CaseRequirements: React.FC<CaseRequirementsProps> = ({ caseId, caseStatus, onRefresh }) => {
   const [requirements, setRequirements] = useState<RequirementResponse[]>([]);
   const [procurementItems, setProcurementItems] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
@@ -164,6 +166,21 @@ export const CaseRequirements: React.FC<CaseRequirementsProps> = ({ caseId }) =>
     }
   };
 
+  const handleConfirmRequirements = async () => {
+    try {
+      await requirementsService.confirmRequirements(caseId);
+      if (onRefresh) {
+        onRefresh();
+      }
+    } catch (err) {
+      if (err instanceof AppError) {
+        setError(`Error al confirmar: ${err.message}`);
+      } else {
+        setError('Error inesperado al confirmar los requerimientos.');
+      }
+    }
+  };
+
 
 
   if (loading) {
@@ -250,6 +267,31 @@ export const CaseRequirements: React.FC<CaseRequirementsProps> = ({ caseId }) =>
 
   return (
     <div className="case-requirements">
+      {caseStatus === 'PROCESSING_REQUIREMENT' && (
+        <div className="bg-blue-50 border border-blue-200 rounded p-4 mb-6 flex justify-between items-center" style={{ backgroundColor: '#eff6ff', border: '1px solid #bfdbfe', borderRadius: '4px', padding: '16px', marginBottom: '24px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <div>
+            <h3 className="font-medium" style={{ color: '#1e40af', fontWeight: 500, margin: 0 }}>Revisión de Requerimientos Pendiente</h3>
+            <p className="text-sm mt-1" style={{ color: '#2563eb', fontSize: '14px', margin: '4px 0 0 0' }}>
+              Verifique los ítems y especificaciones extraídos. Una vez que esté conforme, confirme la revisión.
+            </p>
+          </div>
+          <Button onClick={handleConfirmRequirements} leftIcon={<CheckCircle size={18} />}>
+            Confirmar Revisión
+          </Button>
+        </div>
+      )}
+      {caseStatus === 'WAITING_QUOTATION' && (
+        <div className="bg-green-50 border border-green-200 rounded p-4 mb-6 flex items-center gap-2" style={{ backgroundColor: '#f0fdf4', border: '1px solid #bbf7d0', borderRadius: '4px', padding: '16px', marginBottom: '24px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+          <CheckCircle size={20} color="#16a34a" />
+          <div>
+            <h3 className="font-medium" style={{ color: '#166534', fontWeight: 500, margin: 0 }}>Revisión Confirmada</h3>
+            <p className="text-sm mt-1" style={{ color: '#15803d', fontSize: '14px', margin: '4px 0 0 0' }}>
+              Los requerimientos han sido confirmados. Cualquier modificación manual devolverá el estado a revisión pendiente.
+            </p>
+          </div>
+        </div>
+      )}
+
       <div className="case-requirements__header-wrapper mt-4">
         <div className="case-requirements__header">
           <h2 className="case-requirements__title">Ítems de Contratación</h2>
