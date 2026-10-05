@@ -99,8 +99,50 @@ class DeterministicRequirementExtractor(RequirementExtractionProvider):
         # Phase 1 & 2: Reconstruct paragraphs
         paragraphs = self._reconstruct_paragraphs(text)
 
-        # Check for item lines (e.g., "1 Tinta Negra 3 UNIDADES")
-        item_regex = re.compile(r'^(\d+)\s+(.+?)\s+(\d+(?:\.\d+)?)\s+(UNIDAD|UNIDADES|KIT|KITS|CAJA|CAJAS|GLB|GLOBAL|SERVICIO|SERVICIOS|PAQUETE|PAQUETES|ROLLO|KG|GALON|GALONES)\b', re.IGNORECASE)
+        # Extract items from multiline shredded table first
+        raw_lines = [line.strip() for line in text.split('\n') if line.strip()]
+        i = 0
+        while i < len(raw_lines):
+            if re.match(r'^\d+$', raw_lines[i]):
+                item_no = raw_lines[i]
+                if i + 1 < len(raw_lines) and re.match(r'^\d+(?:\.\d+)?$', raw_lines[i+1]):
+                    qty = float(raw_lines[i+1])
+                    unit = None
+                    j_match = -1
+                    # Search up to 25 lines ahead for the unit
+                    for j in range(i + 2, min(i + 25, len(raw_lines))):
+                        line_j = raw_lines[j]
+                        
+                        # Boundary protection: if we see two consecutive numbers, it's the start of the NEXT item
+                        if j + 1 < len(raw_lines) and re.match(r'^\d+$', line_j) and re.match(r'^\d+(?:\.\d+)?$', raw_lines[j+1]):
+                            break
+                            
+                        if re.match(r'^(UNIDAD|UNIDADES|KIT|KITS|CAJA|CAJAS|GLB|GLOBAL|SERVICIO|SERVICIOS|PAQUETE|PAQUETES|ROLLO|KG|GALON|GALONES|UND|UNDS|FRASCO|FRASCOS)$', line_j, re.IGNORECASE):
+                            unit = line_j.upper()
+                            j_match = j + 1
+                            break
+
+                    if unit:
+                        desc_lines = raw_lines[i+2:j_match-1]
+                        if desc_lines:
+                            result.items.append(ProcurementItemCandidate(
+                                item_number=item_no,
+                                description=" ".join(desc_lines).strip(),
+                                quantity=qty,
+                                unit=unit,
+                                source_document=source_document,
+                                source_page=source_page,
+                                source_fragment="\n".join(raw_lines[i:j_match]),
+                                confidence=0.9
+                            ))
+                            i = j_match
+                            continue
+            i += 1
+
+        # Check for item lines (Single-line table horizontal formats)
+        unit_pattern = r'(UNIDAD|UNIDADES|KIT|KITS|CAJA|CAJAS|GLB|GLOBAL|SERVICIO|SERVICIOS|PAQUETE|PAQUETES|ROLLO|KG|GALON|GALONES|UND|UNDS)'
+        item_regex_1 = re.compile(rf'(?:^|\s+)(\d+)\s+(.+?)\s+(\d+(?:\.\d+)?)\s+{unit_pattern}\b', re.IGNORECASE)
+        item_regex_2 = re.compile(rf'(?:^|\s+)(\d+)\s+(\d+(?:\.\d+)?)\s+(.+?)\s+{unit_pattern}\b', re.IGNORECASE)
 
         # Custom Tabular Parser for Section 5.2 format
         active_item = None
@@ -121,20 +163,48 @@ class DeterministicRequirementExtractor(RequirementExtractionProvider):
                 continue
 
             # Check if paragraph is an item (Standard format)
-            item_match = item_regex.search(p)
-            if item_match:
-                active_item = ProcurementItemCandidate(
-                    item_number=item_match.group(1),
-                    description=item_match.group(2).strip(),
-                    quantity=float(item_match.group(3)),
-                    unit=item_match.group(4).upper(),
-                    source_document=source_document,
-                    source_page=source_page,
-                    source_fragment=p,
-                    confidence=0.9
-                )
-                result.items.append(active_item)
+            # Find all matches in case paragraphs were joined
+            matches_1 = list(item_regex_1.finditer(p))
+            matches_2 = list(item_regex_2.finditer(p))
+            all_matches = matches_1 + matches_2
+
+            for item_match in all_matches:
+                if item_match in matches_1:
+                    qty = float(item_match.group(3))
+                    desc = item_match.group(2).strip()
+                    unit = item_match.group(4).upper()
+                else:
+                    qty = float(item_match.group(2))
+                    desc = item_match.group(3).strip()
+                    unit = item_match.group(4).upper()
+
+                # Skip if already found in multiline to avoid duplicates
+                if not any(it.item_number == item_match.group(1) for it in result.items):
+                    active_item = ProcurementItemCandidate(
+                        item_number=item_match.group(1),
+                        description=desc,
+                        quantity=qty,
+                        unit=unit,
+                        source_document=source_document,
+                        source_page=source_page,
+                        source_fragment=p,
+                        confidence=0.9
+                    )
+                    result.items.append(active_item)
+                else:
+                    # Retrieve the already found active_item to attach specifications
+                    active_item = next((it for it in result.items if it.item_number == item_match.group(1)), None)
+
+            if all_matches:
                 continue
+
+            # If a multiline item matches the start of a paragraph, set it as active_item
+            clean_for_multiline = p.split('\n')[0].strip()
+            if re.match(r'^\d+$', clean_for_multiline):
+                found_it = next((it for it in result.items if it.item_number == clean_for_multiline), None)
+                if found_it:
+                    active_item = found_it
+                    continue
 
             # Clean list item markers for the logic
             clean_p = re.sub(r'^(\d+[\.\)]|\-|\*|[a-zA-Z][\.\)])\s+', '', p).strip()

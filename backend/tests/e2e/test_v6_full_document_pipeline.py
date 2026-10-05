@@ -73,7 +73,11 @@ def test_v6_full_document_pipeline(admin_client, db_session):
     resp = admin_client.get(f"/api/v6/cases/{case_id}/procurement-items")
     assert resp.status_code == 200
     proc_items = resp.json()
-    # It's okay if proc_items is empty if the deterministic extractor didn't find any.
+    assert len(proc_items) >= 2, f"Expected >= 2 items from golden_test_uat.pdf, got {len(proc_items)}"
+    assert proc_items[0]["item_number"] == "1"
+    assert proc_items[0]["quantity"] == 3.0
+    assert proc_items[1]["item_number"] == "2"
+    assert proc_items[1]["quantity"] == 2.0
 
     # STEP 6 — CREATE/LINK SUPPLIER
     supplier_payload = {
