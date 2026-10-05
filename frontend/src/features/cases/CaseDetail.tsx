@@ -189,9 +189,9 @@ const CaseDetail: React.FC = () => {
           ) : activeTab === 'documentos' ? (
             <CaseDocuments caseId={id || ''} onRefresh={refresh} />
           ) : activeTab === 'proveedores' ? (
-            <CaseSuppliers caseId={id || ''} />
+            <CaseSuppliers caseId={id || ''} caseStatus={caseData?.status} />
           ) : activeTab === 'ofertas' ? (
-            <CaseOffers caseId={id || ''} />
+            <CaseOffers caseId={id || ''} caseStatus={caseData?.status} />
           ) : activeTab === 'validaciones' ? (
             <CaseValidations caseId={id || ''} />
           ) : activeTab === 'evaluacion' ? (

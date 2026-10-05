@@ -5,6 +5,7 @@ from app.api.auth import get_current_active_user, verify_case_access
 from app.models.domain import User, CaseFile
 from app.services.v6.evaluation.offer_evaluation_service import OfferEvaluationService
 from app.models.v6.supplier_offer import SupplierOffer
+from app.services.v6.quotation_guard import ensure_requirement_review_valid
 from pydantic import BaseModel
 from typing import List, Optional
 
@@ -59,6 +60,7 @@ def evaluate_offer(
     current_user: User = Depends(get_current_active_user),
     db: Session = Depends(get_db)
 ):
+    ensure_requirement_review_valid(case)
     # Verify offer belongs to case
     offer = db.query(SupplierOffer).filter(
         SupplierOffer.id == offer_id,
@@ -123,6 +125,7 @@ def update_evaluation(
     current_user: User = Depends(get_current_active_user),
     db: Session = Depends(get_db)
 ):
+    ensure_requirement_review_valid(case)
     from app.models.v6.offer_evaluation import OfferEvaluation
     eval_entry = db.query(OfferEvaluation).filter(OfferEvaluation.id == eval_id).first()
     if not eval_entry:

@@ -125,6 +125,9 @@ def link_case_supplier(
 ):
     from app.models.v6.supplier_offer import SupplierOffer
     from app.models.v6.supplier import Supplier
+    from app.services.v6.quotation_guard import ensure_requirement_review_valid
+
+    ensure_requirement_review_valid(case)
 
     supplier = db.query(Supplier).filter(
         Supplier.tenant_id == current_user.tenant_id,
@@ -177,6 +180,10 @@ def unlink_case_supplier(
     db: Session = Depends(get_db)
 ):
     from app.models.v6.supplier_offer import SupplierOffer
+
+    from app.services.v6.quotation_guard import ensure_requirement_review_valid
+
+    ensure_requirement_review_valid(case)
 
     offer = db.query(SupplierOffer).filter(
         SupplierOffer.case_id == case_id,
