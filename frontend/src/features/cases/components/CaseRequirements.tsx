@@ -43,6 +43,7 @@ export const CaseRequirements: React.FC<CaseRequirementsProps> = ({ caseId, case
   const [addItemForm, setAddItemForm] = useState({ item_number: '', description: '', quantity: 1, unit: 'UNIDAD' });
   const [isAddingItem, setIsAddingItem] = useState(false);
   const [itemFormError, setItemFormError] = useState<string | null>(null);
+  const isTerminal = caseStatus === "APPROVED" || caseStatus === "COMPLETED";
 
   const [editingItemId, setEditingItemId] = useState<number | null>(null);
   const [editItemForm, setEditItemForm] = useState({ item_number: '', description: '', quantity: 1, unit: 'UNIDAD' });
@@ -275,7 +276,7 @@ export const CaseRequirements: React.FC<CaseRequirementsProps> = ({ caseId, case
               Verifique los ítems y especificaciones extraídos. Una vez que esté conforme, confirme la revisión.
             </p>
           </div>
-          <Button onClick={handleConfirmRequirements} leftIcon={<CheckCircle size={18} />}>
+          <Button onClick={handleConfirmRequirements} disabled={isTerminal} leftIcon={<CheckCircle size={18} />}>
             Confirmar Revisión
           </Button>
         </div>
@@ -324,7 +325,7 @@ export const CaseRequirements: React.FC<CaseRequirementsProps> = ({ caseId, case
                     className="case-requirements__input"
                     value={addItemForm.description}
                     onChange={e => setAddItemForm({...addItemForm, description: e.target.value})}
-                    disabled={isAddingItem}
+                    disabled={isAddingItem || isTerminal}
                   />
                 </div>
                 <div className="case-requirements__field">
@@ -334,7 +335,7 @@ export const CaseRequirements: React.FC<CaseRequirementsProps> = ({ caseId, case
                     className="case-requirements__input"
                     value={addItemForm.quantity}
                     onChange={e => setAddItemForm({...addItemForm, quantity: parseFloat(e.target.value) || 0})}
-                    disabled={isAddingItem}
+                    disabled={isAddingItem || isTerminal}
                   />
                 </div>
                 <div className="case-requirements__field">
@@ -344,15 +345,15 @@ export const CaseRequirements: React.FC<CaseRequirementsProps> = ({ caseId, case
                     className="case-requirements__input"
                     value={addItemForm.unit}
                     onChange={e => setAddItemForm({...addItemForm, unit: e.target.value})}
-                    disabled={isAddingItem}
+                    disabled={isAddingItem || isTerminal}
                   />
                 </div>
               </div>
               <div className="case-requirements__edit-actions mt-2">
-                <Button variant="outline" size="sm" onClick={() => setShowAddItemForm(false)} disabled={isAddingItem}>
+                <Button variant="outline" size="sm" onClick={() => setShowAddItemForm(false)} disabled={isAddingItem || isTerminal}>
                   Cancelar
                 </Button>
-                <Button size="sm" onClick={handleSaveNewItem} disabled={isAddingItem || !addItemForm.description.trim()}>
+                <Button size="sm" onClick={handleSaveNewItem} disabled={isAddingItem || !addItemForm.description.trim() || isTerminal}>
                   Guardar
                 </Button>
               </div>
@@ -644,3 +645,4 @@ export const CaseRequirements: React.FC<CaseRequirementsProps> = ({ caseId, case
     </div>
   );
 };
+

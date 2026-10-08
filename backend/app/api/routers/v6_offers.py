@@ -4,6 +4,7 @@ from app.core.database import get_db
 from app.api.auth import get_current_active_user, verify_case_access
 from app.models.domain import User, CaseFile
 from app.services.v6.supplier_offer_service import SupplierOfferService
+from app.services.v6.lifecycle_guard import ensure_case_mutable
 from pydantic import BaseModel
 from typing import Optional
 
@@ -88,6 +89,7 @@ def attach_offer(
     from app.models.v6.supplier import Supplier
     from app.services.v6.quotation_guard import ensure_requirement_review_valid
 
+    ensure_case_mutable(case)
     ensure_requirement_review_valid(case)
 
     # Validar supplier existe y pertenece al tenant
@@ -145,6 +147,7 @@ def update_offer(
     from app.models.v6.supplier_offer import SupplierOffer
     from app.services.v6.quotation_guard import ensure_requirement_review_valid
 
+    ensure_case_mutable(case)
     ensure_requirement_review_valid(case)
     
     offer = db.query(SupplierOffer).filter(SupplierOffer.case_id == case_id, SupplierOffer.id == offer_id).first()

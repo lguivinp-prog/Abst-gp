@@ -7,6 +7,7 @@ from app.services.v6.selection.selection_service import SelectionService
 from app.models.v6.supplier_selection import SupplierSelectionAttempt, SupplierSelectionFinal
 from app.models.v6.supplier_offer import SupplierOffer
 from app.services.v6.quotation_guard import ensure_requirement_review_valid
+from app.services.v6.lifecycle_guard import ensure_case_mutable
 from pydantic import BaseModel
 from typing import Optional, List
 from datetime import datetime
@@ -42,6 +43,7 @@ def propose_selection(
     current_user: User = Depends(get_current_active_user),
     db: Session = Depends(get_db)
 ):
+    ensure_case_mutable(case)
     ensure_requirement_review_valid(case)
     try:
         SelectionService.propose_selection(
@@ -83,6 +85,7 @@ def approve_selection(
     current_user: User = Depends(get_current_active_user),
     db: Session = Depends(get_db)
 ):
+    ensure_case_mutable(case)
     ensure_requirement_review_valid(case)
     if current_user.role not in ["ADMIN", "SUPERVISOR"]:
         raise HTTPException(status_code=403, detail="Supervisor role required to approve")

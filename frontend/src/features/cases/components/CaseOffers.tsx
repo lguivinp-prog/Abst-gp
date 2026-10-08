@@ -496,3 +496,4 @@ export const CaseOffers: React.FC<CaseOffersProps> = ({ caseId, caseStatus }) =>
     </div>
   );
 };
+

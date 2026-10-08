@@ -10,6 +10,7 @@ from app.models.v6.supplier_offer import SupplierOffer
 from pydantic import BaseModel
 from typing import List, Optional, Any
 from datetime import datetime
+from app.services.v6.lifecycle_guard import ensure_case_mutable
 
 router = APIRouter()
 
@@ -95,6 +96,7 @@ def create_case_validation_request(
     current_user: User = Depends(get_current_active_user),
     db: Session = Depends(get_db)
 ):
+    ensure_case_mutable(case)
     # Verify supplier is linked to case
     offer = db.query(SupplierOffer).filter(
         SupplierOffer.case_id == case_id,
@@ -130,6 +132,7 @@ def create_manual_validation(
     current_user: User = Depends(get_current_active_user),
     db: Session = Depends(get_db)
 ):
+    ensure_case_mutable(case)
     # Verify supplier is linked to case
     offer = db.query(SupplierOffer).filter(
         SupplierOffer.case_id == case_id,

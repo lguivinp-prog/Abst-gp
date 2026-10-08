@@ -279,3 +279,4 @@ export const CaseSuppliers: React.FC<CaseSuppliersProps> = ({ caseId, caseStatus
     </div>
   );
 };
+
