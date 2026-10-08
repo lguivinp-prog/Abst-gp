@@ -20,9 +20,10 @@ const formatMoney = (value: NumericLike | null | undefined): string =>
 
 interface CaseOffersProps {
   caseId: string;
+  caseStatus?: string;
 }
 
-export const CaseOffers: React.FC<CaseOffersProps> = ({ caseId }) => {
+export const CaseOffers: React.FC<CaseOffersProps> = ({ caseId, caseStatus }) => {
   const [offers, setOffers] = useState<SupplierOfferResponse[]>([]);
   const [procurementItems, setProcurementItems] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
@@ -169,6 +170,8 @@ export const CaseOffers: React.FC<CaseOffersProps> = ({ caseId }) => {
     );
   }
 
+  const validStatuses = ["WAITING_QUOTATION", "COMPARING", "READY_GENERATE", "UNDER_REVIEW", "APPROVED", "COMPLETED"];
+  const isReviewPending = !caseStatus || !validStatuses.includes(caseStatus);
   return (
     <div className="case-offers-container">
       <div className="case-offers-header">
@@ -177,6 +180,21 @@ export const CaseOffers: React.FC<CaseOffersProps> = ({ caseId }) => {
           <p>Gestione las cotizaciones y ofertas vinculadas a este expediente.</p>
         </div>
       </div>
+
+      {isReviewPending && (
+        <div className="bg-yellow-50 border-l-4 border-yellow-400 p-4 mb-6 rounded-md">
+          <div className="flex">
+            <div className="flex-shrink-0">
+              <AlertCircle className="h-5 w-5 text-yellow-400" />
+            </div>
+            <div className="ml-3">
+              <p className="text-sm text-yellow-700">
+                <strong>Requerimiento pendiente de confirmación:</strong> Debe confirmar el requerimiento en la pestaña "Requerimiento" antes de poder modificar o ingresar ofertas.
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
 
       {error && <div className="case-offers-error"><AlertCircle size={16} /> {error}</div>}
 
@@ -451,10 +469,21 @@ export const CaseOffers: React.FC<CaseOffersProps> = ({ caseId }) => {
 
                 {!isEditing && (
                   <div className="case-offer-actions">
-                    <Button variant="ghost" onClick={() => handleEditClick(offer)}>
+                    <Button 
+                      variant="ghost" 
+                      onClick={() => handleEditClick(offer)}
+                      disabled={isReviewPending}
+                      title={isReviewPending ? "Confirme el requerimiento para editar" : ""}
+                    >
                       <Edit2 size={16} /> Editar
                     </Button>
-                    <Button variant="ghost" className="btn-delete" onClick={() => handleDeleteOffer(offer.id)}>
+                    <Button 
+                      variant="ghost" 
+                      className="btn-delete" 
+                      onClick={() => handleDeleteOffer(offer.id)}
+                      disabled={isReviewPending}
+                      title={isReviewPending ? "Confirme el requerimiento para eliminar" : ""}
+                    >
                       <Trash2 size={16} />
                     </Button>
                   </div>

@@ -57,7 +57,15 @@ test.describe('Document Intelligence E2E - Happy Path', () => {
     // Wait for the button 'Extraer requerimientos' which appears when extraction_ready is true
     await expect(page.locator('button:has-text("Extraer requerimientos")').first()).toBeVisible({ timeout: 90000 });
     await page.click('button:has-text("Extraer requerimientos")');
-    await expect(page.locator('text=Requerimientos extraídos/verificados').first()).toBeVisible({ timeout: 30000 });
+    await expect(page.locator('text=Requerimientos extra').and(page.locator('text=dos/verificados')).first()).toBeVisible({ timeout: 30000 });
+
+    // Review and confirm
+    await page.click('button:has-text("Requerimiento")');
+    await expect(page.locator('text=Revisi').and(page.locator('text=Pendiente')).first()).toBeVisible({ timeout: 15000 });
+    const confirmButton = page.locator('button:has-text("Confirmar Revisi")').first();
+    await expect(confirmButton).toBeVisible({ timeout: 15000 });
+    await confirmButton.click();
+    await expect(page.locator('text=Revisi').and(page.locator('text=Confirmada')).first()).toBeVisible({ timeout: 15000 });
 
     // 5. Vincular Proveedor (V6)
     await page.click('button:has-text("Proveedores")');
@@ -81,14 +89,14 @@ test.describe('Document Intelligence E2E - Happy Path', () => {
     await expect(page.locator('text=Oferta completada').first()).toBeVisible({ timeout: 15000 });
 
     // 7. Evaluar Oferta (V6)
-    await page.click('button:has-text("Evaluación")');
+    await page.click('button:has-text("Evaluaci")');
     await page.click('button:has-text("Evaluar Oferta")');
     await expect(page.locator('text=Resultados de Requisitos').first()).toBeVisible({ timeout: 60000 });
 
     // 8. Proponer Selección (V6)
-    await page.click('button:has-text("Selección")');
-    await page.click('button:has-text("Proponer Selección")');
-    await expect(page.locator('text=Selección Propuesta').first()).toBeVisible({ timeout: 15000 });
+    await page.click('button:has-text("Selecci")');
+    await page.click('button:has-text("Proponer Selecci")');
+    await expect(page.locator('text=Selecci').and(page.locator('text=Propuesta')).first()).toBeVisible({ timeout: 15000 });
 
     // 9. Adjudicar (V6)
     await page.click('button:has-text("Resultado")');
@@ -96,3 +104,5 @@ test.describe('Document Intelligence E2E - Happy Path', () => {
     await expect(page.locator('text=Expediente Adjudicado').first()).toBeVisible({ timeout: 15000 });
   });
 });
+
+

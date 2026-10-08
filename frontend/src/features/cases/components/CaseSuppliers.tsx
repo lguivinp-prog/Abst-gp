@@ -9,9 +9,10 @@ import './CaseSuppliers.css';
 
 interface CaseSuppliersProps {
   caseId: string;
+  caseStatus?: string;
 }
 
-export const CaseSuppliers: React.FC<CaseSuppliersProps> = ({ caseId }) => {
+export const CaseSuppliers: React.FC<CaseSuppliersProps> = ({ caseId, caseStatus }) => {
   const [suppliers, setSuppliers] = useState<CaseSupplierResponse[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -112,6 +113,8 @@ export const CaseSuppliers: React.FC<CaseSuppliersProps> = ({ caseId }) => {
     );
   }
 
+  const validStatuses = ["WAITING_QUOTATION", "COMPARING", "READY_GENERATE", "UNDER_REVIEW", "APPROVED", "COMPLETED"];
+  const isReviewPending = !caseStatus || !validStatuses.includes(caseStatus);
   return (
     <div className="case-suppliers-container">
       <div className="case-suppliers-header">
@@ -120,11 +123,31 @@ export const CaseSuppliers: React.FC<CaseSuppliersProps> = ({ caseId }) => {
           <p>Gestione los proveedores vinculados a este expediente y sus ofertas.</p>
         </div>
         {!showAddForm && (
-          <Button onClick={() => setShowAddForm(true)} leftIcon={<Plus size={16} />}>
+          <Button 
+            onClick={() => setShowAddForm(true)} 
+            leftIcon={<Plus size={16} />}
+            disabled={isReviewPending}
+            title={isReviewPending ? "Debe confirmar el requerimiento antes de agregar proveedores" : ""}
+          >
             Vincular Proveedor
           </Button>
         )}
       </div>
+
+      {isReviewPending && (
+        <div className="bg-yellow-50 border-l-4 border-yellow-400 p-4 mb-6 rounded-md">
+          <div className="flex">
+            <div className="flex-shrink-0">
+              <ShieldCheck className="h-5 w-5 text-yellow-400" />
+            </div>
+            <div className="ml-3">
+              <p className="text-sm text-yellow-700">
+                <strong>Requerimiento pendiente de confirmación:</strong> Debe confirmar el requerimiento en la pestaña "Requerimiento" antes de poder vincular proveedores o ingresar ofertas.
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
 
       {error && <div className="case-suppliers-error">{error}</div>}
 

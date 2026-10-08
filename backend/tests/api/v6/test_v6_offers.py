@@ -4,22 +4,22 @@ from sqlalchemy.orm import Session
 from app.models.v6.supplier import Supplier
 from app.models.v6.supplier_offer import SupplierOffer
 
-def test_offers_empty_list(client: TestClient, db_session: Session, test_case_file):
+def test_offers_empty_list(client: TestClient, db_session: Session, reviewed_case_file):
     response = client.get(
-        f"/api/v6/cases/{test_case_file.id}/offers",
+        f"/api/v6/cases/{reviewed_case_file.id}/offers",
         headers={"Authorization": "Bearer test_token"}
     )
     assert response.status_code == 200
     assert response.json() == []
 
-def test_offers_create_and_list(client: TestClient, db_session: Session, test_case_file):
+def test_offers_create_and_list(client: TestClient, db_session: Session, reviewed_case_file):
     # First create a supplier
     supplier_data = {
         "ruc": "11111111111",
         "business_name": "Test Supplier"
     }
     sup_res = client.post(
-        f"/api/v6/cases/{test_case_file.id}/suppliers",
+        f"/api/v6/cases/{reviewed_case_file.id}/suppliers",
         json=supplier_data,
         headers={"Authorization": "Bearer test_token"}
     )
@@ -28,7 +28,7 @@ def test_offers_create_and_list(client: TestClient, db_session: Session, test_ca
 
     # Check that an offer was created automatically by Phase 4A (progressive)
     list_res = client.get(
-        f"/api/v6/cases/{test_case_file.id}/offers",
+        f"/api/v6/cases/{reviewed_case_file.id}/offers",
         headers={"Authorization": "Bearer test_token"}
     )
     assert list_res.status_code == 200
@@ -40,18 +40,18 @@ def test_offers_create_and_list(client: TestClient, db_session: Session, test_ca
 
     # Update the offer with price
     update_res = client.put(
-        f"/api/v6/cases/{test_case_file.id}/offers/{offer_id}",
+        f"/api/v6/cases/{reviewed_case_file.id}/offers/{offer_id}",
         json={"price": 1500.50, "status": "PENDING"},
         headers={"Authorization": "Bearer test_token"}
     )
     assert update_res.status_code == 200
     assert update_res.json()["price"] == 1500.50
 
-def test_offers_update_with_documents(client: TestClient, db_session: Session, test_case_file):
+def test_offers_update_with_documents(client: TestClient, db_session: Session, reviewed_case_file):
     # Create supplier
     supplier_data = {"ruc": "11111111111", "business_name": "Test Supplier"}
     sup_res = client.post(
-        f"/api/v6/cases/{test_case_file.id}/suppliers",
+        f"/api/v6/cases/{reviewed_case_file.id}/suppliers",
         json=supplier_data,
         headers={"Authorization": "Bearer test_token"}
     )
@@ -59,7 +59,7 @@ def test_offers_update_with_documents(client: TestClient, db_session: Session, t
     supplier_id = sup_res.json()["id"]
 
     list_res = client.get(
-        f"/api/v6/cases/{test_case_file.id}/offers",
+        f"/api/v6/cases/{reviewed_case_file.id}/offers",
         headers={"Authorization": "Bearer test_token"}
     )
     offers = list_res.json()
@@ -67,7 +67,7 @@ def test_offers_update_with_documents(client: TestClient, db_session: Session, t
 
     from app.models.domain import UploadedDocument
     doc = UploadedDocument(
-        case_id=test_case_file.id,
+        case_id=reviewed_case_file.id,
         document_type="oferta",
         original_filename="offer.pdf",
         stored_path="test/offer.pdf",
@@ -79,7 +79,7 @@ def test_offers_update_with_documents(client: TestClient, db_session: Session, t
 
     # Test update with document_ids
     update_res = client.put(
-        f"/api/v6/cases/{test_case_file.id}/offers/{offer_id}",
+        f"/api/v6/cases/{reviewed_case_file.id}/offers/{offer_id}",
         json={"document_ids": [doc.id]},
         headers={"Authorization": "Bearer test_token"}
     )
@@ -90,7 +90,7 @@ def test_offers_update_with_documents(client: TestClient, db_session: Session, t
 
     # Test update with document_ids = []
     update_res_empty = client.put(
-        f"/api/v6/cases/{test_case_file.id}/offers/{offer_id}",
+        f"/api/v6/cases/{reviewed_case_file.id}/offers/{offer_id}",
         json={"document_ids": []},
         headers={"Authorization": "Bearer test_token"}
     )
@@ -98,24 +98,24 @@ def test_offers_update_with_documents(client: TestClient, db_session: Session, t
     data_empty = update_res_empty.json()
     assert len(data_empty["documents"]) == 0
 
-def test_offers_cross_tenant_check(other_client: TestClient, db_session: Session, test_case_file):
+def test_offers_cross_tenant_check(other_client: TestClient, db_session: Session, reviewed_case_file):
     # Cross tenant check
     cross_res = other_client.get(
-        f"/api/v6/cases/{test_case_file.id}/offers",
+        f"/api/v6/cases/{reviewed_case_file.id}/offers",
         headers={"Authorization": "Bearer other_tenant_token"}
     )
     # The user should not have access to the case
     assert cross_res.status_code == 403 or cross_res.status_code == 404
 
-def test_offers_cross_case_not_modifiable(client: TestClient, db_session: Session, test_case_file):
+def test_offers_cross_case_not_modifiable(client: TestClient, db_session: Session, reviewed_case_file):
     # Create an offer
     sup_res = client.post(
-        f"/api/v6/cases/{test_case_file.id}/suppliers",
+        f"/api/v6/cases/{reviewed_case_file.id}/suppliers",
         json={"ruc": "22222222222", "business_name": "Test Supplier 2"},
         headers={"Authorization": "Bearer test_token"}
     )
     supplier_id = sup_res.json()["id"]
-    list_res = client.get(f"/api/v6/cases/{test_case_file.id}/offers", headers={"Authorization": "Bearer test_token"})
+    list_res = client.get(f"/api/v6/cases/{reviewed_case_file.id}/offers", headers={"Authorization": "Bearer test_token"})
     offers = list_res.json()
     offer_id = [o for o in offers if o["supplier_id"] == supplier_id][0]["id"]
 
@@ -127,30 +127,30 @@ def test_offers_cross_case_not_modifiable(client: TestClient, db_session: Sessio
     )
     assert update_res.status_code == 403 or update_res.status_code == 404
 
-def test_offers_delete(client: TestClient, db_session: Session, test_case_file):
+def test_offers_delete(client: TestClient, db_session: Session, reviewed_case_file):
     sup_res = client.post(
-        f"/api/v6/cases/{test_case_file.id}/suppliers",
+        f"/api/v6/cases/{reviewed_case_file.id}/suppliers",
         json={"ruc": "33333333333", "business_name": "Test Supplier 3"},
         headers={"Authorization": "Bearer test_token"}
     )
     supplier_id = sup_res.json()["id"]
-    list_res = client.get(f"/api/v6/cases/{test_case_file.id}/offers", headers={"Authorization": "Bearer test_token"})
+    list_res = client.get(f"/api/v6/cases/{reviewed_case_file.id}/offers", headers={"Authorization": "Bearer test_token"})
     offer_id = [o for o in list_res.json() if o["supplier_id"] == supplier_id][0]["id"]
 
     del_res = client.delete(
-        f"/api/v6/cases/{test_case_file.id}/offers/{offer_id}",
+        f"/api/v6/cases/{reviewed_case_file.id}/offers/{offer_id}",
         headers={"Authorization": "Bearer test_token"}
     )
     assert del_res.status_code == 200
 
-    list_res2 = client.get(f"/api/v6/cases/{test_case_file.id}/offers", headers={"Authorization": "Bearer test_token"})
+    list_res2 = client.get(f"/api/v6/cases/{reviewed_case_file.id}/offers", headers={"Authorization": "Bearer test_token"})
     assert offer_id not in [o["id"] for o in list_res2.json()]
 
-def test_offers_itemized_calculations_and_rollback(client: TestClient, db_session: Session, test_case_file):
+def test_offers_itemized_calculations_and_rollback(client: TestClient, db_session: Session, reviewed_case_file):
     from app.models.v6.case_procurement_item import CaseProcurementItem
     # Create procurement items
-    pi1 = CaseProcurementItem(case_id=test_case_file.id, item_number="1", description="Item 1", quantity=10, unit="UNIDAD")
-    pi2 = CaseProcurementItem(case_id=test_case_file.id, item_number="2", description="Item 2", quantity=5, unit="CAJA")
+    pi1 = CaseProcurementItem(case_id=reviewed_case_file.id, item_number="1", description="Item 1", quantity=10, unit="UNIDAD")
+    pi2 = CaseProcurementItem(case_id=reviewed_case_file.id, item_number="2", description="Item 2", quantity=5, unit="CAJA")
     db_session.add(pi1)
     db_session.add(pi2)
     db_session.commit()
@@ -159,12 +159,12 @@ def test_offers_itemized_calculations_and_rollback(client: TestClient, db_sessio
 
     # Create supplier and get offer
     sup_res = client.post(
-        f"/api/v6/cases/{test_case_file.id}/suppliers",
+        f"/api/v6/cases/{reviewed_case_file.id}/suppliers",
         json={"ruc": "44444444444", "business_name": "Test Supplier 4"},
         headers={"Authorization": "Bearer test_token"}
     )
     supplier_id = sup_res.json()["id"]
-    list_res = client.get(f"/api/v6/cases/{test_case_file.id}/offers", headers={"Authorization": "Bearer test_token"})
+    list_res = client.get(f"/api/v6/cases/{reviewed_case_file.id}/offers", headers={"Authorization": "Bearer test_token"})
     offer_id = [o for o in list_res.json() if o["supplier_id"] == supplier_id][0]["id"]
 
     # A) Calculation & D) Server-side authority
@@ -173,7 +173,7 @@ def test_offers_itemized_calculations_and_rollback(client: TestClient, db_sessio
     # 5 * 20.00 = 100.00
     # Total should be 225.00
     update_res = client.put(
-        f"/api/v6/cases/{test_case_file.id}/offers/{offer_id}",
+        f"/api/v6/cases/{reviewed_case_file.id}/offers/{offer_id}",
         json={
             "total_amount": 999.99,
             "currency": "USD",
@@ -194,7 +194,7 @@ def test_offers_itemized_calculations_and_rollback(client: TestClient, db_sessio
     # B) Update idempotency & C) No duplicate items
     # Sending again with different prices should replace them
     update_res2 = client.put(
-        f"/api/v6/cases/{test_case_file.id}/offers/{offer_id}",
+        f"/api/v6/cases/{reviewed_case_file.id}/offers/{offer_id}",
         json={
             "items": [
                 {"procurement_item_id": pi1.id, "unit_price": 10.00},
@@ -215,7 +215,7 @@ def test_offers_itemized_calculations_and_rollback(client: TestClient, db_sessio
 
     # E) Rollback on invalid item
     update_res3 = client.put(
-        f"/api/v6/cases/{test_case_file.id}/offers/{offer_id}",
+        f"/api/v6/cases/{reviewed_case_file.id}/offers/{offer_id}",
         json={
             "items": [
                 {"procurement_item_id": pi1.id, "unit_price": 10.00},

@@ -15,6 +15,20 @@ def test_case_file(db_session: Session, setup_mega_tenant):
     db_session.refresh(case)
     return case
 
+@pytest.fixture
+def reviewed_case_file(db_session: Session, setup_mega_tenant):
+    case = CaseFile(
+        title="Test Case V6 (Reviewed)",
+        contract_type="services",
+        tenant_id="mega_tenant",
+        assigned_to_user_id=1,
+        status="WAITING_QUOTATION"
+    )
+    db_session.add(case)
+    db_session.commit()
+    db_session.refresh(case)
+    return case
+
 @pytest.fixture(scope="function")
 def other_client(db_session):
     from app.main import app

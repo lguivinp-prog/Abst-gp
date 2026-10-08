@@ -86,6 +86,9 @@ def attach_offer(
     db: Session = Depends(get_db)
 ):
     from app.models.v6.supplier import Supplier
+    from app.services.v6.quotation_guard import ensure_requirement_review_valid
+
+    ensure_requirement_review_valid(case)
 
     # Validar supplier existe y pertenece al tenant
     supplier = db.query(Supplier).filter(
@@ -140,6 +143,10 @@ def update_offer(
     db: Session = Depends(get_db)
 ):
     from app.models.v6.supplier_offer import SupplierOffer
+    from app.services.v6.quotation_guard import ensure_requirement_review_valid
+
+    ensure_requirement_review_valid(case)
+    
     offer = db.query(SupplierOffer).filter(SupplierOffer.case_id == case_id, SupplierOffer.id == offer_id).first()
     if not offer:
         raise HTTPException(status_code=404, detail="Offer not found")
