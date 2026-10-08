@@ -29,6 +29,11 @@ export const CaseOffers: React.FC<CaseOffersProps> = ({ caseId, caseStatus }) =>
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
+  const validStatuses = ["WAITING_QUOTATION", "COMPARING", "READY_GENERATE", "UNDER_REVIEW", "APPROVED", "COMPLETED"];
+  const isTerminal = caseStatus === "APPROVED" || caseStatus === "COMPLETED";
+  const isReviewPending = !caseStatus || !validStatuses.includes(caseStatus);
+  const isMutationBlocked = isReviewPending || isTerminal;
+
   const [editingOfferId, setEditingOfferId] = useState<number | null>(null);
   const [editData, setEditData] = useState<SupplierOfferUpdate>({});
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
@@ -100,6 +105,7 @@ export const CaseOffers: React.FC<CaseOffersProps> = ({ caseId, caseStatus }) =>
   };
 
   const handleSaveOffer = async (offerId: number) => {
+    if (isMutationBlocked) return;
     setIsSubmitting(true);
     setError(null);
 
@@ -144,6 +150,7 @@ export const CaseOffers: React.FC<CaseOffersProps> = ({ caseId, caseStatus }) =>
   };
 
   const handleDeleteOffer = async (offerId: number) => {
+    if (isMutationBlocked) return;
     if (!window.confirm('¿Está seguro de eliminar esta oferta?')) {
       return;
     }
@@ -170,8 +177,6 @@ export const CaseOffers: React.FC<CaseOffersProps> = ({ caseId, caseStatus }) =>
     );
   }
 
-  const validStatuses = ["WAITING_QUOTATION", "COMPARING", "READY_GENERATE", "UNDER_REVIEW", "APPROVED", "COMPLETED"];
-  const isReviewPending = !caseStatus || !validStatuses.includes(caseStatus);
   return (
     <div className="case-offers-container">
       <div className="case-offers-header">
@@ -472,8 +477,8 @@ export const CaseOffers: React.FC<CaseOffersProps> = ({ caseId, caseStatus }) =>
                     <Button 
                       variant="ghost" 
                       onClick={() => handleEditClick(offer)}
-                      disabled={isReviewPending}
-                      title={isReviewPending ? "Confirme el requerimiento para editar" : ""}
+                      disabled={isMutationBlocked}
+                      title={isTerminal ? "El expediente está cerrado" : (isReviewPending ? "Confirme el requerimiento para editar" : "")}
                     >
                       <Edit2 size={16} /> Editar
                     </Button>
@@ -481,8 +486,8 @@ export const CaseOffers: React.FC<CaseOffersProps> = ({ caseId, caseStatus }) =>
                       variant="ghost" 
                       className="btn-delete" 
                       onClick={() => handleDeleteOffer(offer.id)}
-                      disabled={isReviewPending}
-                      title={isReviewPending ? "Confirme el requerimiento para eliminar" : ""}
+                      disabled={isMutationBlocked}
+                      title={isTerminal ? "El expediente está cerrado" : (isReviewPending ? "Confirme el requerimiento para eliminar" : "")}
                     >
                       <Trash2 size={16} />
                     </Button>

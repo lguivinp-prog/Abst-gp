@@ -17,6 +17,11 @@ export const CaseSuppliers: React.FC<CaseSuppliersProps> = ({ caseId, caseStatus
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   
+  const validStatuses = ["WAITING_QUOTATION", "COMPARING", "READY_GENERATE", "UNDER_REVIEW", "APPROVED", "COMPLETED"];
+  const isTerminal = caseStatus === "APPROVED" || caseStatus === "COMPLETED";
+  const isReviewPending = !caseStatus || !validStatuses.includes(caseStatus);
+  const isMutationBlocked = isReviewPending || isTerminal;
+
   const [showAddForm, setShowAddForm] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   
@@ -56,6 +61,7 @@ export const CaseSuppliers: React.FC<CaseSuppliersProps> = ({ caseId, caseStatus
 
   const handleAddSupplier = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (isMutationBlocked) return;
     if (!formData.ruc || !formData.business_name) {
       setError('RUC y Razón Social son obligatorios.');
       return;
@@ -87,6 +93,7 @@ export const CaseSuppliers: React.FC<CaseSuppliersProps> = ({ caseId, caseStatus
   };
 
   const handleUnlink = async (supplierId: number) => {
+    if (isMutationBlocked) return;
     if (!window.confirm('¿Está seguro de desvincular este proveedor del expediente?')) {
       return;
     }
@@ -113,8 +120,6 @@ export const CaseSuppliers: React.FC<CaseSuppliersProps> = ({ caseId, caseStatus
     );
   }
 
-  const validStatuses = ["WAITING_QUOTATION", "COMPARING", "READY_GENERATE", "UNDER_REVIEW", "APPROVED", "COMPLETED"];
-  const isReviewPending = !caseStatus || !validStatuses.includes(caseStatus);
   return (
     <div className="case-suppliers-container">
       <div className="case-suppliers-header">
@@ -126,8 +131,8 @@ export const CaseSuppliers: React.FC<CaseSuppliersProps> = ({ caseId, caseStatus
           <Button 
             onClick={() => setShowAddForm(true)} 
             leftIcon={<Plus size={16} />}
-            disabled={isReviewPending}
-            title={isReviewPending ? "Debe confirmar el requerimiento antes de agregar proveedores" : ""}
+            disabled={isMutationBlocked}
+            title={isTerminal ? "El expediente está cerrado" : (isReviewPending ? "Debe confirmar el requerimiento antes de agregar proveedores" : "")}
           >
             Vincular Proveedor
           </Button>
@@ -226,7 +231,7 @@ export const CaseSuppliers: React.FC<CaseSuppliersProps> = ({ caseId, caseStatus
           <Building2 size={48} className="empty-icon" />
           <h3>No hay proveedores vinculados</h3>
           <p>No se han registrado proveedores para este expediente.</p>
-          <Button onClick={() => setShowAddForm(true)} variant="outline">
+          <Button onClick={() => setShowAddForm(true)} variant="outline" disabled={isMutationBlocked} title={isTerminal ? "El expediente está cerrado" : ""}>
             Vincular el primero
           </Button>
         </div>
@@ -267,7 +272,8 @@ export const CaseSuppliers: React.FC<CaseSuppliersProps> = ({ caseId, caseStatus
                   variant="ghost" 
                   className="btn-delete"
                   onClick={() => handleUnlink(sup.id)}
-                  title="Desvincular"
+                  title={isTerminal ? "El expediente está cerrado" : "Desvincular"}
+                  disabled={isMutationBlocked}
                 >
                   <Trash2 size={16} />
                 </Button>

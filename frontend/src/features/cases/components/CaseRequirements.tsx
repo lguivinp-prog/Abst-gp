@@ -121,6 +121,7 @@ export const CaseRequirements: React.FC<CaseRequirementsProps> = ({ caseId, case
   };
 
   const handleSaveEdit = async (id: number) => {
+    if (isTerminal) return;
     setMutationError(null);
     if (!editForm.reason.trim()) {
       setMutationError('Debe ingresar un motivo para la modificación.');
@@ -144,6 +145,7 @@ export const CaseRequirements: React.FC<CaseRequirementsProps> = ({ caseId, case
   };
 
   const handleSaveNew = async () => {
+    if (isTerminal) return;
     setFormError(null);
     if (!addForm.requirement_type.trim() || !addForm.description.trim()) {
       setFormError('El tipo de requerimiento y la descripción son obligatorios.');
@@ -168,6 +170,7 @@ export const CaseRequirements: React.FC<CaseRequirementsProps> = ({ caseId, case
   };
 
   const handleConfirmRequirements = async () => {
+    if (isTerminal) return;
     try {
       await requirementsService.confirmRequirements(caseId);
       if (onRefresh) {
@@ -219,6 +222,7 @@ export const CaseRequirements: React.FC<CaseRequirementsProps> = ({ caseId, case
   }
 
   const handleSaveNewItem = async () => {
+    if (isTerminal) return;
     setItemFormError(null);
     if (!addItemForm.description.trim()) {
       setItemFormError('La descripción es obligatoria.');
@@ -242,6 +246,7 @@ export const CaseRequirements: React.FC<CaseRequirementsProps> = ({ caseId, case
   };
 
   const handleEditItem = async (itemId: number) => {
+    if (isTerminal) return;
     setItemFormError(null);
     try {
       await requirementsService.updateProcurementItem(caseId, itemId, editItemForm);
@@ -257,6 +262,7 @@ export const CaseRequirements: React.FC<CaseRequirementsProps> = ({ caseId, case
   };
 
   const handleDeleteItem = async (itemId: number) => {
+    if (isTerminal) return;
     if (!window.confirm('¿Está seguro de eliminar este ítem?')) return;
     try {
       await requirementsService.deleteProcurementItem(caseId, itemId);
@@ -431,10 +437,10 @@ export const CaseRequirements: React.FC<CaseRequirementsProps> = ({ caseId, case
                         unit: item.unit || 'UNIDAD',
                         status: 'VALIDATED'
                       } as any);
-                    }}>
+                    }} disabled={isTerminal}>
                       <Edit2 size={16} />
                     </Button>
-                    <Button variant="ghost" size="sm" onClick={() => handleDeleteItem(item.id)}>
+                    <Button variant="ghost" size="sm" onClick={() => handleDeleteItem(item.id)} disabled={isTerminal}>
                       <Trash2 size={16} className="text-red-500" />
                     </Button>
                   </div>
@@ -447,7 +453,7 @@ export const CaseRequirements: React.FC<CaseRequirementsProps> = ({ caseId, case
 
       <div className="case-requirements__header-wrapper mt-8 justify-end">
         {!showAddForm && editingId === null && (
-          <Button leftIcon={<Plus size={18} />} onClick={() => setShowAddForm(true)}>
+          <Button leftIcon={<Plus size={18} />} onClick={() => setShowAddForm(true)} disabled={isTerminal}>
             Agregar Requerimiento
           </Button>
         )}
@@ -639,6 +645,7 @@ export const CaseRequirements: React.FC<CaseRequirementsProps> = ({ caseId, case
             requirements={requirements}
             procurementItems={procurementItems}
             onEditRequirement={handleStartEdit}
+            isTerminal={isTerminal}
           />
         )}
       </div>
