@@ -219,6 +219,7 @@ def delete_offer(
     current_user: User = Depends(get_current_active_user),
     db: Session = Depends(get_db)
 ):
+    ensure_case_mutable(case)
     from app.models.v6.supplier_offer import SupplierOffer
     offer = db.query(SupplierOffer).filter(SupplierOffer.case_id == case_id, SupplierOffer.id == offer_id).first()
     if not offer:
@@ -238,6 +239,7 @@ def extract_offer_terms(
     current_user: User = Depends(get_current_active_user),
     db: Session = Depends(get_db)
 ):
+    ensure_case_mutable(case)
     from app.models.v6.supplier_offer import SupplierOffer
     from app.models.v6.supplier_offer_contract_term import SupplierOfferContractTerm
     from app.services.v6.extraction.contract_extractor import extract_offer_terms_from_text

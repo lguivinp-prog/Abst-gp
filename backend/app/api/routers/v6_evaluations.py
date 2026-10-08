@@ -192,11 +192,13 @@ def get_contractual_evaluations(
     all_conditions = []
 
     for offer in offers:
-        # Check if already resolved
         existing = db.query(ContractualCondition).filter_by(supplier_offer_id=offer.id).all()
+        
+        if case.status in ["APPROVED", "COMPLETED"]:
+            all_conditions.extend(existing)
+            continue
+            
         if existing:
-            # We clear them and re-resolve to get fresh data (or we could just return existing)
-            # Since the user might have updated requirements or offers, it's safer to re-evaluate dynamically here, or we can just delete and recreate.
             db.query(ContractualCondition).filter_by(supplier_offer_id=offer.id).delete()
             db.flush()
 
