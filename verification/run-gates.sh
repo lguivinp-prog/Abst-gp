@@ -113,6 +113,27 @@ RESULTS["LEGACY_V5_INFRASTRUCTURE_PIPELINE"]="PASS"
 echo "[J.1] ISOLATION BOUNDARY: Limpiando Redis y reiniciando worker deterministicamente..."
 run_compose stop worker-test backend-app
 run_compose exec -T redis-test redis-cli -n 1 FLUSHDB
+
+echo "Terminando sesiones residuales de test_db..."
+run_compose exec -T db-test psql -U test_user -d test_db -c "SELECT pg_terminate_backend(pid) FROM pg_stat_activity WHERE datname = 'test_db' AND pid <> pg_backend_pid();"
+
+echo "Esperando quiescence de test_db..."
+DB_READY=0
+for i in {1..30}; do
+    ACTIVE_SESSIONS=$(run_compose exec -T db-test psql -U test_user -d test_db -t -A -c "SELECT count(*) FROM pg_stat_activity WHERE datname = 'test_db' AND pid <> pg_backend_pid();")
+    if [ "$ACTIVE_SESSIONS" -eq 0 ]; then
+        DB_READY=1
+        break
+    fi
+    sleep 2
+done
+
+if [ "$DB_READY" -eq 0 ]; then
+    echo "ERROR: test_db no alcanzó quiescence."
+    RESULTS["NATIVE_V6_API_E2E"]="FAIL"
+    exit 1
+fi
+
 run_compose start backend-app worker-test
 
 echo "Esperando readiness del backend..."
