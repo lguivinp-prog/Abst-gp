@@ -307,7 +307,7 @@ export const CaseRequirements: React.FC<CaseRequirementsProps> = ({ caseId, case
           </p>
         </div>
         {!showAddItemForm && (
-          <Button leftIcon={<Plus size={18} />} onClick={() => setShowAddItemForm(true)}>
+          <Button leftIcon={<Plus size={18} />} onClick={() => setShowAddItemForm(true)} disabled={isTerminal}>
             Agregar Ítem
           </Button>
         )}

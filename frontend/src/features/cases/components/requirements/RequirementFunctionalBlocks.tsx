@@ -152,7 +152,7 @@ export const RequirementFunctionalBlocks: React.FC<Props> = ({
                             </div>
                             <div className="flex items-center gap-2">
                               {getStatusBadge(req.status)}
-                              <Button variant="ghost" size="sm" onClick={() => onEditRequirement(req)}>
+                              <Button variant="ghost" size="sm" onClick={() => onEditRequirement(req)} disabled={isTerminal}>
                                 <Edit2 size={12} />
                               </Button>
                             </div>
@@ -244,7 +244,7 @@ export const RequirementFunctionalBlocks: React.FC<Props> = ({
                       <span className="font-semibold text-sm">Contexto</span>
                       <div className="flex items-center gap-2">
                         {getStatusBadge(req.status)}
-                        <Button variant="ghost" size="sm" onClick={() => onEditRequirement(req)}>
+                        <Button variant="ghost" size="sm" onClick={() => onEditRequirement(req)} disabled={isTerminal}>
                           <Edit2 size={14} />
                         </Button>
                       </div>
