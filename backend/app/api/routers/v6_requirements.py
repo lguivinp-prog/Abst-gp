@@ -79,6 +79,7 @@ class RequirementCreate(BaseModel):
     phase: Optional[str] = None
 
 from app.api.auth import get_current_active_user, verify_case_access, require_role
+from app.services.v6.lifecycle_guard import ensure_case_mutable
 
 class RequirementUploadResponse(BaseModel):
     document_id: int
@@ -93,6 +94,7 @@ def upload_v6_requirement(
     current_user: User = Depends(get_current_active_user),
     db: Session = Depends(get_db)
 ):
+    ensure_case_mutable(case)
     if not file.filename.lower().endswith(".pdf"):
         raise HTTPException(
             status_code=400,
@@ -120,6 +122,7 @@ def extract_requirements(
     current_user: User = Depends(require_role(["ADMIN", "OPERATOR"])),
     db: Session = Depends(get_db)
 ):
+    ensure_case_mutable(case)
     doc = db.query(UploadedDocument).filter(UploadedDocument.id == req.document_id, UploadedDocument.case_id == case_id).first()
     if not doc:
         raise HTTPException(status_code=404, detail="Document not found")
@@ -181,6 +184,7 @@ def confirm_requirements(
     current_user: User = Depends(get_current_active_user),
     db: Session = Depends(get_db)
 ):
+    ensure_case_mutable(case)
     if case.status == "WAITING_QUOTATION":
         return {"message": "Requirements already confirmed", "status": case.status}
         
@@ -200,6 +204,7 @@ def create_requirement(
     current_user: User = Depends(get_current_active_user),
     db: Session = Depends(get_db)
 ):
+    ensure_case_mutable(case)
     from app.models.v6.case_procurement_item import CaseProcurementItem, CaseProcurementItemSpecification
     procurement_items = db.query(CaseProcurementItem).filter(CaseProcurementItem.case_id == case_id).all()
     specifications = db.query(CaseProcurementItemSpecification).join(CaseProcurementItem).filter(CaseProcurementItem.case_id == case_id).all()
@@ -249,6 +254,7 @@ def update_requirement(
     current_user: User = Depends(get_current_active_user),
     db: Session = Depends(get_db)
 ):
+    ensure_case_mutable(case)
     req = db.query(CaseRequirementMatrix).filter(
         CaseRequirementMatrix.id == req_id,
         CaseRequirementMatrix.case_id == case_id
@@ -363,6 +369,7 @@ def create_procurement_item(
     case: CaseFile = Depends(verify_case_access),
     db: Session = Depends(get_db)
 ):
+    ensure_case_mutable(case)
     from app.models.v6.case_procurement_item import CaseProcurementItem
     item = CaseProcurementItem(
         case_id=case_id,
@@ -390,6 +397,7 @@ def update_procurement_item(
     case: CaseFile = Depends(verify_case_access),
     db: Session = Depends(get_db)
 ):
+    ensure_case_mutable(case)
     from app.models.v6.case_procurement_item import CaseProcurementItem
     item = db.query(CaseProcurementItem).filter(
         CaseProcurementItem.case_id == case_id,
@@ -420,6 +428,7 @@ def delete_procurement_item(
     case: CaseFile = Depends(verify_case_access),
     db: Session = Depends(get_db)
 ):
+    ensure_case_mutable(case)
     from app.models.v6.case_procurement_item import CaseProcurementItem
     item = db.query(CaseProcurementItem).filter(
         CaseProcurementItem.case_id == case_id,

@@ -8,12 +8,14 @@ interface Props {
   requirements: RequirementResponse[];
   procurementItems: ProcurementItemResponse[];
   onEditRequirement: (req: RequirementResponse) => void;
+  isTerminal?: boolean;
 }
 
 export const RequirementFunctionalBlocks: React.FC<Props> = ({
   requirements,
   procurementItems,
   onEditRequirement,
+  isTerminal = false,
 }) => {
   const getStatusBadge = (status: string) => {
     switch (status) {
@@ -94,7 +96,7 @@ export const RequirementFunctionalBlocks: React.FC<Props> = ({
                   <tr key={req.id}>
                     {columns.map((col, idx) => <td key={idx} className="p-3 align-top">{col.render(req)}</td>)}
                     <td className="p-3 text-right align-top">
-                      <Button variant="ghost" size="sm" onClick={() => onEditRequirement(req)}>
+                      <Button variant="ghost" size="sm" onClick={() => onEditRequirement(req)} disabled={isTerminal}>
                         <Edit2 size={16} />
                       </Button>
                     </td>
@@ -150,7 +152,7 @@ export const RequirementFunctionalBlocks: React.FC<Props> = ({
                             </div>
                             <div className="flex items-center gap-2">
                               {getStatusBadge(req.status)}
-                              <Button variant="ghost" size="sm" onClick={() => onEditRequirement(req)}>
+                              <Button variant="ghost" size="sm" onClick={() => onEditRequirement(req)} disabled={isTerminal}>
                                 <Edit2 size={12} />
                               </Button>
                             </div>
@@ -242,7 +244,7 @@ export const RequirementFunctionalBlocks: React.FC<Props> = ({
                       <span className="font-semibold text-sm">Contexto</span>
                       <div className="flex items-center gap-2">
                         {getStatusBadge(req.status)}
-                        <Button variant="ghost" size="sm" onClick={() => onEditRequirement(req)}>
+                        <Button variant="ghost" size="sm" onClick={() => onEditRequirement(req)} disabled={isTerminal}>
                           <Edit2 size={14} />
                         </Button>
                       </div>

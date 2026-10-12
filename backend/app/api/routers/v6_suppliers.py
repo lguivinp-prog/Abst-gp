@@ -76,6 +76,7 @@ def get_supplier_profile(
 
 from app.api.auth import verify_case_access
 from app.models.domain import CaseFile
+from app.services.v6.lifecycle_guard import ensure_case_mutable
 from typing import List
 
 class CaseSupplierResponse(BaseModel):
@@ -127,6 +128,7 @@ def link_case_supplier(
     from app.models.v6.supplier import Supplier
     from app.services.v6.quotation_guard import ensure_requirement_review_valid
 
+    ensure_case_mutable(case)
     ensure_requirement_review_valid(case)
 
     supplier = db.query(Supplier).filter(
@@ -183,6 +185,7 @@ def unlink_case_supplier(
 
     from app.services.v6.quotation_guard import ensure_requirement_review_valid
 
+    ensure_case_mutable(case)
     ensure_requirement_review_valid(case)
 
     offer = db.query(SupplierOffer).filter(

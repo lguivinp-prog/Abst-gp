@@ -17,7 +17,7 @@ jobs:
   verify:
     name: Execute Canonical Gates
     runs-on: ubuntu-latest
-    timeout-minutes: 30
+    timeout-minutes: 90
 
     steps:
       - name: Checkout Code

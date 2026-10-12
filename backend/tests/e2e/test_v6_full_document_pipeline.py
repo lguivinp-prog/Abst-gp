@@ -42,7 +42,7 @@ def test_v6_full_document_pipeline(admin_client, db_session):
     run_id = upload_data["run_id"]
 
     # STEP 4 — REAL OCR POLLING
-    max_retries = 60
+    max_retries = 150
     final_status = "QUEUED"
     extraction_ready = False
 

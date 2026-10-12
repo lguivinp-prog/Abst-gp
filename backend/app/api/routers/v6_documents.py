@@ -63,6 +63,7 @@ def upload_v6_document(
     current_user: User = Depends(get_current_active_user),
     db: Session = Depends(get_db)
 ):
+    ensure_case_mutable(case)
     if not file.filename.lower().endswith(".pdf"):
         raise HTTPException(status_code=400, detail="Only PDF files are allowed")
 
@@ -104,6 +105,7 @@ from fastapi import HTTPException
 from fastapi.responses import FileResponse
 import os
 from app.core.config import settings
+from app.services.v6.lifecycle_guard import ensure_case_mutable
 
 @router.get("/cases/{case_id}/documents/{document_id}/content")
 def get_document_content(
