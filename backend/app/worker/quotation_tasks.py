@@ -89,7 +89,7 @@ def process_quotation_task(
 
         pages_processed = quotation_data.get("pages_processed") or quotation_data.get("page_count") or 1
 
-        # 5. Persistir QuotationExtraction y actualizar CaseFile
+        # 5. Persistir QuotationExtraction y actualizar CaseFile bajo control transaccional estricto
         JobRepository.update_progress(
             db=db,
             job_id=job_id,
@@ -103,6 +103,67 @@ def process_quotation_task(
             rq_job.meta["progress"] = 70
             rq_job.save_meta()
 
+        # Adquisición de bloqueo a nivel de fila y comprobación atómica de estado terminal
+        locked_case = (
+            db.query(CaseFile)
+            .filter(CaseFile.id == case_id, CaseFile.tenant_id == tenant_id)
+            .populate_existing()
+            .with_for_update()
+            .first()
+        )
+
+        if not locked_case:
+            raise ValueError(f"Expediente {case_id} no encontrado para tenant {tenant_id}")
+
+        from app.models.v6.case_workflow import CaseWorkflow
+        from app.models.v6.supplier_selection import SupplierSelectionFinal
+
+        is_terminal = (
+            locked_case.status in ["APPROVED", "COMPLETED"]
+            or db.query(CaseWorkflow).filter(CaseWorkflow.case_id == case_id, CaseWorkflow.status.in_(["APPROVED", "COMPLETED"])).first() is not None
+            or db.query(SupplierSelectionFinal).filter(SupplierSelectionFinal.case_id == case_id).first() is not None
+        )
+
+        if is_terminal:
+            # Caso en estado terminal: NO modificar datos de negocio congelados ni insertar cotizaciones
+            logger.warning(
+                f"[QuotationWorker] Inserción descartada: caso {case_id} en estado terminal {locked_case.status}"
+            )
+            result_summary = {
+                "rejected": True,
+                "reason": f"Expediente en estado terminal ({locked_case.status})",
+                "case_status": locked_case.status
+            }
+            JobRepository.mark_failed(
+                db=db,
+                job_id=job_id,
+                error_message=f"CASE_TERMINAL_IMMUTABLE: Operación descartada: el expediente {case_id} está en estado terminal {locked_case.status}.",
+                tenant_id=tenant_id,
+                worker_name=worker_name,
+                error_code="CASE_TERMINAL_IMMUTABLE",
+                error_category="BUSINESS_RULE",
+                failure_classification="FINAL",
+                pages_processed=pages_processed
+            )
+            audit = AuditLog(
+                tenant_id=tenant_id,
+                user_id=user_id,
+                action="QUOTATION_EXTRACTED_ASYNC_BLOCKED",
+                entity_type="CaseFile",
+                entity_id=str(case_id),
+                details=f"Extracción tardía descartada: expediente cerrado ({locked_case.status})",
+                status="FAILED"
+            )
+            db.add(audit)
+            db.commit()
+
+            if rq_job:
+                rq_job.meta["progress"] = 100
+                rq_job.meta["error"] = f"Expediente en estado terminal {locked_case.status}"
+                rq_job.save_meta()
+
+            return result_summary
+
         confidence = quotation_data.get("global_confidence", 0.0)
         review_status = "validated" if confidence > 0.8 else "pending_review"
 
@@ -112,12 +173,7 @@ def process_quotation_task(
             review_status=review_status
         )
         db.add(quotation)
-
-        # Actualizar caso a COMPARING
-        case = db.query(CaseFile).filter(CaseFile.id == case_id, CaseFile.tenant_id == tenant_id).first()
-        if case:
-            case.status = "COMPARING"
-
+        locked_case.status = "COMPARING"
         db.flush()
 
         # 6. Registrar AuditLog SUCCESS
@@ -134,11 +190,19 @@ def process_quotation_task(
         db.commit()
 
         # 7. Marcar ProcessingJob completado y generar ProcessingMetrics
+        supplier_obj = quotation_data.get("supplier")
+        supplier_ruc = None
+        if isinstance(supplier_obj, dict):
+            ruc_val = supplier_obj.get("supplier_ruc")
+            supplier_ruc = ruc_val.get("value") if isinstance(ruc_val, dict) else ruc_val
+        elif isinstance(quotation_data.get("ruc"), str):
+            supplier_ruc = quotation_data.get("ruc")
+
         result_summary = {
             "extraction_id": quotation.id,
             "review_status": review_status,
             "global_confidence": confidence,
-            "supplier_ruc": quotation_data.get("supplier", {}).get("supplier_ruc", {}).get("value")
+            "supplier_ruc": supplier_ruc
         }
 
         completed_job = JobRepository.mark_completed(

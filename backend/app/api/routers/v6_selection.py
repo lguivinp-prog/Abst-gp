@@ -99,6 +99,8 @@ def approve_selection(
         )
         return {"case_id": case.id, "status": "APPROVED"}
     except ValueError as e:
+        if "terminal" in str(e).lower() or "finalized" in str(e).lower():
+            raise HTTPException(status_code=409, detail=str(e))
         raise HTTPException(status_code=400, detail=str(e))
 
 @router.get("/cases/{case_id}/result", response_model=Optional[ResultResponse])

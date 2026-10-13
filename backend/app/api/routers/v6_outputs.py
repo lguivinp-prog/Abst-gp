@@ -1,8 +1,9 @@
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from app.core.database import get_db
-from app.api.auth import get_current_active_user
-from app.models.domain import User
+from app.api.auth import get_current_active_user, verify_case_access, require_role
+from app.api.exceptions import NotFoundException, ForbiddenException
+from app.models.domain import User, CaseFile
 from app.services.v6.engines.accuracy_gate import ContractAccuracyGate
 from app.services.v6.engines.template_engine import OutputTemplateEngine
 from app.models.v6.supplier_selection import SupplierSelectionFinal
@@ -17,7 +18,8 @@ router = APIRouter()
 @router.post("/cases/{case_id}/prepare-output")
 def prepare_output(
     case_id: int,
-    current_user: User = Depends(get_current_active_user),
+    case: CaseFile = Depends(verify_case_access),
+    current_user: User = Depends(require_role(["ADMIN", "OPERATOR", "SUPERVISOR"])),
     db: Session = Depends(get_db)
 ):
     # 1. Gate Check
@@ -91,22 +93,30 @@ def prepare_output(
 @router.get("/cases/{case_id}/outputs")
 def list_outputs(
     case_id: int,
+    case: CaseFile = Depends(verify_case_access),
     current_user: User = Depends(get_current_active_user),
     db: Session = Depends(get_db)
 ):
-    outputs = db.query(GeneratedOutput).filter_by(case_id=case_id).all()
-    return [{"id": o.id, "type": o.template.type, "status": o.status} for o in outputs]
+    outputs = db.query(GeneratedOutput).filter_by(case_id=case.id).all()
+    return [{"id": o.id, "type": o.template.type if o.template else "CONDICIONES", "status": o.status} for o in outputs]
 
 @router.post("/outputs/{output_id}/approve")
 def approve_output(
     output_id: int,
-    current_user: User = Depends(get_current_active_user),
+    current_user: User = Depends(require_role(["ADMIN", "SUPERVISOR"])),
     db: Session = Depends(get_db)
 ):
     output = db.query(GeneratedOutput).filter_by(id=output_id).first()
     if not output:
-        raise HTTPException(status_code=404, detail="Output not found")
-        
+        raise NotFoundException("Output not found")
+
+    case = db.query(CaseFile).filter(
+        CaseFile.id == output.case_id,
+        CaseFile.tenant_id == current_user.tenant_id
+    ).first()
+    if not case:
+        raise NotFoundException("Output not found")
+
     output.status = "APPROVED"
     
     audit = AuditLog(
@@ -125,16 +135,26 @@ def approve_output(
 @router.post("/outputs/{output_id}/export")
 def export_output(
     output_id: int,
-    current_user: User = Depends(get_current_active_user),
+    current_user: User = Depends(require_role(["ADMIN", "OPERATOR", "SUPERVISOR"])),
     db: Session = Depends(get_db)
 ):
     output = db.query(GeneratedOutput).filter_by(id=output_id).first()
     if not output:
-        raise HTTPException(status_code=404, detail="Output not found")
-        
+        raise NotFoundException("Output not found")
+
+    case_query = db.query(CaseFile).filter(
+        CaseFile.id == output.case_id,
+        CaseFile.tenant_id == current_user.tenant_id
+    )
+    if current_user.role not in ["ADMIN", "SUPERVISOR"]:
+        case_query = case_query.filter(CaseFile.assigned_to_user_id == current_user.id)
+    case = case_query.first()
+    if not case:
+        raise NotFoundException("Output not found")
+
     if output.status != "APPROVED":
         raise HTTPException(status_code=400, detail="Output must be APPROVED before export")
-        
+
     output.status = "EXPORTED"
     
     audit = AuditLog(

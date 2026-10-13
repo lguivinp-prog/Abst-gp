@@ -67,13 +67,22 @@ def process_run_v1(run_id: str):
             # Execute legacy pipeline
             job_id = job.id if job else run.rq_job_id
             fallback_used = (run.execution_role == 'FALLBACK')
-            execute_v1_pipeline(doc.case_id, doc.stored_path, job_id, fallback_used)
+            persisted = execute_v1_pipeline(doc.case_id, doc.stored_path, job_id, fallback_used)
         finally:
             stop_event.set()
             hb_thread.join(timeout=2)
 
-        # Mark Completed
         run = db.query(OCRProcessingRun).filter(OCRProcessingRun.run_id == run_id).first()
+        if not persisted:
+            run.status = 'FAILED'
+            run.failure_code = 'CASE_TERMINAL_IMMUTABLE'
+            run.failure_detail = 'Extracción OCR V1 tardía descartada: expediente cerrado'
+            run.finished_at = datetime.utcnow()
+            run.quality_status = None
+            db.commit()
+            return
+
+        # Mark Completed
         run.status = 'COMPLETED'
         run.finished_at = datetime.utcnow()
         run.quality_status = 'APPROVED'
@@ -151,6 +160,9 @@ def process_run_v1(run_id: str):
     finally:
         db.close()
 
+logger = logging.getLogger(__name__)
+
+
 def execute_v1_pipeline(case_id: int, file_path: str, job_id: str, fallback_used: bool = False):
     """
     Original V1 pipeline. Kept unmodified for compatibility and fallback.
@@ -158,7 +170,48 @@ def execute_v1_pipeline(case_id: int, file_path: str, job_id: str, fallback_used
     job = get_current_job()
     db = SessionLocal()
     try:
-        # 1. Update Document status to 'started'
+        # 0. Verificación atómica bajo bloqueo de fila antes de modificar el documento
+        locked_case = (
+            db.query(CaseFile)
+            .filter(CaseFile.id == case_id)
+            .populate_existing()
+            .with_for_update()
+            .first()
+        )
+        from app.models.v6.case_workflow import CaseWorkflow
+        from app.models.v6.supplier_selection import SupplierSelectionFinal
+
+        is_initial_terminal = False
+        if locked_case:
+            is_initial_terminal = (
+                locked_case.status in ["APPROVED", "COMPLETED"]
+                or db.query(CaseWorkflow).filter(CaseWorkflow.case_id == case_id, CaseWorkflow.status.in_(["APPROVED", "COMPLETED"])).first() is not None
+                or db.query(SupplierSelectionFinal).filter(SupplierSelectionFinal.case_id == case_id).first() is not None
+            )
+
+        if is_initial_terminal:
+            logger.warning(f"[OCR V1] Caso {case_id} ya se encuentra en estado terminal ({locked_case.status if locked_case else 'N/A'}). Omitiendo ejecución V1.")
+            if job:
+                job.meta['progress'] = 100
+                job.meta['status_message'] = f"OCR descartado: expediente cerrado ({locked_case.status if locked_case else 'N/A'})"
+                job.meta['error'] = f"Case in terminal status {locked_case.status if locked_case else 'N/A'}"
+                job.save_meta()
+
+            from app.models.domain import AuditLog
+            audit = AuditLog(
+                tenant_id=locked_case.tenant_id if locked_case else "unknown",
+                user_id=(locked_case.assigned_to_user_id or locked_case.created_by) if locked_case else 1,
+                action="OCR_V1_PROCESSING_BLOCKED_TERMINAL",
+                entity_type="CaseFile",
+                entity_id=str(case_id),
+                details=f"Extracción OCR V1 tardía descartada: expediente cerrado ({locked_case.status if locked_case else 'N/A'})",
+                status="FAILED"
+            )
+            db.add(audit)
+            db.commit()
+            return False
+
+        # 1. Update Document status to 'started' bajo la misma transacción atómica
         doc = db.query(UploadedDocument).filter(UploadedDocument.processing_job_id == job_id).first()
         if not doc:
             doc = db.query(UploadedDocument).filter(
@@ -176,7 +229,23 @@ def execute_v1_pipeline(case_id: int, file_path: str, job_id: str, fallback_used
                 job.meta['progress'] = 10
                 job.meta['status_message'] = "Iniciando OCR (V1)..."
                 job.save_meta()
-            db.commit()
+
+        # Volver a comprobar el estado terminal inmediatamente antes de guardar
+        is_terminal_recheck = False
+        if locked_case:
+            is_terminal_recheck = (
+                locked_case.status in ["APPROVED", "COMPLETED"]
+                or db.query(CaseWorkflow).filter(CaseWorkflow.case_id == case_id, CaseWorkflow.status.in_(["APPROVED", "COMPLETED"])).first() is not None
+                or db.query(SupplierSelectionFinal).filter(SupplierSelectionFinal.case_id == case_id).first() is not None
+            )
+
+        if is_terminal_recheck:
+            db.rollback()
+            logger.warning(f"[OCR V1] Recomprobación antes de guardar detectó estado terminal en caso {case_id}. Omitiendo guardado temprano.")
+            return False
+
+        # Liberar el bloqueo transaccional ANTES de iniciar el procesamiento pesado de OCR
+        db.commit()
 
         # 2. Run OCR
         from app.storage.workspace import materialize_document
@@ -199,7 +268,51 @@ def execute_v1_pipeline(case_id: int, file_path: str, job_id: str, fallback_used
         if not extracted_sections:
             raise NoSectionsExtractedError("No se detectaron secciones estructurales válidas en el documento (V1).")
 
-        # 4. Save extracted data to document
+        # 4. Control de concurrencia y persistencia atómica con bloqueo de fila
+        locked_case = (
+            db.query(CaseFile)
+            .filter(CaseFile.id == case_id)
+            .populate_existing()
+            .with_for_update()
+            .first()
+        )
+
+        if not locked_case:
+            raise ValueError(f"Expediente {case_id} no encontrado.")
+
+        from app.models.v6.case_workflow import CaseWorkflow
+        from app.models.v6.supplier_selection import SupplierSelectionFinal
+
+        is_terminal = (
+            locked_case.status in ["APPROVED", "COMPLETED"]
+            or db.query(CaseWorkflow).filter(CaseWorkflow.case_id == case_id, CaseWorkflow.status.in_(["APPROVED", "COMPLETED"])).first() is not None
+            or db.query(SupplierSelectionFinal).filter(SupplierSelectionFinal.case_id == case_id).first() is not None
+        )
+
+        if is_terminal:
+            # Expediente cerrado: NO modificar secciones, documento ni status de caso
+            logger.warning(f"[OCR V1] Descartando persistencia: expediente {case_id} en estado terminal {locked_case.status}")
+            if job:
+                job.meta['progress'] = 100
+                job.meta['status_message'] = f"OCR descartado: expediente cerrado ({locked_case.status})"
+                job.meta['error'] = f"Case in terminal status {locked_case.status}"
+                job.save_meta()
+
+            from app.models.domain import AuditLog
+            audit = AuditLog(
+                tenant_id=locked_case.tenant_id,
+                user_id=locked_case.assigned_to_user_id or locked_case.created_by,
+                action="OCR_V1_PROCESSING_BLOCKED_TERMINAL",
+                entity_type="CaseFile",
+                entity_id=str(case_id),
+                details=f"Extracción OCR V1 tardía descartada: expediente cerrado ({locked_case.status})",
+                status="FAILED"
+            )
+            db.add(audit)
+            db.commit()
+            return False
+
+        # 5. Guardar metadatos en documento y limpiar secciones previas
         if doc:
             doc.text_extracted = ocr_result.text
             doc.ocr_used = ocr_result.ocr_used
@@ -209,7 +322,6 @@ def execute_v1_pipeline(case_id: int, file_path: str, job_id: str, fallback_used
                 "ocr_pipeline_version": "1.0",
                 "fallback_used": fallback_used
             }
-            db.commit()
 
         if job:
             job.meta['progress'] = 70
@@ -291,8 +403,8 @@ def execute_v1_pipeline(case_id: int, file_path: str, job_id: str, fallback_used
                             )
                             db.add(sc)
 
-        # 7. Update Case Status and Doc Status
-        db_case.status = "REVIEW_SECTIONS"
+        # 6. Update Case Status and Doc Status
+        locked_case.status = "REVIEW_SECTIONS"
         if doc:
             doc.processing_status = "review_required" if has_warnings else "finished"
 
@@ -302,26 +414,60 @@ def execute_v1_pipeline(case_id: int, file_path: str, job_id: str, fallback_used
             job.save_meta()
 
         db.commit()
+        return True
 
-    except Exception as e:
+    except JobTimeoutException as e:
         db.rollback()
-        error_msg = str(e)
+        error_msg = "El proceso de OCR excedió el tiempo máximo permitido."
 
-        doc = db.query(UploadedDocument).filter(UploadedDocument.processing_job_id == job_id).first()
-        if not doc:
-            doc = db.query(UploadedDocument).filter(
-                UploadedDocument.case_id == case_id,
-                UploadedDocument.document_type == "requirement"
-            ).order_by(UploadedDocument.id.desc()).first()
+        locked_case = (
+            db.query(CaseFile)
+            .filter(CaseFile.id == case_id)
+            .populate_existing()
+            .with_for_update()
+            .first()
+        )
+        from app.models.v6.case_workflow import CaseWorkflow
+        from app.models.v6.supplier_selection import SupplierSelectionFinal
 
-        if doc:
-            doc.processing_status = "failed"
-            doc.processing_error = error_msg
-            doc.ocr_status = "FAILED"
+        is_terminal = False
+        if locked_case:
+            is_terminal = (
+                locked_case.status in ["APPROVED", "COMPLETED"]
+                or db.query(CaseWorkflow).filter(CaseWorkflow.case_id == case_id, CaseWorkflow.status.in_(["APPROVED", "COMPLETED"])).first() is not None
+                or db.query(SupplierSelectionFinal).filter(SupplierSelectionFinal.case_id == case_id).first() is not None
+            )
 
-        db_case = db.query(CaseFile).filter(CaseFile.id == case_id).first()
-        if db_case:
-            db_case.status = "ERROR"
+        if not is_terminal:
+            doc = db.query(UploadedDocument).filter(UploadedDocument.processing_job_id == job_id).first()
+            if not doc:
+                doc = db.query(UploadedDocument).filter(
+                    UploadedDocument.case_id == case_id,
+                    UploadedDocument.document_type == "requirement"
+                ).order_by(UploadedDocument.id.desc()).first()
+
+            if doc:
+                doc.processing_status = "timeout"
+                doc.processing_error = error_msg
+                doc.ocr_status = "FAILED"
+
+            if locked_case:
+                locked_case.status = "TIMEOUT"
+        else:
+            logger.warning(
+                f"[OCR V1 Timeout] Expediente {case_id} cerrado ({locked_case.status if locked_case else 'N/A'}); no se alteran documentos ni estado de negocio."
+            )
+            from app.models.domain import AuditLog
+            audit = AuditLog(
+                tenant_id=locked_case.tenant_id if locked_case else "unknown",
+                user_id=(locked_case.assigned_to_user_id or locked_case.created_by) if locked_case else 1,
+                action="OCR_V1_TIMEOUT_BLOCKED_TERMINAL",
+                entity_type="CaseFile",
+                entity_id=str(case_id),
+                details=f"Timeout OCR V1 tardío descartado: expediente cerrado ({locked_case.status if locked_case else 'N/A'})",
+                status="FAILED"
+            )
+            db.add(audit)
 
         if job:
             job.meta['progress'] = 100
@@ -330,25 +476,58 @@ def execute_v1_pipeline(case_id: int, file_path: str, job_id: str, fallback_used
 
         db.commit()
         raise
-    except JobTimeoutException as e:
+    except Exception as e:
         db.rollback()
-        error_msg = "El proceso de OCR excedió el tiempo máximo permitido."
+        error_msg = str(e)
 
-        doc = db.query(UploadedDocument).filter(UploadedDocument.processing_job_id == job_id).first()
-        if not doc:
-            doc = db.query(UploadedDocument).filter(
-                UploadedDocument.case_id == case_id,
-                UploadedDocument.document_type == "requirement"
-            ).order_by(UploadedDocument.id.desc()).first()
+        locked_case = (
+            db.query(CaseFile)
+            .filter(CaseFile.id == case_id)
+            .populate_existing()
+            .with_for_update()
+            .first()
+        )
+        from app.models.v6.case_workflow import CaseWorkflow
+        from app.models.v6.supplier_selection import SupplierSelectionFinal
 
-        if doc:
-            doc.processing_status = "failed"
-            doc.processing_error = error_msg
-            doc.ocr_status = "FAILED"
+        is_terminal = False
+        if locked_case:
+            is_terminal = (
+                locked_case.status in ["APPROVED", "COMPLETED"]
+                or db.query(CaseWorkflow).filter(CaseWorkflow.case_id == case_id, CaseWorkflow.status.in_(["APPROVED", "COMPLETED"])).first() is not None
+                or db.query(SupplierSelectionFinal).filter(SupplierSelectionFinal.case_id == case_id).first() is not None
+            )
 
-        db_case = db.query(CaseFile).filter(CaseFile.id == case_id).first()
-        if db_case:
-            db_case.status = "ERROR"
+        if not is_terminal:
+            doc = db.query(UploadedDocument).filter(UploadedDocument.processing_job_id == job_id).first()
+            if not doc:
+                doc = db.query(UploadedDocument).filter(
+                    UploadedDocument.case_id == case_id,
+                    UploadedDocument.document_type == "requirement"
+                ).order_by(UploadedDocument.id.desc()).first()
+
+            if doc:
+                doc.processing_status = "failed"
+                doc.processing_error = error_msg
+                doc.ocr_status = "FAILED"
+
+            if locked_case:
+                locked_case.status = "ERROR"
+        else:
+            logger.warning(
+                f"[OCR V1 Exception] Expediente {case_id} cerrado ({locked_case.status if locked_case else 'N/A'}); no se alteran documentos ni estado de negocio."
+            )
+            from app.models.domain import AuditLog
+            audit = AuditLog(
+                tenant_id=locked_case.tenant_id if locked_case else "unknown",
+                user_id=(locked_case.assigned_to_user_id or locked_case.created_by) if locked_case else 1,
+                action="OCR_V1_ERROR_BLOCKED_TERMINAL",
+                entity_type="CaseFile",
+                entity_id=str(case_id),
+                details=f"Fallo OCR V1 tardío descartado: expediente cerrado ({locked_case.status if locked_case else 'N/A'})",
+                status="FAILED"
+            )
+            db.add(audit)
 
         if job:
             job.meta['progress'] = 100
