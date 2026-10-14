@@ -1,14 +1,8 @@
 import json
 import pytest
-import sys
 from pathlib import Path
 
-try:
-    from verification.dr.validate_report import validate_dr_report
-except ModuleNotFoundError:
-    repo_root = Path(__file__).resolve().parents[3]
-    sys.path.insert(0, str(repo_root))
-    from verification.dr.validate_report import validate_dr_report
+from verification.dr.validate_report import validate_dr_report
 
 
 def test_validate_report_success_exact_15(tmp_path):
@@ -146,10 +140,11 @@ def test_validate_report_inconsistent_passed_total(tmp_path):
     assert validate_dr_report(inconsistent) == 1
 
 
-def test_validate_report_nonzero_exitcode(tmp_path):
+@pytest.mark.parametrize("nonzero_code", [1, 2, -1, 137])
+def test_validate_report_nonzero_exitcode(tmp_path, nonzero_code):
     nonzero = tmp_path / "nonzero_exit.json"
     data = {
-        "exitcode": 2,
+        "exitcode": nonzero_code,
         "summary": {
             "passed": 15,
             "total": 15
@@ -157,3 +152,55 @@ def test_validate_report_nonzero_exitcode(tmp_path):
     }
     nonzero.write_text(json.dumps(data), encoding="utf-8")
     assert validate_dr_report(nonzero) == 1
+
+
+def test_validate_report_missing_exitcode(tmp_path):
+    missing_exit = tmp_path / "missing_exit.json"
+    data = {
+        "summary": {
+            "passed": 15,
+            "total": 15
+        }
+    }
+    missing_exit.write_text(json.dumps(data), encoding="utf-8")
+    assert validate_dr_report(missing_exit) == 1
+
+
+def test_validate_report_null_exitcode(tmp_path):
+    null_exit = tmp_path / "null_exit.json"
+    data = {
+        "exitcode": None,
+        "summary": {
+            "passed": 15,
+            "total": 15
+        }
+    }
+    null_exit.write_text(json.dumps(data), encoding="utf-8")
+    assert validate_dr_report(null_exit) == 1
+
+
+def test_validate_report_string_exitcode(tmp_path):
+    string_exit = tmp_path / "string_exit.json"
+    data = {
+        "exitcode": "0",
+        "summary": {
+            "passed": 15,
+            "total": 15
+        }
+    }
+    string_exit.write_text(json.dumps(data), encoding="utf-8")
+    assert validate_dr_report(string_exit) == 1
+
+
+@pytest.mark.parametrize("bool_val", [True, False])
+def test_validate_report_boolean_exitcode(tmp_path, bool_val):
+    bool_exit = tmp_path / "bool_exit.json"
+    data = {
+        "exitcode": bool_val,
+        "summary": {
+            "passed": 15,
+            "total": 15
+        }
+    }
+    bool_exit.write_text(json.dumps(data), encoding="utf-8")
+    assert validate_dr_report(bool_exit) == 1

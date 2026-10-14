@@ -43,9 +43,24 @@ def validate_dr_report(report_path: Path) -> int:
         print("DR DRILL OUTCOME: FAILED", file=sys.stderr)
         return 1
 
-    # 3. Comprobar exitcode de pytest si está disponible
-    exitcode = data.get("exitcode")
-    if exitcode is not None and exitcode != 0:
+    # 3. Validar estrictamente exitcode de pytest
+    if "exitcode" not in data:
+        print("ERROR: Clave obligatoria 'exitcode' no encontrada en el informe JSON.", file=sys.stderr)
+        print("DR DRILL OUTCOME: FAILED", file=sys.stderr)
+        return 1
+
+    exitcode = data["exitcode"]
+    if exitcode is None:
+        print("ERROR: El campo 'exitcode' no puede ser nulo (null).", file=sys.stderr)
+        print("DR DRILL OUTCOME: FAILED", file=sys.stderr)
+        return 1
+
+    if isinstance(exitcode, bool) or not isinstance(exitcode, int):
+        print(f"ERROR: El campo 'exitcode' debe ser un entero estricto, obtenido: {type(exitcode).__name__} ({exitcode!r}).", file=sys.stderr)
+        print("DR DRILL OUTCOME: FAILED", file=sys.stderr)
+        return 1
+
+    if exitcode != 0:
         print(f"ERROR: Pytest finalizó con exitcode no exitoso: {exitcode}", file=sys.stderr)
         print("DR DRILL OUTCOME: FAILED", file=sys.stderr)
         return 1
