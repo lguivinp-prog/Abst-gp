@@ -204,7 +204,18 @@ def create_requirement(
     current_user: User = Depends(get_current_active_user),
     db: Session = Depends(get_db)
 ):
-    ensure_case_mutable(case)
+    # Lock case row for atomic state check and transition
+    locked_case = (
+        db.query(CaseFile)
+        .filter(CaseFile.id == case_id)
+        .populate_existing()
+        .with_for_update()
+        .first()
+    )
+    if not locked_case:
+        raise HTTPException(status_code=404, detail="Case not found")
+    ensure_case_mutable(locked_case)
+
     from app.models.v6.case_procurement_item import CaseProcurementItem, CaseProcurementItemSpecification
     procurement_items = db.query(CaseProcurementItem).filter(CaseProcurementItem.case_id == case_id).all()
     specifications = db.query(CaseProcurementItemSpecification).join(CaseProcurementItem).filter(CaseProcurementItem.case_id == case_id).all()
@@ -240,6 +251,22 @@ def create_requirement(
     db.add(audit)
     db.flush()
     audit.entity_id = str(req.id)
+
+    # Invalidate review confirmation atomically if requirement added after confirmation
+    if locked_case.status in ["WAITING_QUOTATION", "COMPARING", "READY_GENERATE"]:
+        old_status = locked_case.status
+        locked_case.status = "PROCESSING_REQUIREMENT"
+        audit_inv = AuditLog(
+            user_id=current_user.id,
+            tenant_id=current_user.tenant_id,
+            action="INVALIDATE_REQUIREMENT_REVIEW",
+            entity_type="CaseFile",
+            entity_id=str(case_id),
+            details=f"Requirement creation invalidated confirmed state. Transitioned from {old_status} to PROCESSING_REQUIREMENT",
+            status="WARNING"
+        )
+        db.add(audit_inv)
+
     db.commit()
     db.refresh(req)
 
@@ -254,7 +281,18 @@ def update_requirement(
     current_user: User = Depends(get_current_active_user),
     db: Session = Depends(get_db)
 ):
-    ensure_case_mutable(case)
+    # Lock case row for atomic state check and transition
+    locked_case = (
+        db.query(CaseFile)
+        .filter(CaseFile.id == case_id)
+        .populate_existing()
+        .with_for_update()
+        .first()
+    )
+    if not locked_case:
+        raise HTTPException(status_code=404, detail="Case not found")
+    ensure_case_mutable(locked_case)
+
     req = db.query(CaseRequirementMatrix).filter(
         CaseRequirementMatrix.id == req_id,
         CaseRequirementMatrix.case_id == case_id
@@ -292,7 +330,6 @@ def update_requirement(
     if update_data.source_section is not None:
         req.source_section = update_data.source_section
 
-
     req.validated_by = current_user.id
     req.validated_at = datetime.now(timezone.utc)
 
@@ -312,6 +349,22 @@ def update_requirement(
         status="SUCCESS"
     )
     db.add(audit)
+
+    # Invalidate review confirmation atomically if requirement modified after confirmation
+    if locked_case.status in ["WAITING_QUOTATION", "COMPARING", "READY_GENERATE"]:
+        old_status = locked_case.status
+        locked_case.status = "PROCESSING_REQUIREMENT"
+        audit_inv = AuditLog(
+            user_id=current_user.id,
+            tenant_id=current_user.tenant_id,
+            action="INVALIDATE_REQUIREMENT_REVIEW",
+            entity_type="CaseFile",
+            entity_id=str(case_id),
+            details=f"Requirement update invalidated confirmed state. Transitioned from {old_status} to PROCESSING_REQUIREMENT",
+            status="WARNING"
+        )
+        db.add(audit_inv)
+
     db.commit()
     db.refresh(req)
 

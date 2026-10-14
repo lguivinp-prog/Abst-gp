@@ -211,6 +211,7 @@ class VFMResponse(BaseModel):
     supplier_offer_id: int
     supplier_id: int
     is_eligible: bool
+    is_evaluated: Optional[bool] = None
     reason: Optional[str] = None
     total_score: Optional[float] = None
     price: Optional[float] = None
