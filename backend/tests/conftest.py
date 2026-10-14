@@ -20,8 +20,14 @@ def ensure_safe_test_db(conn):
     if "abst_gp" in db_name or "production" in db_name:
         pytest.exit(f"FATAL: Database name '{db_name}' is protected. Tests cannot run against development/production targets.")
 
-    if "test" not in db_name:
-        pytest.exit(f"FATAL: Database name '{db_name}' does not look like a test database (must contain 'test').")
+    if db_name == "dr_db":
+        host = getattr(conn.engine.url, "host", None)
+        if host != "db-dr":
+            pytest.exit(f"FATAL: DR database 'dr_db' is only permitted on host 'db-dr', got host '{host}'.")
+    elif "test" in db_name:
+        pass
+    else:
+        pytest.exit(f"FATAL: Database name '{db_name}' does not look like a test database (must contain 'test' or be exact 'dr_db' on host 'db-dr').")
 
     app_env = os.environ.get("APP_ENV")
     if app_env != "test":
