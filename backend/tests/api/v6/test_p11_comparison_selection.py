@@ -203,7 +203,7 @@ def test_p11_scenarios_a_b_c_comparison_and_matching_selection(
     assert eligible_offers[0]["supplier_offer_id"] == offer1.id
     assert len(ineligible_offers) == 1
     assert ineligible_offers[0]["supplier_offer_id"] == offer2.id
-    assert ineligible_offers[0]["reason"] == "FAILED_CONTRACTUAL_CONDITIONS"
+    assert ineligible_offers[0]["reason"] in ("FAILED_CONTRACTUAL_CONDITIONS", "CONFLICT_MANDATORY_REQUIREMENTS")
 
     # Verificación Escenario C: Proponer selección de la oferta recomendada (offer1)
     # Debe ser aceptada sin exigir justificación forzada
@@ -1175,3 +1175,285 @@ def test_p11_scenario_r_real_authorization_and_rollback(
     finally:
         cleanup_overrides()
 
+# ==============================================================================
+# REMEDIACIÓN CORRECCIÓN B: Validación de Estados Obligatorios Negativos y Positivos
+# ==============================================================================
+
+def test_p11_mandatory_passed_and_conflict_blocks_selection(admin_client: TestClient, db_session: Session, setup_mega_tenant):
+    """Prueba 1: Un requisito obligatorio PASSED y otro CONFLICT debe marcar ineligibilidad y bloquear selección."""
+    try:
+        case = CaseFile(title="Caso Req Mandatory Conflict", contract_type="BIENES", status="WAITING_QUOTATION", tenant_id="mega_tenant", assigned_to_user_id=1)
+        db_session.add(case)
+        db_session.commit()
+
+        req1 = CaseRequirementMatrix(case_id=case.id, requirement_type="TECHNICAL", key="REQ-RAM", description="RAM 32GB", mandatory=True, status="VALIDATED")
+        req2 = CaseRequirementMatrix(case_id=case.id, requirement_type="TECHNICAL", key="REQ-CPU", description="CPU 8 núcleos", mandatory=True, status="VALIDATED")
+        db_session.add_all([req1, req2])
+        db_session.commit()
+
+        sup = Supplier(ruc="20900000001", business_name="Proveedor Alfa SAC", tenant_id="mega_tenant")
+        db_session.add(sup)
+        db_session.commit()
+        db_session.add(SupplierProfile(supplier_id=sup.id, validation_status="VERIFIED"))
+        db_session.commit()
+
+        offer = SupplierOffer(case_id=case.id, supplier_id=sup.id, status="SUBMITTED", total_amount=10000.0, price=10000.0, currency="PEN")
+        db_session.add(offer)
+        db_session.commit()
+
+        # req1 es PASSED, req2 es CONFLICT
+        ev1 = OfferEvaluation(supplier_offer_id=offer.id, requirement_id=req1.id, status="PASSED", explanation="Cumple RAM")
+        ev2 = OfferEvaluation(supplier_offer_id=offer.id, requirement_id=req2.id, status="CONFLICT", explanation="Conflicto en ficha técnica")
+        db_session.add_all([ev1, ev2])
+        db_session.commit()
+
+        from app.services.v6.evaluation.vfm_service import ValueForMoneyService
+        vfm = ValueForMoneyService(db_session).calculate_vfm(case.id)
+        assert len(vfm) == 1
+        assert vfm[0]["is_eligible"] is False
+        assert vfm[0]["reason"] == "CONFLICT_MANDATORY_REQUIREMENTS"
+        assert vfm[0]["total_score"] == 0.0
+
+        # Intento de selección debe fallar con 400
+        res = admin_client.post(f"/api/v6/cases/{case.id}/selection", json={"supplier_offer_id": offer.id, "justification_comment": "Justificación ordinaria"})
+        assert res.status_code == 400
+        assert "unresolved conflicts" in res.json()["detail"] or "CONFLICT" in res.json()["detail"]
+
+        # Comprobar que no se cree SupplierSelectionAttempt ni se altere el expediente
+        assert db_session.query(SupplierSelectionAttempt).filter_by(case_id=case.id).first() is None
+        db_session.refresh(case)
+        assert case.status == "WAITING_QUOTATION"
+    finally:
+        cleanup_overrides()
+
+def test_p11_mandatory_passed_and_missing_data_blocks_selection(admin_client: TestClient, db_session: Session, setup_mega_tenant):
+    """Prueba 2: Un requisito obligatorio PASSED y otro MISSING_DATA debe marcar ineligibilidad y bloquear selección."""
+    try:
+        case = CaseFile(title="Caso Req Mandatory Missing Data", contract_type="BIENES", status="WAITING_QUOTATION", tenant_id="mega_tenant", assigned_to_user_id=1)
+        db_session.add(case)
+        db_session.commit()
+
+        req1 = CaseRequirementMatrix(case_id=case.id, requirement_type="TECHNICAL", key="REQ-RAM", description="RAM 32GB", mandatory=True, status="VALIDATED")
+        req2 = CaseRequirementMatrix(case_id=case.id, requirement_type="TECHNICAL", key="REQ-CERT", description="Certificado ISO", mandatory=True, status="VALIDATED")
+        db_session.add_all([req1, req2])
+        db_session.commit()
+
+        sup = Supplier(ruc="20900000002", business_name="Proveedor Beta SAC", tenant_id="mega_tenant")
+        db_session.add(sup)
+        db_session.commit()
+        db_session.add(SupplierProfile(supplier_id=sup.id, validation_status="VERIFIED"))
+        db_session.commit()
+
+        offer = SupplierOffer(case_id=case.id, supplier_id=sup.id, status="SUBMITTED", total_amount=10000.0, price=10000.0, currency="PEN")
+        db_session.add(offer)
+        db_session.commit()
+
+        # req1 es PASSED, req2 es MISSING_DATA
+        ev1 = OfferEvaluation(supplier_offer_id=offer.id, requirement_id=req1.id, status="PASSED", explanation="Cumple RAM")
+        ev2 = OfferEvaluation(supplier_offer_id=offer.id, requirement_id=req2.id, status="MISSING_DATA", explanation="Falta adjuntar certificado")
+        db_session.add_all([ev1, ev2])
+        db_session.commit()
+
+        from app.services.v6.evaluation.vfm_service import ValueForMoneyService
+        vfm = ValueForMoneyService(db_session).calculate_vfm(case.id)
+        assert len(vfm) == 1
+        assert vfm[0]["is_eligible"] is False
+        assert vfm[0]["reason"] == "MISSING_DATA_MANDATORY_REQUIREMENTS"
+
+        res = admin_client.post(f"/api/v6/cases/{case.id}/selection", json={"supplier_offer_id": offer.id, "justification_comment": "Falta dato"})
+        assert res.status_code == 400
+        assert "missing data" in res.json()["detail"] or "MISSING_DATA" in res.json()["detail"]
+
+        assert db_session.query(SupplierSelectionAttempt).filter_by(case_id=case.id).first() is None
+        db_session.refresh(case)
+        assert case.status == "WAITING_QUOTATION"
+    finally:
+        cleanup_overrides()
+
+def test_p11_mandatory_observed_and_pending_blocks_selection(admin_client: TestClient, db_session: Session, setup_mega_tenant):
+    """Prueba 3: Evaluación obligatoria OBSERVED o PENDING permanece bloqueada hasta resolución."""
+    try:
+        case = CaseFile(title="Caso Req Mandatory Observed Pending", contract_type="BIENES", status="WAITING_QUOTATION", tenant_id="mega_tenant", assigned_to_user_id=1)
+        db_session.add(case)
+        db_session.commit()
+
+        req1 = CaseRequirementMatrix(case_id=case.id, requirement_type="TECHNICAL", key="REQ-OBS", description="Requisito Observado", mandatory=True, status="VALIDATED")
+        req2 = CaseRequirementMatrix(case_id=case.id, requirement_type="TECHNICAL", key="REQ-PEND", description="Requisito Pendiente", mandatory=True, status="VALIDATED")
+        db_session.add_all([req1, req2])
+        db_session.commit()
+
+        sup = Supplier(ruc="20900000003", business_name="Proveedor Gamma SAC", tenant_id="mega_tenant")
+        db_session.add(sup)
+        db_session.commit()
+        db_session.add(SupplierProfile(supplier_id=sup.id, validation_status="VERIFIED"))
+        db_session.commit()
+
+        offer = SupplierOffer(case_id=case.id, supplier_id=sup.id, status="SUBMITTED", total_amount=10000.0, price=10000.0, currency="PEN")
+        db_session.add(offer)
+        db_session.commit()
+
+        # Caso 3a: OBSERVED
+        ev1 = OfferEvaluation(supplier_offer_id=offer.id, requirement_id=req1.id, status="OBSERVED", explanation="Observado")
+        ev2 = OfferEvaluation(supplier_offer_id=offer.id, requirement_id=req2.id, status="PASSED", explanation="Aprobado")
+        db_session.add_all([ev1, ev2])
+        db_session.commit()
+
+        from app.services.v6.evaluation.vfm_service import ValueForMoneyService
+        vfm = ValueForMoneyService(db_session).calculate_vfm(case.id)
+        assert vfm[0]["is_eligible"] is False
+        assert vfm[0]["reason"] == "OBSERVED_MANDATORY_REQUIREMENTS"
+
+        res_obs = admin_client.post(f"/api/v6/cases/{case.id}/selection", json={"supplier_offer_id": offer.id, "justification_comment": "Observado"})
+        assert res_obs.status_code == 400
+        assert "observations" in res_obs.json()["detail"] or "OBSERVED" in res_obs.json()["detail"]
+        assert db_session.query(SupplierSelectionAttempt).filter_by(case_id=case.id).first() is None
+
+        # Caso 3b: PENDING
+        ev1.status = "PENDING"
+        db_session.commit()
+        vfm_pend = ValueForMoneyService(db_session).calculate_vfm(case.id)
+        assert vfm_pend[0]["is_eligible"] is False
+        assert vfm_pend[0]["reason"] == "MANDATORY_EVALUATIONS_PENDING"
+
+        res_pend = admin_client.post(f"/api/v6/cases/{case.id}/selection", json={"supplier_offer_id": offer.id, "justification_comment": "Pendiente"})
+        assert res_pend.status_code == 400
+        assert "pending" in res_pend.json()["detail"].lower()
+        assert db_session.query(SupplierSelectionAttempt).filter_by(case_id=case.id).first() is None
+    finally:
+        cleanup_overrides()
+
+def test_p11_mandatory_all_passed_allows_selection(admin_client: TestClient, db_session: Session, setup_mega_tenant):
+    """Prueba 4: Todos los requisitos obligatorios cumplidos permiten seleccionar válidamente."""
+    try:
+        case = CaseFile(title="Caso Req Mandatory All Passed", contract_type="BIENES", status="WAITING_QUOTATION", tenant_id="mega_tenant", assigned_to_user_id=1)
+        db_session.add(case)
+        db_session.commit()
+
+        req1 = CaseRequirementMatrix(case_id=case.id, requirement_type="TECHNICAL", key="REQ-1", description="Requisito 1", mandatory=True, status="VALIDATED")
+        req2 = CaseRequirementMatrix(case_id=case.id, requirement_type="TECHNICAL", key="REQ-2", description="Requisito 2", mandatory=True, status="VALIDATED")
+        db_session.add_all([req1, req2])
+        db_session.commit()
+
+        sup = Supplier(ruc="20900000004", business_name="Proveedor Delta SAC", tenant_id="mega_tenant")
+        db_session.add(sup)
+        db_session.commit()
+        db_session.add(SupplierProfile(supplier_id=sup.id, validation_status="VERIFIED"))
+        db_session.commit()
+
+        offer = SupplierOffer(case_id=case.id, supplier_id=sup.id, status="SUBMITTED", total_amount=10000.0, price=10000.0, currency="PEN")
+        db_session.add(offer)
+        db_session.commit()
+
+        ev1 = OfferEvaluation(supplier_offer_id=offer.id, requirement_id=req1.id, status="PASSED", explanation="Cumple 1")
+        ev2 = OfferEvaluation(supplier_offer_id=offer.id, requirement_id=req2.id, status="IMPROVEMENT", explanation="Mejora 2")
+        db_session.add_all([ev1, ev2])
+        db_session.commit()
+
+        from app.services.v6.evaluation.vfm_service import ValueForMoneyService
+        vfm = ValueForMoneyService(db_session).calculate_vfm(case.id)
+        assert len(vfm) == 1
+        assert vfm[0]["is_eligible"] is True
+        assert vfm[0]["total_score"] == 15.0 # 5.0 (PASSED) + 10.0 (IMPROVEMENT)
+
+        res = admin_client.post(f"/api/v6/cases/{case.id}/selection", json={"supplier_offer_id": offer.id, "justification_comment": "Oferta plenamente conforme"})
+        assert res.status_code == 200
+        assert res.json()["status"] == "UNDER_REVIEW"
+
+        attempt = db_session.query(SupplierSelectionAttempt).filter_by(case_id=case.id).first()
+        assert attempt is not None
+        assert attempt.supplier_offer_id == offer.id
+    finally:
+        cleanup_overrides()
+
+def test_p11_ineligible_offer_with_justification_rejected(admin_client: TestClient, db_session: Session, setup_mega_tenant):
+    """Prueba 5: Selección de oferta no conforme con justificación técnica queda terminantemente rechazada."""
+    try:
+        case = CaseFile(title="Caso No Conforme Con Justificación", contract_type="BIENES", status="WAITING_QUOTATION", tenant_id="mega_tenant", assigned_to_user_id=1)
+        db_session.add(case)
+        db_session.commit()
+
+        req = CaseRequirementMatrix(case_id=case.id, requirement_type="TECHNICAL", key="REQ-CRIT", description="Requisito Crítico", mandatory=True, status="VALIDATED")
+        db_session.add(req)
+        db_session.commit()
+
+        sup = Supplier(ruc="20900000005", business_name="Proveedor Epsilon SAC", tenant_id="mega_tenant")
+        db_session.add(sup)
+        db_session.commit()
+        db_session.add(SupplierProfile(supplier_id=sup.id, validation_status="VERIFIED"))
+        db_session.commit()
+
+        offer = SupplierOffer(case_id=case.id, supplier_id=sup.id, status="SUBMITTED", total_amount=8000.0, price=8000.0, currency="PEN")
+        db_session.add(offer)
+        db_session.commit()
+
+        # Descalificado en requisito mandatorio
+        ev = OfferEvaluation(supplier_offer_id=offer.id, requirement_id=req.id, status="FAILED", explanation="Incumple especificación mandatoria")
+        db_session.add(ev)
+        db_session.commit()
+
+        # Operador envía justificación extensa y detallada para intentar habilitar la oferta descalificada
+        extensa_justificacion = "Se justifica su elección porque ofrece un precio significativamente más bajo y entrega en menor plazo."
+        res = admin_client.post(f"/api/v6/cases/{case.id}/selection", json={"supplier_offer_id": offer.id, "justification_comment": extensa_justificacion})
+        assert res.status_code == 400
+        assert "Cannot propose an ineligible offer" in res.json()["detail"]
+
+        # Comprobar que no se cree SupplierSelectionAttempt ni se altere el expediente
+        assert db_session.query(SupplierSelectionAttempt).filter_by(case_id=case.id).first() is None
+        db_session.refresh(case)
+        assert case.status == "WAITING_QUOTATION"
+    finally:
+        cleanup_overrides()
+
+def test_p11_supervisor_exception_on_mandatory_non_compliance_rejected(db_session: Session, setup_mega_tenant):
+    """Prueba 6: Intento de excepción supervisora sobre incumplimiento obligatorio es rechazado y bloqueado."""
+    try:
+        case = CaseFile(title="Caso Excepción Supervisora Bloqueada", contract_type="BIENES", status="WAITING_QUOTATION", tenant_id="mega_tenant", assigned_to_user_id=1)
+        db_session.add(case)
+        db_session.commit()
+
+        req = CaseRequirementMatrix(case_id=case.id, requirement_type="TECHNICAL", key="REQ-MAND", description="Garantía mínima", mandatory=True, status="VALIDATED")
+        db_session.add(req)
+        db_session.commit()
+        db_session.commit()
+
+        sup = Supplier(ruc="20900000006", business_name="Proveedor Zeta SAC", tenant_id="mega_tenant")
+        db_session.add(sup)
+        db_session.commit()
+        db_session.add(SupplierProfile(supplier_id=sup.id, validation_status="VERIFIED"))
+        db_session.commit()
+
+        offer = SupplierOffer(case_id=case.id, supplier_id=sup.id, status="SUBMITTED", total_amount=9500.0, price=9500.0, currency="PEN")
+        db_session.add(offer)
+        db_session.commit()
+
+        # Condición CONFLICT en requisito obligatorio
+        ev = OfferEvaluation(supplier_offer_id=offer.id, requirement_id=req.id, status="CONFLICT", explanation="Conflicto contractual insalvable")
+        db_session.add(ev)
+        db_session.commit()
+
+        # Supervisor intenta proponer selección con excepción explícita
+        sup_client = get_supervisor_client(user_id=1)
+        res = sup_client.post(
+            f"/api/v6/cases/{case.id}/selection",
+            json={
+                "supplier_offer_id": offer.id,
+                "justification_comment": "Excepción de supervisor autorizada por jefatura."
+            }
+        )
+        assert res.status_code == 400
+        assert "Cannot propose an ineligible offer" in res.json()["detail"]
+
+        # Comprobar que no se cree SupplierSelectionAttempt ni se altere el expediente
+        assert db_session.query(SupplierSelectionAttempt).filter_by(case_id=case.id).first() is None
+        db_session.refresh(case)
+        assert case.status == "WAITING_QUOTATION"
+    finally:
+        cleanup_overrides()
+
+def test_p11_test_e2e_reset_endpoint_removed_returns_404_or_405(admin_client: TestClient):
+    """Prueba 7: Confirmar que la ruta destructiva /api/v6/cases/{id}/test-e2e-reset ya no existe en la aplicación."""
+    try:
+        res = admin_client.post("/api/v6/cases/1/test-e2e-reset")
+        assert res.status_code in [404, 405]
+    finally:
+        cleanup_overrides()

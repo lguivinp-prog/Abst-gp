@@ -62,10 +62,11 @@ class ValueForMoneyService:
             from app.models.v6.offer_evaluation import OfferEvaluation
             offer_evals = self.db.query(OfferEvaluation).filter_by(supplier_offer_id=offer.id).all()
 
-            # Comprobar que todas las evaluaciones de requisitos obligatorios estén concluidas
+            # Comprobar que todos los requisitos obligatorios por identificador cumplan estrictamente
             if mandatory_req_ids:
-                evaluated_req_ids = {e.requirement_id for e in offer_evals if e.status not in ["PENDING", None]}
-                if mandatory_req_ids - evaluated_req_ids:
+                eval_map = {e.requirement_id: e for e in offer_evals if e.requirement_id in mandatory_req_ids}
+                missing_coverage = mandatory_req_ids - set(eval_map.keys())
+                if missing_coverage:
                     results.append({
                         "supplier_offer_id": offer.id,
                         "supplier_id": offer.supplier_id,
@@ -77,19 +78,38 @@ class ValueForMoneyService:
                     })
                     continue
 
-            # Comprobar si alguna evaluación técnica obligatoria resultó descalificada
-            failed_evals = [e for e in offer_evals if e.status in ["FAILED", "REJECTED"]]
-            if failed_evals:
-                results.append({
-                    "supplier_offer_id": offer.id,
-                    "supplier_id": offer.supplier_id,
-                    "is_eligible": False,
-                    "is_evaluated": True,
-                    "total_score": 0.0,
-                    "price": float(offer.total_amount) if offer.total_amount else (offer.price or 0.0),
-                    "reason": "FAILED_MANDATORY_REQUIREMENTS"
-                })
-                continue
+                # Únicamente los estados positivos expresamente aceptados por el contrato funcional acreditan cumplimiento
+                non_compliant = [e for e in eval_map.values() if e.status not in {"PASSED", "IMPROVEMENT", "CUMPLE", "CUMPLE_Y_MEJORA"}]
+                if non_compliant:
+                    if any(e.status in ["FAILED", "REJECTED", "NO_CUMPLE"] for e in non_compliant):
+                        reason = "FAILED_MANDATORY_REQUIREMENTS"
+                        is_eval = True
+                    elif any(e.status == "CONFLICT" for e in non_compliant):
+                        reason = "CONFLICT_MANDATORY_REQUIREMENTS"
+                        is_eval = True
+                    elif any(e.status == "MISSING_DATA" for e in non_compliant):
+                        reason = "MISSING_DATA_MANDATORY_REQUIREMENTS"
+                        is_eval = True
+                    elif any(e.status == "OBSERVED" for e in non_compliant):
+                        reason = "OBSERVED_MANDATORY_REQUIREMENTS"
+                        is_eval = True
+                    elif any(e.status in ["PENDING", None, ""] for e in non_compliant):
+                        reason = "MANDATORY_EVALUATIONS_PENDING"
+                        is_eval = False
+                    else:
+                        reason = "UNRESOLVED_MANDATORY_REQUIREMENTS"
+                        is_eval = True
+
+                    results.append({
+                        "supplier_offer_id": offer.id,
+                        "supplier_id": offer.supplier_id,
+                        "is_eligible": False,
+                        "is_evaluated": is_eval,
+                        "total_score": 0.0,
+                        "price": float(offer.total_amount) if offer.total_amount else (offer.price or 0.0),
+                        "reason": reason
+                    })
+                    continue
 
             # Query contractual conditions for evaluation
             conditions = self.db.query(ContractualCondition).filter_by(supplier_offer_id=offer.id).all()
@@ -109,7 +129,7 @@ class ValueForMoneyService:
 
             failed_conditions = self.db.query(ContractualCondition).filter(
                 ContractualCondition.supplier_offer_id == offer.id,
-                ContractualCondition.status.in_(["NO_CUMPLE", "NO_OFERTADO", "REQUIERE_REVISION", "MISSING_DATA"])
+                ContractualCondition.status.in_(["NO_CUMPLE", "NO_OFERTADO", "REQUIERE_REVISION", "MISSING_DATA", "CONFLICT", "OBSERVED"])
             ).count()
 
             if failed_conditions > 0:
@@ -135,6 +155,8 @@ class ValueForMoneyService:
             for ev in offer_evals:
                 if ev.status == "PASSED":
                     total_score += 5.0
+                elif ev.status == "IMPROVEMENT":
+                    total_score += 10.0
 
             raw_price = offer.total_amount if offer.total_amount is not None else offer.price
             price = float(raw_price) if raw_price is not None else 0.0

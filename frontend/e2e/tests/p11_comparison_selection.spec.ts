@@ -1,5 +1,6 @@
 import { test, expect } from '@playwright/test';
 import crypto from 'crypto';
+import { Client } from 'pg';
 
 // Tokens con expiración en el año 2035 (timestamp 2050000000)
 // Base64 header: {"alg":"HS256","typ":"JWT"} -> eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9
@@ -309,7 +310,7 @@ test.describe('[UI-MOCK] Fase P11: Matriz Comparativa, Selección Fundamentada y
 });
 
 // ============================================================================
-// INTEGRADO-E2E: Recorrido Real contra Backend de Pruebas (sin mock de /approve)
+// INTEGRADO-E2E: Recorrido Real contra Backend de Pruebas (Bootstrap Aislado)
 // ============================================================================
 test.describe('[INTEGRADO-E2E] Fase P11: Flujo Real de Aprobación contra Backend de Pruebas', () => {
   function makeRealTestJwt(username: string, role: string, secret: string = 'synthetic_secret_key_for_testing') {
@@ -327,62 +328,141 @@ test.describe('[INTEGRADO-E2E] Fase P11: Flujo Real de Aprobación contra Backen
 
   const REAL_ADMIN_TOKEN = makeRealTestJwt('admin', 'ADMIN');
 
-  test.beforeEach(async ({ request }) => {
-    // Reset reproducible del expediente 901 a estado UNDER_REVIEW
-    const res = await request.post('http://backend-app:8000/api/v6/cases/901/test-e2e-reset', {
+  test('[INTEGRADO-E2E] Endpoint destructivo /test-e2e-reset ha sido eliminado de la aplicación (404/405)', async ({ request }) => {
+    const res = await request.post('http://backend-app:8000/api/v6/cases/1/test-e2e-reset', {
       headers: {
         Authorization: `Bearer ${REAL_ADMIN_TOKEN}`
       }
     });
-    expect([200, 204]).toContain(res.status());
+    expect([404, 405]).toContain(res.status());
   });
 
-  test('[INTEGRADO-E2E] Aprobación interna real persistida contra backend-app sin interceptar /approve', async ({ page, request }) => {
-    // 1. Inyectar token JWT real firmado para autenticación contra backend-app
-    await page.addInitScript((token) => {
-      window.localStorage.setItem('access_token', token);
-    }, REAL_ADMIN_TOKEN);
+  test('[INTEGRADO-E2E] Aprobación interna real con bootstrap de datos aislado sin interceptar /approve', async ({ page, request }) => {
+    // 1. Mecanismo de bootstrap de pruebas aislado del router de aplicación
+    const connStr = process.env.DATABASE_URL || 'postgresql://test_user:test_password@db-test:5432/test_db';
+    const client = new Client({ connectionString: connStr });
+    await client.connect();
 
-    // 2. Navegar directamente al expediente real 901 sin simular rutas ni mockear la API
-    await page.goto('/expedientes/901');
-    await expect(page.getByRole('heading', { name: 'Expediente E2E Integrado P11' })).toBeVisible({ timeout: 15000 });
+    let createdCaseId = 0;
+    let createdSupplierId = 0;
+    let createdOfferId = 0;
 
-    // 3. Navegar a la pestaña Resultado
-    await page.click('button:has-text("Resultado")');
-
-    // 4. Verificar que la propuesta de selección registrada en UNDER_REVIEW se visualiza correctamente
-    await expect(page.locator('text=Propuesta de Selección Pendiente de Revisión')).toBeVisible({ timeout: 10000 });
-    await expect(page.locator('text=Oferta Propuesta: #901')).toBeVisible();
-
-    // 5. El usuario con rol SUPERVISOR/ADMIN ve el botón institucional real de aprobación
-    const approveBtn = page.locator('button:has-text("Aprobar Propuesta de Selección")');
-    await expect(approveBtn).toBeVisible({ timeout: 10000 });
-
-    // 6. Hacer clic en Aprobar SIN interceptar el endpoint /approve ni simular su respuesta
-    await approveBtn.click();
-
-    // 7. Verificar que la UI reacciona a la respuesta 200 real de backend-app y actualiza su estado
-    await expect(page.locator('text=Selección Aprobada Internamente')).toBeVisible({ timeout: 15000 });
-    await expect(page.locator('text=Proveedor Propuesto / Seleccionado')).toBeVisible();
-    await expect(page.locator('text=Tech Integration E2E SAC')).toBeVisible();
-    await expect(page.locator('text=Importe de la Oferta Seleccionada')).toBeVisible();
-    await expect(page.locator('text=Aviso de alcance legal')).toBeVisible();
-
-    // 8. Verificar que la aprobación persiste realmente en el backend de pruebas
-    const checkRes = await request.get('http://backend-app:8000/api/v6/cases/901/result', {
-      headers: {
-        Authorization: `Bearer ${REAL_ADMIN_TOKEN}`
+    try {
+      // 2. Validar inequívocamente el entorno antes de cualquier modificación
+      const dbCheck = await client.query('SELECT current_database() as db;');
+      if (dbCheck.rows[0]?.db !== 'test_db') {
+        throw new Error(`ABORT: Database safety check failed. Connected to ${dbCheck.rows[0]?.db}, strictly expected 'test_db'.`);
       }
-    });
-    expect(checkRes.status()).toBe(200);
-    const resultJson = await checkRes.json();
-    expect(resultJson.status).toBe('APPROVED');
-    expect(resultJson.supplier_name).toBe('Tech Integration E2E SAC');
 
-    // 9. Comprobar que no existen expresiones de adjudicación vinculante oficial
-    await expect(page.locator('text=Expediente Adjudicado')).not.toBeVisible();
-    await expect(page.locator('text=Ganador Oficial')).not.toBeVisible();
-    await expect(page.locator('text=Aprobar y Adjudicar')).not.toBeVisible();
+      // 3. Crear datos sintéticos con identificadores dinámicos para evitar colisiones
+      const uniqueTag = `E2E_${Date.now()}_${Math.floor(Math.random() * 10000)}`;
+      const caseTitle = `Expediente E2E Integrado P11 ${uniqueTag}`;
+
+      const caseRes = await client.query(`
+        INSERT INTO case_files (title, contract_type, status, tenant_id, assigned_to_user_id)
+        VALUES ($1, 'BIENES', 'UNDER_REVIEW', 'mega_tenant', 1)
+        RETURNING id;
+      `, [caseTitle]);
+      createdCaseId = caseRes.rows[0].id;
+
+      const ruc = `20${String(Date.now()).slice(-9)}`;
+      const supRes = await client.query(`
+        INSERT INTO suppliers (ruc, business_name, tenant_id)
+        VALUES ($1, 'Tech Integration E2E SAC', 'mega_tenant')
+        RETURNING id;
+      `, [ruc]);
+      createdSupplierId = supRes.rows[0].id;
+
+      await client.query(`
+        INSERT INTO supplier_profiles (supplier_id, validation_status)
+        VALUES ($1, 'VERIFIED');
+      `, [createdSupplierId]);
+
+      const offerRes = await client.query(`
+        INSERT INTO supplier_offers (case_id, supplier_id, status, evaluation_status, total_amount, price, currency)
+        VALUES ($1, $2, 'SUBMITTED', 'READY', 15000.0, 15000.0, 'PEN')
+        RETURNING id;
+      `, [createdCaseId, createdSupplierId]);
+      createdOfferId = offerRes.rows[0].id;
+
+      await client.query(`
+        INSERT INTO contractual_conditions (supplier_offer_id, key, label, resolution_rule, status)
+        VALUES ($1, 'plazo', 'Plazo de entrega', 'EXACT_MATCH', 'CUMPLE');
+      `, [createdOfferId]);
+
+      await client.query(`
+        INSERT INTO supplier_selection_attempts (case_id, supplier_offer_id, justification_comment, status, selected_by)
+        VALUES ($1, $2, 'Propuesta integrada E2E fundamentada', 'UNDER_REVIEW', 1);
+      `, [createdCaseId, createdOfferId]);
+
+      await client.query(`
+        INSERT INTO case_workflows (case_id, status)
+        VALUES ($1, 'UNDER_REVIEW');
+      `, [createdCaseId]);
+
+      // 4. Inyectar token JWT real firmado para autenticación contra backend-app
+      await page.addInitScript((token) => {
+        window.localStorage.setItem('access_token', token);
+      }, REAL_ADMIN_TOKEN);
+
+      // 5. Navegar directamente al expediente dinámico real sin simular rutas ni mockear la API
+      await page.goto(`/expedientes/${createdCaseId}`);
+      await expect(page.getByRole('heading', { name: caseTitle })).toBeVisible({ timeout: 15000 });
+
+      // 6. Navegar a la pestaña Resultado
+      await page.click('button:has-text("Resultado")');
+
+      // 7. Verificar que la propuesta de selección registrada en UNDER_REVIEW se visualiza correctamente
+      await expect(page.locator('text=Propuesta de Selección Pendiente de Revisión')).toBeVisible({ timeout: 10000 });
+      await expect(page.locator(`text=Oferta Propuesta: #${createdOfferId}`)).toBeVisible();
+
+      // 8. El usuario con rol SUPERVISOR/ADMIN ve el botón institucional real de aprobación
+      const approveBtn = page.locator('button:has-text("Aprobar Propuesta de Selección")');
+      await expect(approveBtn).toBeVisible({ timeout: 10000 });
+
+      // 9. Hacer clic en Aprobar SIN interceptar el endpoint /approve ni simular su respuesta
+      await approveBtn.click();
+
+      // 10. Verificar que la UI reacciona a la respuesta 200 real de backend-app y actualiza su estado
+      await expect(page.locator('text=Selección Aprobada Internamente')).toBeVisible({ timeout: 15000 });
+      await expect(page.locator('text=Proveedor Propuesto / Seleccionado')).toBeVisible();
+      await expect(page.locator('text=Tech Integration E2E SAC')).toBeVisible();
+      await expect(page.locator('text=Importe de la Oferta Seleccionada')).toBeVisible();
+      await expect(page.locator('text=Aviso de alcance legal')).toBeVisible();
+
+      // 11. Verificar que la aprobación persiste realmente en el backend de pruebas
+      const checkRes = await request.get(`http://backend-app:8000/api/v6/cases/${createdCaseId}/result`, {
+        headers: {
+          Authorization: `Bearer ${REAL_ADMIN_TOKEN}`
+        }
+      });
+      expect(checkRes.status()).toBe(200);
+      const resultJson = await checkRes.json();
+      expect(resultJson.status).toBe('APPROVED');
+      expect(resultJson.supplier_name).toBe('Tech Integration E2E SAC');
+
+      // 12. Comprobar que no existen expresiones de adjudicación vinculante oficial
+      await expect(page.locator('text=Expediente Adjudicado')).not.toBeVisible();
+      await expect(page.locator('text=Ganador Oficial')).not.toBeVisible();
+      await expect(page.locator('text=Aprobar y Adjudicar')).not.toBeVisible();
+
+    } finally {
+      // 13. Limpiar solamente registros creados por la prueba, sin alterar otros expedientes ni tenants
+      if (createdCaseId > 0) {
+        await client.query('DELETE FROM supplier_selection_final WHERE case_id = $1;', [createdCaseId]);
+        await client.query('DELETE FROM supplier_selection_attempts WHERE case_id = $1;', [createdCaseId]);
+        await client.query('DELETE FROM case_workflows WHERE case_id = $1;', [createdCaseId]);
+        if (createdOfferId > 0) {
+          await client.query('DELETE FROM contractual_conditions WHERE supplier_offer_id = $1;', [createdOfferId]);
+          await client.query('DELETE FROM supplier_offers WHERE id = $1;', [createdOfferId]);
+        }
+        await client.query('DELETE FROM case_files WHERE id = $1 AND tenant_id = $2;', [createdCaseId, 'mega_tenant']);
+      }
+      if (createdSupplierId > 0) {
+        await client.query('DELETE FROM supplier_profiles WHERE supplier_id = $1;', [createdSupplierId]);
+        await client.query('DELETE FROM suppliers WHERE id = $1 AND tenant_id = $2;', [createdSupplierId, 'mega_tenant']);
+      }
+      await client.end();
+    }
   });
 });
-

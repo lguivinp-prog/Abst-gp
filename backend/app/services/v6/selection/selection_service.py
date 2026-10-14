@@ -207,7 +207,13 @@ class SelectionService:
                 reason = current_vfm.get("reason", "UNKNOWN")
                 if reason in ("FAILED_CONTRACTUAL_CONDITIONS", "FAILED_MANDATORY_REQUIREMENTS"):
                     raise ValueError("Cannot propose an ineligible offer: Failed mandatory contractual conditions.")
-                elif reason == "MANDATORY_EVALUATIONS_PENDING":
+                elif reason == "CONFLICT_MANDATORY_REQUIREMENTS":
+                    raise ValueError("Cannot propose an ineligible offer: Mandatory requirement evaluation has unresolved conflicts (CONFLICT).")
+                elif reason == "MISSING_DATA_MANDATORY_REQUIREMENTS":
+                    raise ValueError("Cannot propose an ineligible offer: Mandatory requirement evaluation has missing data (MISSING_DATA).")
+                elif reason == "OBSERVED_MANDATORY_REQUIREMENTS":
+                    raise ValueError("Cannot propose an ineligible offer: Mandatory requirement evaluation has unresolved observations (OBSERVED).")
+                elif reason in ("MANDATORY_EVALUATIONS_PENDING", "UNRESOLVED_MANDATORY_REQUIREMENTS"):
                     raise ValueError("Cannot propose an offer with pending mandatory evaluations.")
                 elif reason == "INCOMPATIBLE_CURRENCIES_NO_CONVERSION_RULE":
                     raise ValueError("Cannot propose offer: Incompatible currencies in case without conversion rule.")
@@ -219,6 +225,8 @@ class SelectionService:
                         raise ValueError("Justification is required when proposing an unevaluated offer.")
                 else:
                     raise ValueError(f"Cannot propose an ineligible offer ({reason}).")
+        else:
+            raise ValueError("Cannot propose offer: No evaluation results found for this offer.")
 
         # 3. Recomendación referencial del sistema
         reliable_recommendations = [

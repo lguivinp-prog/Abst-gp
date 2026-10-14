@@ -7,5 +7,9 @@
   "devDependencies": {
     "@playwright/test": "^1.42.0",
     "@types/node": "^20.0.0"
+  },
+  "dependencies": {
+    "@types/pg": "^8.23.1",
+    "pg": "^8.23.1"
   }
 }
