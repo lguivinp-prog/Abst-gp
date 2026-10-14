@@ -1,6 +1,7 @@
 services:
   db-dr:
     image: postgres:16-alpine
+    entrypoint: ["/bin/sh", "/usr/local/bin/entrypoint-db.sh"]
     environment:
       POSTGRES_USER: dr_user
       POSTGRES_PASSWORD: dr_password
@@ -23,6 +24,7 @@ services:
       - dr-db-data:/var/lib/postgresql/data
       - dr-wal-archive:/var/lib/postgresql/archive
       - dr-backup-vault:/var/lib/postgresql/backup_vault
+      - ./dr/entrypoint-db.sh:/usr/local/bin/entrypoint-db.sh:ro
       - ./dr/init-replication.sh:/docker-entrypoint-initdb.d/01-replication.sh:ro
 
   redis-dr:

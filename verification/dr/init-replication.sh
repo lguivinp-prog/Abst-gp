@@ -11,12 +11,16 @@ if [ -f "$PGDATA/pg_hba.conf" ]; then
     fi
 fi
 
-# Ensure archive directory has postgres:postgres ownership and 0700 permissions
-mkdir -p /var/lib/postgresql/archive
-chown -R postgres:postgres /var/lib/postgresql/archive
-chmod 0700 /var/lib/postgresql/archive
-
-if [ -d /var/lib/postgresql/backup_vault ]; then
-    chown -R postgres:postgres /var/lib/postgresql/backup_vault
-    chmod 0700 /var/lib/postgresql/backup_vault
+# Validar que el directorio WAL archive sea accesible y escribible por postgres
+ARCHIVE_DIR="/var/lib/postgresql/archive"
+if [ ! -d "$ARCHIVE_DIR" ]; then
+    echo "FATAL [init-replication.sh]: El directorio de archivo WAL '$ARCHIVE_DIR' no existe." >&2
+    exit 1
 fi
+
+touch "$ARCHIVE_DIR/.probe_wal_write" && rm -f "$ARCHIVE_DIR/.probe_wal_write" || {
+    echo "FATAL [init-replication.sh]: PostgreSQL carece de permisos de escritura en '$ARCHIVE_DIR'." >&2
+    exit 1
+}
+
+echo "INFO [init-replication.sh]: WAL archive verificado con permisos de escritura para PostgreSQL."

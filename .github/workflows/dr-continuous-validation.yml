@@ -1,6 +1,9 @@
 name: DR Continuous Validation
 
 on:
+  pull_request:
+    branches:
+      - refactor/v6-squash
   workflow_dispatch:
   schedule:
     - cron: '0 0 * * *'
@@ -30,30 +33,10 @@ jobs:
         run: |
           mv backend/dr-validation-report.json ./dr-validation-report.json || true
 
-      - name: Extract and Publish DR Metrics
+      - name: Extract and Validate DR Metrics
         if: always()
         run: |
-          echo "==== DR DRILL METRICS ===="
-          echo "Execution Date: $(date -u +'%Y-%m-%dT%H:%M:%SZ')"
-          
-          if [ -f "dr-validation-report.json" ]; then
-            TOTAL_DURATION=$(grep -o '"total": [0-9.]*' dr-validation-report.json | head -1 | cut -d':' -f2 | tr -d ' ')
-            PASSED=$(grep -o '"passed": [0-9]*' dr-validation-report.json | head -1 | cut -d':' -f2 | tr -d ' ')
-            FAILED=$(grep -o '"failed": [0-9]*' dr-validation-report.json | head -1 | cut -d':' -f2 | tr -d ' ')
-            
-            echo "Total Duration (seconds): $TOTAL_DURATION"
-            echo "Result: PASSED=$PASSED, FAILED=$FAILED"
-            
-            if [ "$FAILED" != "0" ] && [ ! -z "$FAILED" ]; then
-              echo "DR DRILL OUTCOME: FAILED"
-              exit 1
-            else
-              echo "DR DRILL OUTCOME: SUCCESS"
-            fi
-          else
-            echo "Error: dr-validation-report.json not found. Execution failed catastrophically."
-            exit 1
-          fi
+          python3 verification/dr/validate_report.py ./dr-validation-report.json
 
       - name: Archive DR Validation Report
         uses: actions/upload-artifact@v4

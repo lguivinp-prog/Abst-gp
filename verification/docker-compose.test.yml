@@ -42,6 +42,7 @@ services:
       - ENVIRONMENT=test
     volumes:
       - ../backend:/app
+      - ../verification:/app/verification:ro
       - test-uploads:/app/uploads
     command: ["/bin/sh", "-c", "sleep infinity"]
 
