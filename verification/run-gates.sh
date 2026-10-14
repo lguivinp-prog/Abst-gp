@@ -25,6 +25,16 @@ function run_compose() {
     docker compose -p "$PROJECT_NAME" -f "$COMPOSE_FILE" "$@"
 }
 
+function run_compose_timed() {
+    local max_time="$1"
+    shift
+    if command -v timeout >/dev/null 2>&1; then
+        timeout --kill-after=30s "$max_time" docker compose -p "$PROJECT_NAME" -f "$COMPOSE_FILE" "$@"
+    else
+        run_compose "$@"
+    fi
+}
+
 function cleanup() {
     echo "--- Ejecutando Cleanup ---"
     if [[ "$PROJECT_NAME" == "abst_gp_v52_validation" ]]; then
@@ -78,22 +88,22 @@ RESULTS["SEED"]="PASS"
 
 # F. BACKEND SUITE
 echo "[F] Backend Suite Completa..."
-run_compose run --rm backend-test python -m pytest tests/ -v --ignore=tests/e2e > "$ARTIFACTS_DIR/pytest-full.log" 2>&1 || { RESULTS["SUITE_BACKEND"]="FAIL"; exit 1; }
+run_compose_timed 25m run --rm backend-test python -m pytest tests/ -v --ignore=tests/e2e > "$ARTIFACTS_DIR/pytest-full.log" 2>&1 || { RESULTS["SUITE_BACKEND"]="FAIL"; exit 1; }
 RESULTS["SUITE_BACKEND"]="PASS"
 
 # G. CONCURRENCIA
 echo "[G] Prueba Real de Concurrencia..."
-run_compose run --rm backend-test python -m pytest tests/api/integration/test_comparison_concurrency.py -v > "$ARTIFACTS_DIR/concurrency.log" 2>&1 || { RESULTS["CONCURRENCY"]="FAIL"; exit 1; }
+run_compose_timed 5m run --rm backend-test python -m pytest tests/api/integration/test_comparison_concurrency.py -v > "$ARTIFACTS_DIR/concurrency.log" 2>&1 || { RESULTS["CONCURRENCY"]="FAIL"; exit 1; }
 RESULTS["CONCURRENCY"]="PASS"
 
 # H. ROLLBACK
 echo "[H] Prueba Real de Rollback..."
-run_compose run --rm backend-test python -m pytest tests/api/integration/test_comparison_rollback.py -v > "$ARTIFACTS_DIR/rollback.log" 2>&1 || { RESULTS["ROLLBACK"]="FAIL"; exit 1; }
+run_compose_timed 5m run --rm backend-test python -m pytest tests/api/integration/test_comparison_rollback.py -v > "$ARTIFACTS_DIR/rollback.log" 2>&1 || { RESULTS["ROLLBACK"]="FAIL"; exit 1; }
 RESULTS["ROLLBACK"]="PASS"
 
 # I. DOCUMENTAL SECURITY
 echo "[I] Gate Documental (Seguridad)..."
-run_compose run --rm backend-test python -m pytest tests/e2e/test_documental_security.py -v > "$ARTIFACTS_DIR/documental.log" 2>&1 || { RESULTS["DOCUMENTAL"]="FAIL"; exit 1; }
+run_compose_timed 5m run --rm backend-test python -m pytest tests/e2e/test_documental_security.py -v > "$ARTIFACTS_DIR/documental.log" 2>&1 || { RESULTS["DOCUMENTAL"]="FAIL"; exit 1; }
 RESULTS["DOCUMENTAL"]="PASS"
 
 # J. LEGACY V5 INFRASTRUCTURE PIPELINE
@@ -101,7 +111,7 @@ echo "[J] LEGACY_V5_INFRASTRUCTURE_PIPELINE..."
 run_compose up -d backend-app worker-test
 echo "Esperando a backend y worker..."
 sleep 15
-run_compose run --rm backend-test python -m pytest tests/e2e/test_full_document_pipeline.py -v > "$ARTIFACTS_DIR/legacy_e2e.log" 2>&1 || { RESULTS["LEGACY_V5_INFRASTRUCTURE_PIPELINE"]="FAIL"; exit 1; }
+run_compose_timed 10m run --rm backend-test python -m pytest tests/e2e/test_full_document_pipeline.py -v > "$ARTIFACTS_DIR/legacy_e2e.log" 2>&1 || { RESULTS["LEGACY_V5_INFRASTRUCTURE_PIPELINE"]="FAIL"; exit 1; }
 if grep -q "1 skipped" "$ARTIFACTS_DIR/legacy_e2e.log" || ! grep -q "passed" "$ARTIFACTS_DIR/legacy_e2e.log"; then
     echo "LEGACY API E2E Zero-Test Defect detected (Skipped or no passes)."
     RESULTS["LEGACY_V5_INFRASTRUCTURE_PIPELINE"]="FAIL"
@@ -172,7 +182,7 @@ echo "Worker está listo y registrado."
 
 # J.2 NATIVE V6 API E2E
 echo "[J.2] NATIVE_V6_API_E2E..."
-run_compose run --rm backend-test python -m pytest tests/e2e/test_v6_full_document_pipeline.py -v > "$ARTIFACTS_DIR/native_v6_e2e.log" 2>&1 || { RESULTS["NATIVE_V6_API_E2E"]="FAIL"; exit 1; }
+run_compose_timed 10m run --rm backend-test python -m pytest tests/e2e/test_v6_full_document_pipeline.py -v > "$ARTIFACTS_DIR/native_v6_e2e.log" 2>&1 || { RESULTS["NATIVE_V6_API_E2E"]="FAIL"; exit 1; }
 if grep -q "1 skipped" "$ARTIFACTS_DIR/native_v6_e2e.log" || ! grep -q "passed" "$ARTIFACTS_DIR/native_v6_e2e.log"; then
     echo "NATIVE V6 API E2E Zero-Test Defect detected (Skipped, no passes)."
     RESULTS["NATIVE_V6_API_E2E"]="FAIL"
@@ -190,7 +200,7 @@ RESULTS["SEED_E2E"]="PASS"
 # Frontend ya debería estar corriendo en background para ser probado
 run_compose up -d frontend-test
 echo "Instalando Playwright dependencias en test container y ejecutando pruebas..."
-run_compose run --rm browser-test sh -c "npm install && npx playwright install --with-deps chromium && npm run test" > "$ARTIFACTS_DIR/browser_e2e.log" 2>&1 || { RESULTS["BROWSER_E2E"]="FAIL"; exit 1; }
+run_compose_timed 15m run --rm browser-test sh -c "npm install && npx playwright install --with-deps chromium && npm run test" > "$ARTIFACTS_DIR/browser_e2e.log" 2>&1 || { RESULTS["BROWSER_E2E"]="FAIL"; exit 1; }
 RESULTS["BROWSER_E2E"]="PASS"
 
 # L. REPORTE

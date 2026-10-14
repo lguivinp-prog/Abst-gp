@@ -3,10 +3,12 @@ import threading
 import os
 import json
 import socket
+import hashlib
 import traceback
 import logging
 from datetime import datetime, timezone
 from rq import get_current_job
+from rq.timeouts import JobTimeoutException
 from app.core.database import SessionLocal
 from app.models.domain import CaseFile, UploadedDocument, ParsedSection, OCRProcessingRun
 from app.services.extraction_engine.v2_pipeline import OCRV2Pipeline
@@ -109,6 +111,62 @@ def process_run_v2(run_id: str):
 
         try:
             if run.execution_role == "PRIMARY":
+                # Verificación temprana de estado terminal con bloqueo de fila
+                locked_case = (
+                    db.query(CaseFile)
+                    .filter(CaseFile.id == case_id)
+                    .populate_existing()
+                    .with_for_update()
+                    .first()
+                )
+                from app.models.v6.case_workflow import CaseWorkflow
+                from app.models.v6.supplier_selection import SupplierSelectionFinal
+
+                is_terminal = False
+                if locked_case:
+                    is_terminal = (
+                        locked_case.status in ["APPROVED", "COMPLETED"]
+                        or db.query(CaseWorkflow).filter(CaseWorkflow.case_id == case_id, CaseWorkflow.status.in_(["APPROVED", "COMPLETED"])).first() is not None
+                        or db.query(SupplierSelectionFinal).filter(SupplierSelectionFinal.case_id == case_id).first() is not None
+                    )
+
+                if is_terminal:
+                    logger.warning(
+                        f"[OCR V2 Early] Descartando inicio: expediente {case_id} en estado terminal {locked_case.status if locked_case else 'N/A'}"
+                    )
+                    now_term = datetime.now(timezone.utc)
+                    run.status = 'FAILED'
+                    run.failure_code = 'CASE_TERMINAL_IMMUTABLE'
+                    run.failure_detail = f"Procesamiento OCR V2 cancelado tempranamente: expediente cerrado ({locked_case.status if locked_case else 'N/A'})"
+                    run.finished_at = now_term
+                    run.quality_status = None
+
+                    from app.models.domain import AuditLog
+                    audit = AuditLog(
+                        tenant_id=locked_case.tenant_id if locked_case else (tenant_id or "unknown"),
+                        user_id=(locked_case.assigned_to_user_id or locked_case.created_by) if locked_case else None,
+                        action="OCR_V2_PROCESSING_BLOCKED_TERMINAL",
+                        entity_type="CaseFile",
+                        entity_id=str(case_id),
+                        details=f"Procesamiento OCR V2 cancelado tempranamente: expediente cerrado ({locked_case.status if locked_case else 'N/A'})",
+                        status="FAILED"
+                    )
+                    db.add(audit)
+
+                    if run.processing_job_id:
+                        JobRepository.mark_failed(
+                            db=db,
+                            job_id=run.processing_job_id,
+                            error_message=f"CASE_TERMINAL_IMMUTABLE: Operación descartada: el expediente {case_id} está en estado terminal {locked_case.status if locked_case else 'N/A'}.",
+                            tenant_id=tenant_id,
+                            worker_name=worker_name,
+                            error_code="CASE_TERMINAL_IMMUTABLE",
+                            error_category="TERMINAL_STATE",
+                            failure_classification="FINAL"
+                        )
+                    db.commit()
+                    return
+
                 doc.processing_status = "started"
                 db.commit()
 
@@ -154,6 +212,63 @@ def process_run_v2(run_id: str):
                 db.commit()
 
             else: # PRIMARY
+                # 1. Bloqueo de fila y verificación atómica de estado terminal
+                locked_case = (
+                    db.query(CaseFile)
+                    .filter(CaseFile.id == case_id)
+                    .populate_existing()
+                    .with_for_update()
+                    .first()
+                )
+
+                if not locked_case:
+                    raise ValueError(f"Expediente {case_id} no encontrado")
+
+                from app.models.v6.case_workflow import CaseWorkflow
+                from app.models.v6.supplier_selection import SupplierSelectionFinal
+
+                is_terminal = (
+                    locked_case.status in ["APPROVED", "COMPLETED"]
+                    or db.query(CaseWorkflow).filter(CaseWorkflow.case_id == case_id, CaseWorkflow.status.in_(["APPROVED", "COMPLETED"])).first() is not None
+                    or db.query(SupplierSelectionFinal).filter(SupplierSelectionFinal.case_id == case_id).first() is not None
+                )
+
+                if is_terminal:
+                    logger.warning(
+                        f"[OCR V2] Descartando persistencia: expediente {case_id} en estado terminal {locked_case.status}"
+                    )
+                    run.status = 'FAILED'
+                    run.failure_code = 'CASE_TERMINAL_IMMUTABLE'
+                    run.failure_detail = f"Extracción OCR V2 tardía descartada: expediente cerrado ({locked_case.status})"
+                    run.finished_at = finish_now
+                    run.quality_status = None
+
+                    from app.models.domain import AuditLog
+                    audit = AuditLog(
+                        tenant_id=locked_case.tenant_id,
+                        user_id=locked_case.assigned_to_user_id or locked_case.created_by,
+                        action="OCR_V2_PROCESSING_BLOCKED_TERMINAL",
+                        entity_type="CaseFile",
+                        entity_id=str(case_id),
+                        details=f"Extracción OCR V2 tardía descartada: expediente cerrado ({locked_case.status})",
+                        status="FAILED"
+                    )
+                    db.add(audit)
+
+                    if run.processing_job_id:
+                        JobRepository.mark_failed(
+                            db=db,
+                            job_id=run.processing_job_id,
+                            error_message=f"CASE_TERMINAL_IMMUTABLE: Operación descartada: el expediente {case_id} está en estado terminal {locked_case.status}.",
+                            tenant_id=tenant_id,
+                            worker_name=worker_name,
+                            error_code="CASE_TERMINAL_IMMUTABLE",
+                            error_category="TERMINAL_STATE",
+                            failure_classification="FINAL"
+                        )
+                    db.commit()
+                    return
+
                 # Save structured document via DocumentStorage
                 from app.services.ocr.checksum import calculate_structured_document_checksum
                 content_dump = structured_doc.model_dump()
@@ -218,9 +333,7 @@ def process_run_v2(run_id: str):
                 for sec in parsed_sections:
                     db.add(sec)
 
-                db_case = db.query(CaseFile).filter(CaseFile.id == case_id).first()
-                if db_case:
-                    db_case.status = "REVIEW_SECTIONS"
+                locked_case.status = "REVIEW_SECTIONS"
 
                 doc.processing_status = "finished"
                 db.commit()
@@ -243,7 +356,7 @@ def process_run_v2(run_id: str):
         finally:
             stop_event.set()
             hb_thread.join(timeout=2)
-    except Exception as e:
+    except (Exception, JobTimeoutException) as e:
         db.rollback()
         error_msg = str(e)
         logger.error(f"Error in OCR V2 Pipeline for run {run_id}: {error_msg}")
@@ -252,40 +365,74 @@ def process_run_v2(run_id: str):
         now_err = datetime.now(timezone.utc)
         run = db.query(OCRProcessingRun).filter(OCRProcessingRun.run_id == run_id).first()
         if run:
+            is_timeout = isinstance(e, JobTimeoutException)
             run.status = 'FAILED'
-            run.failure_code = 'TASK_EXCEPTION'
-            run.failure_detail = error_msg
+            run.failure_code = 'TIMEOUT' if is_timeout else 'TASK_EXCEPTION'
+            run.failure_detail = 'El proceso de OCR excedió el tiempo máximo permitido.' if is_timeout else error_msg
             run.finished_at = now_err
             run.quality_status = None
 
             if run.execution_role == 'PRIMARY':
                 doc = db.query(UploadedDocument).filter(UploadedDocument.id == run.uploaded_document_id).first()
                 if doc:
-                    doc.processing_status = "failed"
-                    doc.processing_error = error_msg
-                    doc.ocr_status = "FAILED"
+                    db_case = (
+                        db.query(CaseFile)
+                        .filter(CaseFile.id == doc.case_id)
+                        .populate_existing()
+                        .with_for_update()
+                        .first()
+                    )
+                    from app.models.v6.case_workflow import CaseWorkflow
+                    from app.models.v6.supplier_selection import SupplierSelectionFinal
 
-                    db_case = db.query(CaseFile).filter(CaseFile.id == doc.case_id).first()
+                    is_terminal = False
                     if db_case:
-                        db_case.status = "ERROR"
+                        is_terminal = (
+                            db_case.status in ["APPROVED", "COMPLETED"]
+                            or db.query(CaseWorkflow).filter(CaseWorkflow.case_id == db_case.id, CaseWorkflow.status.in_(["APPROVED", "COMPLETED"])).first() is not None
+                            or db.query(SupplierSelectionFinal).filter(SupplierSelectionFinal.case_id == db_case.id).first() is not None
+                        )
 
-                from app.services.ocr.run_repository import OCRRunRepository
-                repo = OCRRunRepository(db)
-                fallback = OCRProcessingRun(
-                    uploaded_document_id=run.uploaded_document_id,
-                    validation_case_id=run.validation_case_id,
-                    processing_job_id=run.processing_job_id,
-                    execution_role='FALLBACK',
-                    engine='v1',
-                    status='PENDING_DISPATCH',
-                    source_run_id=run.run_id,
-                    run_dedup_key=f"{run.run_dedup_key[:32]}{'f'*32}"[:64]
-                )
-                try:
-                    repo.create_run(fallback)
-                    logger.info("FALLBACK run created immediately due to task exception")
-                except Exception as fallback_e:
-                    logger.error(f"Failed to create fallback: {str(fallback_e)}")
+                    if not is_terminal:
+                        doc.processing_status = "timeout" if is_timeout else "failed"
+                        doc.processing_error = "Timeout OCR excedido" if is_timeout else error_msg
+                        doc.ocr_status = "FAILED"
+
+                        if db_case:
+                            db_case.status = "TIMEOUT" if is_timeout else "ERROR"
+
+                        from app.services.ocr.run_repository import OCRRunRepository
+                        repo = OCRRunRepository(db)
+                        fallback = OCRProcessingRun(
+                            uploaded_document_id=run.uploaded_document_id,
+                            validation_case_id=run.validation_case_id,
+                            processing_job_id=run.processing_job_id,
+                            execution_role='FALLBACK',
+                            engine='v1',
+                            status='PENDING_DISPATCH',
+                            source_run_id=run.run_id,
+                            run_dedup_key=hashlib.sha256(f"{run.run_id}_fallback_{now_err.isoformat()}".encode()).hexdigest()
+                        )
+                        try:
+                            repo.create_run(fallback)
+                            logger.info("FALLBACK run created immediately due to task exception")
+                        except Exception as fallback_e:
+                            logger.error(f"Failed to create fallback: {str(fallback_e)}")
+                    else:
+                        logger.info(
+                            f"[OCR V2 Exception] Expediente {doc.case_id} cerrado ({db_case.status if db_case else 'N/A'}); no se alteran documentos ni caso, ni se crea fallback."
+                        )
+                        from app.models.domain import AuditLog
+                        audit = AuditLog(
+                            tenant_id=db_case.tenant_id if db_case else (tenant_id or "unknown"),
+                            user_id=(db_case.assigned_to_user_id or db_case.created_by) if db_case else None,
+                            action="OCR_V2_TIMEOUT_BLOCKED_TERMINAL" if is_timeout else "OCR_V2_ERROR_BLOCKED_TERMINAL",
+                            entity_type="CaseFile",
+                            entity_id=str(doc.case_id),
+                            details=f"Mutación de error/timeout OCR V2 descartada: expediente cerrado ({db_case.status if db_case else 'N/A'})",
+                            status="FAILED"
+                        )
+                        db.add(audit)
 
             # Clasificación taxonómica y marcado de fallo en ProcessingJob
             if run.processing_job_id:

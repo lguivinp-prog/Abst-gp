@@ -295,17 +295,101 @@ def test_get_job_status_multi_tenant_isolation(admin_client, db_session):
 def test_get_job_status_redis_fallback(admin_client, db_session):
     """
     Verifica que si un job no está en PostgreSQL, consulte el fallback a RQ/Redis.
+    La seguridad V6 exige asociar el job con UploadedDocument.processing_job_id
+    y comprobar el tenant del expediente.
+    Cubre:
+    1. Caso autorizado: job asociado a UploadedDocument de un expediente perteneciente al tenant del admin ('mega_tenant') -> 200 OK.
+    2. Caso no autorizado: job asociado a UploadedDocument de otro tenant ('other_tenant') -> 404 (sin fugas).
+    3. Caso no autorizado: job existente en RQ/Redis pero sin UploadedDocument asociado en BD -> 404.
     """
-    mock_rq_job = Mock()
-    mock_rq_job.id = "mock-legacy-ocr-job-123"
-    mock_rq_job.get_status.return_value = "started"
-    mock_rq_job.meta = {"progress": 40, "status_message": "Ejecutando Tesseract OCR"}
+    from app.models.domain import Tenant
 
-    with patch("app.api.routers.cases.rq.job.Job.fetch", return_value=mock_rq_job):
-        res = admin_client.get(f"/cases/jobs/{mock_rq_job.id}")
-        assert res.status_code == 200
-        data = res.json()
-        assert data["job_id"] == mock_rq_job.id
-        assert data["status"] == "started"
-        assert data["progress"] == 40
-        assert data["message"] == "Ejecutando Tesseract OCR"
+    # Asegurar existencia de 'other_tenant'
+    if not db_session.query(Tenant).filter_by(id="other_tenant").first():
+        db_session.add(Tenant(id="other_tenant", name="Other Tenant"))
+        db_session.commit()
+
+    # 1. Expediente y documento autorizado (mega_tenant)
+    auth_case = CaseFile(
+        id=710,
+        title="Expediente Fallback Autorizado",
+        contract_type="SERVICE",
+        status="COMPARING",
+        tenant_id="mega_tenant"
+    )
+    auth_doc = UploadedDocument(
+        id=710,
+        case_id=710,
+        document_type="requirement",
+        original_filename="doc_auth.pdf",
+        stored_path="/tmp/auth.pdf",
+        mime_type="application/pdf",
+        processing_job_id="mock-legacy-ocr-job-auth"
+    )
+
+    # 2. Expediente y documento no autorizado (other_tenant)
+    unauth_case = CaseFile(
+        id=711,
+        title="Expediente Fallback No Autorizado",
+        contract_type="SERVICE",
+        status="COMPARING",
+        tenant_id="other_tenant"
+    )
+    unauth_doc = UploadedDocument(
+        id=711,
+        case_id=711,
+        document_type="requirement",
+        original_filename="doc_unauth.pdf",
+        stored_path="/tmp/unauth.pdf",
+        mime_type="application/pdf",
+        processing_job_id="mock-legacy-ocr-job-unauth"
+    )
+
+    db_session.add_all([auth_case, auth_doc, unauth_case, unauth_doc])
+    db_session.commit()
+
+    # Mocks de RQ Jobs
+    mock_rq_job_auth = Mock()
+    mock_rq_job_auth.id = "mock-legacy-ocr-job-auth"
+    mock_rq_job_auth.get_status.return_value = "started"
+    mock_rq_job_auth.meta = {"progress": 40, "status_message": "Ejecutando Tesseract OCR"}
+
+    mock_rq_job_unauth = Mock()
+    mock_rq_job_unauth.id = "mock-legacy-ocr-job-unauth"
+    mock_rq_job_unauth.get_status.return_value = "started"
+    mock_rq_job_unauth.meta = {"progress": 20, "status_message": "Procesando"}
+
+    mock_rq_job_unlinked = Mock()
+    mock_rq_job_unlinked.id = "mock-legacy-ocr-job-unlinked"
+    mock_rq_job_unlinked.get_status.return_value = "queued"
+    mock_rq_job_unlinked.meta = {"progress": 0}
+
+    def mock_fetch(job_id, connection=None):
+        if job_id == "mock-legacy-ocr-job-auth":
+            return mock_rq_job_auth
+        elif job_id == "mock-legacy-ocr-job-unauth":
+            return mock_rq_job_unauth
+        elif job_id == "mock-legacy-ocr-job-unlinked":
+            return mock_rq_job_unlinked
+        from rq.exceptions import NoSuchJobError
+        raise NoSuchJobError(f"No such job: {job_id}")
+
+    with patch("app.api.routers.cases.rq.job.Job.fetch", side_effect=mock_fetch):
+        # A. Job autorizado -> 200 OK con metadatos
+        res_auth = admin_client.get(f"/cases/jobs/{mock_rq_job_auth.id}")
+        assert res_auth.status_code == 200
+        data_auth = res_auth.json()
+        assert data_auth["job_id"] == mock_rq_job_auth.id
+        assert data_auth["status"] == "started"
+        assert data_auth["progress"] == 40
+        assert data_auth["message"] == "Ejecutando Tesseract OCR"
+
+        # B. Job no autorizado (pertenece a other_tenant) -> 404 (sin fugas)
+        res_unauth = admin_client.get(f"/cases/jobs/{mock_rq_job_unauth.id}")
+        assert res_unauth.status_code == 404
+        assert res_unauth.json()["detail"] == "Job not found"
+
+        # C. Job sin UploadedDocument asociado en BD -> 404
+        res_unlinked = admin_client.get(f"/cases/jobs/{mock_rq_job_unlinked.id}")
+        assert res_unlinked.status_code == 404
+        assert res_unlinked.json()["detail"] == "Job not found"

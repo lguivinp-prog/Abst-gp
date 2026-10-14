@@ -29,6 +29,7 @@ import hashlib
 from app.models.domain import User, AuditLog
 from app.api.auth import get_current_user, get_current_active_user, verify_case_access, require_role
 from app.api.exceptions import NotFoundException, ConflictException
+from app.services.v6.lifecycle_guard import ensure_case_mutable
 from pydantic import BaseModel
 from datetime import datetime, timezone
 
@@ -56,7 +57,7 @@ router = APIRouter()
 # CASOS
 # =========================================================
 
-@router.post("/", response_model=CaseResponse)
+@router.post("/", response_model=CaseResponse, dependencies=[Depends(require_role(["ADMIN", "OPERATOR", "SUPERVISOR"]))])
 def create_case(
     case: CaseCreate,
     current_user: User = Depends(get_current_active_user),
@@ -67,6 +68,7 @@ def create_case(
         title=case.title,
         contract_type=case.contract_type,
         status="CREATED",
+        tenant_id=current_user.tenant_id,
         created_by=current_user.id,
         assigned_to_user_id=current_user.id
     )
@@ -83,7 +85,7 @@ def get_cases(
     current_user: User = Depends(get_current_active_user),
     db: Session = Depends(get_db)
 ):
-    query = db.query(CaseFile)
+    query = db.query(CaseFile).filter(CaseFile.tenant_id == current_user.tenant_id)
     if current_user.role != "ADMIN":
         query = query.filter(CaseFile.assigned_to_user_id == current_user.id)
     cases = query.all()
@@ -117,9 +119,20 @@ def assign_case(
     if not target_user:
         raise NotFoundException("Target user not found")
 
-    db_case.assigned_to_user_id = assign_req.assigned_to_user_id
-    db_case.assigned_by_user_id = current_user.id
-    db_case.assigned_at = datetime.now(timezone.utc)
+    locked_case = (
+        db.query(CaseFile)
+        .filter(CaseFile.id == case_id)
+        .populate_existing()
+        .with_for_update()
+        .first()
+    )
+    if not locked_case:
+        raise NotFoundException("Case not found")
+    ensure_case_mutable(locked_case)
+
+    locked_case.assigned_to_user_id = assign_req.assigned_to_user_id
+    locked_case.assigned_by_user_id = current_user.id
+    locked_case.assigned_at = datetime.now(timezone.utc)
 
     audit = AuditLog(
         user_id=current_user.id,
@@ -140,8 +153,8 @@ def assign_case(
         db.rollback()
         raise HTTPException(status_code=500, detail="Transaction failed")
 
-    db.refresh(db_case)
-    return db_case
+    db.refresh(locked_case)
+    return locked_case
 
 @router.get("/{case_id}", response_model=CaseResponse)
 def get_case(
@@ -166,7 +179,7 @@ def get_case(
 # REQUERIMIENTO PDF + RQ
 # =========================================================
 
-@router.post("/{case_id}/requirement/upload")
+@router.post("/{case_id}/requirement/upload", dependencies=[Depends(require_role(["ADMIN", "OPERATOR", "SUPERVISOR"]))])
 def upload_requirement(
     case_id: int,
     file: UploadFile = File(...),
@@ -175,6 +188,7 @@ def upload_requirement(
     current_user: User = Depends(get_current_active_user),
     db: Session = Depends(get_db)
 ):
+    ensure_case_mutable(db_case)
 
     if not file.filename.lower().endswith(".pdf"):
         raise HTTPException(
@@ -194,21 +208,39 @@ def upload_requirement(
     )
 
 
-    job_id = str(uuid.uuid4())
+    try:
+        locked_case = (
+            db.query(CaseFile)
+            .filter(CaseFile.id == case_id)
+            .populate_existing()
+            .with_for_update()
+            .first()
+        )
+        if not locked_case:
+            raise NotFoundException("Case not found")
+        ensure_case_mutable(locked_case)
 
-    document = UploadedDocument(
-        case_id=case_id,
-        document_type=document_type,
-        original_filename=file.filename,
-        stored_path=file_path,
-        mime_type="application/pdf",
-        processing_job_id=job_id,
-        processing_status="queued"
-    )
+        job_id = str(uuid.uuid4())
 
-    db.add(document)
-    db_case.status = "PROCESSING_REQUIREMENT"
-    db.commit()
+        document = UploadedDocument(
+            case_id=case_id,
+            document_type=document_type,
+            original_filename=file.filename,
+            stored_path=file_path,
+            mime_type="application/pdf",
+            processing_job_id=job_id,
+            processing_status="queued"
+        )
+
+        db.add(document)
+        locked_case.status = "PROCESSING_REQUIREMENT"
+        db.commit()
+    except Exception:
+        try:
+            storage.delete(file_path)
+        except Exception:
+            pass
+        raise
 
     job = task_queue.enqueue(
         "app.worker.tasks.process_requirement_task",
@@ -322,8 +354,11 @@ def get_job_status(
                 )
                 .first()
             )
-            if case:
-                case_status = case.status
+            if not case:
+                raise NotFoundException("Job not found")
+            if current_user.role != "ADMIN" and case.assigned_to_user_id != current_user.id:
+                raise NotFoundException("Job not found")
+            case_status = case.status
 
         result_summary = None
         if job.result_summary:
@@ -356,19 +391,22 @@ def get_job_status(
             )
             .first()
         )
+        if not document:
+            raise NotFoundException("Job not found")
 
-        case_status = None
-        if document:
-            case = (
-                db.query(CaseFile)
-                .filter(
-                    CaseFile.id == document.case_id,
-                    CaseFile.tenant_id == current_user.tenant_id
-                )
-                .first()
+        case = (
+            db.query(CaseFile)
+            .filter(
+                CaseFile.id == document.case_id,
+                CaseFile.tenant_id == current_user.tenant_id
             )
-            if case:
-                case_status = case.status
+            .first()
+        )
+        if not case:
+            raise NotFoundException("Job not found")
+
+        if current_user.role != "ADMIN" and case.assigned_to_user_id != current_user.id:
+            raise NotFoundException("Job not found")
 
         return {
             "job_id": rq_job.id,
@@ -381,7 +419,7 @@ def get_job_status(
                 "status_message",
                 "En cola"
             ),
-            "case_status": case_status
+            "case_status": case.status
         }
 
     except (rq.exceptions.NoSuchJobError, Exception):
@@ -426,7 +464,7 @@ def get_sections(
 def update_section(
     section_id: int,
     section_in: SectionUpdate,
-    current_user: User = Depends(get_current_active_user),
+    current_user: User = Depends(require_role(["ADMIN", "OPERATOR", "SUPERVISOR"])),
     db: Session = Depends(get_db)
 ):
 
@@ -445,11 +483,18 @@ def update_section(
             detail="Section not found"
         )
 
+    # Secure case resolution respecting tenant isolation and assignment
+    case_query = db.query(CaseFile).filter(
+        CaseFile.id == section.case_id,
+        CaseFile.tenant_id == current_user.tenant_id
+    )
     if current_user.role != "ADMIN":
-        case = db.query(CaseFile).filter(CaseFile.id == section.case_id).first()
-        if not case or case.assigned_to_user_id != current_user.id:
-            raise NotFoundException("Section not found")
+        case_query = case_query.filter(CaseFile.assigned_to_user_id == current_user.id)
+    case = case_query.populate_existing().with_for_update().first()
+    if not case:
+        raise NotFoundException("Section not found")
 
+    ensure_case_mutable(case)
 
     section.is_selected = section_in.is_selected
     section.review_status = section_in.review_status
@@ -480,10 +525,21 @@ def has_unresolved_review(section: ParsedSection) -> bool:
 def confirm_sections(
     case_id: int,
     case: CaseFile = Depends(verify_case_access),
+    current_user: User = Depends(require_role(["ADMIN", "OPERATOR", "SUPERVISOR"])),
     db: Session = Depends(get_db)
 ):
+    locked_case = (
+        db.query(CaseFile)
+        .filter(CaseFile.id == case_id)
+        .populate_existing()
+        .with_for_update()
+        .first()
+    )
+    if not locked_case:
+        raise NotFoundException("Case not found")
+    ensure_case_mutable(locked_case)
 
-    if case.status != "REVIEW_SECTIONS":
+    if locked_case.status != "REVIEW_SECTIONS":
         raise HTTPException(status_code=400, detail="El expediente no está en revisión de secciones")
 
     sections = db.query(ParsedSection).filter(ParsedSection.case_id == case_id).all()
@@ -494,10 +550,10 @@ def confirm_sections(
     if pending_sections:
         raise HTTPException(status_code=400, detail=f"Hay {len(pending_sections)} secciones con problemas no resueltos. Por favor revise y valide manualmente las secciones requeridas.")
 
-    case.status = "WAITING_QUOTATION"
+    locked_case.status = "WAITING_QUOTATION"
     db.commit()
-    db.refresh(case)
-    return case
+    db.refresh(locked_case)
+    return locked_case
 
 
 
@@ -510,9 +566,11 @@ def upload_quotation(
     case_id: int,
     file: UploadFile = File(...),
     case: CaseFile = Depends(verify_case_access),
-    current_user: User = Depends(get_current_active_user),
+    current_user: User = Depends(require_role(["ADMIN", "OPERATOR", "SUPERVISOR"])),
     db: Session = Depends(get_db)
 ):
+    ensure_case_mutable(case)
+
     # FLUJO ASÍNCRONO V5.3 (Feature Flag ON)
     if settings.is_async_quotation_enabled():
         storage = get_storage()
@@ -526,14 +584,33 @@ def upload_quotation(
             file_stream=file.file
         )
 
-        # 1. Crear ProcessingJob en PostgreSQL antes de encolar
-        job = JobRepository.create_job(
-            db=db,
-            case_id=case_id,
-            tenant_id=current_user.tenant_id,
-            user_id=current_user.id,
-            job_type="QUOTATION_EXTRACTION"
-        )
+        try:
+            locked_case = (
+                db.query(CaseFile)
+                .filter(CaseFile.id == case_id)
+                .populate_existing()
+                .with_for_update()
+                .first()
+            )
+            if not locked_case:
+                raise NotFoundException("Case not found")
+            ensure_case_mutable(locked_case)
+
+            # 1. Crear ProcessingJob en PostgreSQL antes de encolar
+            job = JobRepository.create_job(
+                db=db,
+                case_id=case_id,
+                tenant_id=current_user.tenant_id,
+                user_id=current_user.id,
+                job_type="QUOTATION_EXTRACTION"
+            )
+            db.commit()
+        except Exception:
+            try:
+                storage.delete(saved_path)
+            except Exception:
+                pass
+            raise
 
         # 2. Encolar en RQ (Worker de cotización por dominio)
         task_queue.enqueue(
@@ -567,6 +644,17 @@ def upload_quotation(
             temp_path
         )
 
+        locked_case = (
+            db.query(CaseFile)
+            .filter(CaseFile.id == case_id)
+            .populate_existing()
+            .with_for_update()
+            .first()
+        )
+        if not locked_case:
+            raise NotFoundException("Case not found")
+        ensure_case_mutable(locked_case)
+
         quotation = QuotationExtraction(
             case_id=case_id,
             raw_json=quotation_data,
@@ -581,7 +669,7 @@ def upload_quotation(
         )
 
         db.add(quotation)
-        case.status = "COMPARING"
+        locked_case.status = "COMPARING"
         db.commit()
     finally:
         if os.path.exists(temp_path):
@@ -600,9 +688,11 @@ def upload_quotation(
 def run_comparison_endpoint(
     case_id: int,
     case: CaseFile = Depends(verify_case_access),
-    current_user: User = Depends(get_current_active_user),
+    current_user: User = Depends(require_role(["ADMIN", "OPERATOR", "SUPERVISOR"])),
     db: Session = Depends(get_db)
 ):
+    ensure_case_mutable(case)
+
     # Re-fetch with row-level lock and populate_existing to prevent reading stale identity map data
     locked_case = (
         db.query(CaseFile)
@@ -765,6 +855,7 @@ def get_comparison(
 def generate_html_endpoint(
     case_id: int,
     case: CaseFile = Depends(verify_case_access),
+    current_user: User = Depends(require_role(["ADMIN", "OPERATOR", "SUPERVISOR"])),
     db: Session = Depends(get_db)
 ):
 
@@ -873,7 +964,7 @@ def generate_html_endpoint(
         template_id=template.id,
         content_rendered=html,
         generation_hash=content_hash,
-        generated_by=None,
+        generated_by=current_user.id,
         template_version=template.version,
         accuracy_gate_result="LEGACY_COMPAT",
         source_snapshot={

@@ -3,7 +3,7 @@ from app.models.v6.supplier_profile import SupplierProfile
 from app.models.v6.supplier_offer import SupplierOffer
 from app.models.v6.supplier_selection import SupplierSelectionAttempt, SupplierSelectionFinal
 from app.models.v6.case_workflow import CaseWorkflow
-from app.models.domain import AuditLog
+from app.models.domain import AuditLog, CaseFile
 
 class SelectionService:
     @staticmethod
@@ -98,15 +98,54 @@ class SelectionService:
 
     @staticmethod
     def approve_selection(db: Session, case_id: int, supervisor_id: int, tenant_id: str):
-        attempt = db.query(SupplierSelectionAttempt).filter_by(case_id=case_id, status="UNDER_REVIEW").first()
+        # Bloqueo a nivel de fila sobre el caso para sincronizar con la persistencia asíncrona de workers
+        locked_case = (
+            db.query(CaseFile)
+            .filter(CaseFile.id == case_id)
+            .populate_existing()
+            .with_for_update()
+            .first()
+        )
+        if not locked_case:
+            raise ValueError(f"Case {case_id} not found")
+
+        # 1. El expediente pertenece al tenant solicitado
+        if locked_case.tenant_id != tenant_id:
+            raise ValueError(f"Case {case_id} does not belong to tenant {tenant_id}")
+
+        # 2. El estado vuelve a comprobarse después de adquirir el bloqueo
+        # 3. No se degrada ni sobrescribe un estado terminal previo
+        if locked_case.status in ["APPROVED", "COMPLETED"]:
+            raise ValueError(f"Case is already in terminal status: {locked_case.status}")
+
+        existing_final = db.query(SupplierSelectionFinal).filter_by(case_id=case_id).first()
+        if existing_final:
+            raise ValueError("Supplier selection has already been finalized for this case")
+
+        # 4. Existe una transición legítima de aprobación
+        workflow = db.query(CaseWorkflow).filter_by(case_id=case_id).first()
+        if workflow and workflow.status in ["APPROVED", "COMPLETED"]:
+            raise ValueError(f"Workflow is already in terminal status: {workflow.status}")
+
+        attempt = (
+            db.query(SupplierSelectionAttempt)
+            .filter_by(case_id=case_id, status="UNDER_REVIEW")
+            .order_by(SupplierSelectionAttempt.id.desc())
+            .first()
+        )
         if not attempt:
-            raise ValueError("No proposed selection found for this case")
+            raise ValueError("No proposed selection found for this case in UNDER_REVIEW status")
+
+        # 5. El cambio de CaseFile, CaseWorkflow y SupplierSelectionFinal se confirma de manera atómica
+        locked_case.status = "APPROVED"
 
         final = SupplierSelectionFinal(case_id=case_id, attempt_id=attempt.id)
         db.add(final)
 
-        workflow = db.query(CaseWorkflow).filter_by(case_id=case_id).first()
-        if workflow:
+        if not workflow:
+            workflow = CaseWorkflow(case_id=case_id, status="APPROVED", supervisor_id=supervisor_id)
+            db.add(workflow)
+        else:
             workflow.status = "APPROVED"
             workflow.supervisor_id = supervisor_id
 
@@ -121,3 +160,4 @@ class SelectionService:
         )
         db.add(audit)
         db.commit()
+        return final

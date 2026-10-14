@@ -2,7 +2,7 @@ import pytest
 from sqlalchemy import text
 from fastapi.testclient import TestClient
 from app.main import app
-from app.api.auth import get_current_active_user
+from app.api.auth import get_current_active_user, get_current_user
 from app.models.domain import User, CaseFile, FinalConditionComparison, QuotationExtraction, ParsedSection, UploadedDocument
 from tests.conftest import TestingSessionLocal
 
@@ -39,9 +39,9 @@ def setup_rollback_trigger():
             FOR EACH ROW EXECUTE FUNCTION fail_second_insert_trg();
         """))
         db.commit()
-    
+
     yield
-    
+
     # Teardown
     with TestingSessionLocal() as db:
         db.execute(text("DROP TRIGGER IF EXISTS fail_second_insert ON final_condition_comparisons;"))
@@ -64,24 +64,29 @@ def test_comparison_rollback_real(setup_mega_tenant, setup_rollback_trigger):
     original_run_comparison = cases.run_comparison
     cases.run_comparison = mock_run_comparison
 
-    app.dependency_overrides[get_current_active_user] = lambda: User(
+    admin_user = User(
         id=1, username="admin", role="ADMIN", is_active=True, must_change_password=False, tenant_id="mega_tenant"
     )
+    app.dependency_overrides[get_current_active_user] = lambda: admin_user
+    app.dependency_overrides[get_current_user] = lambda: admin_user
 
-    with TestClient(app) as client:
-        response = client.post("/cases/998/comparison/run")
-        
-        # El endpoint captura la excepcion general y retorna 500
-        assert response.status_code == 500
-        assert "error occurred" in response.json()["detail"].lower()
-        
-    cases.run_comparison = original_run_comparison
-    app.dependency_overrides.clear()
-    
+    try:
+        with TestClient(app) as client:
+            response = client.post("/cases/998/comparison/run")
+
+            # El endpoint captura la excepcion general y retorna 500
+            assert response.status_code == 500
+            assert "error occurred" in response.json()["detail"].lower()
+    finally:
+        cases.run_comparison = original_run_comparison
+        app.dependency_overrides.pop(get_current_active_user, None)
+        app.dependency_overrides.pop(get_current_user, None)
+
+
     # Verificación en PostgreSQL mediante una sesión nueva (Rollback real)
     with TestingSessionLocal() as db:
         count = db.query(FinalConditionComparison).filter_by(case_id=998).count()
         assert count == 0, "Deberían haber cero filas parciales persistidas"
-        
+
         case_state = db.query(CaseFile).filter_by(id=998).first()
         assert case_state.status == "COMPARING", "El estado debió retornar a COMPARING al hacer rollback"
