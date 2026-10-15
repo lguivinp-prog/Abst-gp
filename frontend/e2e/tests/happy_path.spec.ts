@@ -1,4 +1,5 @@
 import { test, expect } from '@playwright/test';
+import { Client } from 'pg';
 
 // Base64 valid PDF buffers with structural sections conforming to DocumentExtractionAgent
 const REQ_PDF_BASE64 = 'JVBERi0xLjMKJZOMi54gUmVwb3J0TGFiIEdlbmVyYXRlZCBQREYgZG9jdW1lbnQgKG9wZW5zb3VyY2UpCjEgMCBvYmoKPDwKL0YxIDIgMCBSCj4+CmVuZG9iagoyIDAgb2JqCjw8Ci9CYXNlRm9udCAvSGVsdmV0aWNhIC9FbmNvZGluZyAvV2luQW5zaUVuY29kaW5nIC9OYW1lIC9GMSAvU3VidHlwZSAvVHlwZTEgL1R5cGUgL0ZvbnQKPj4KZW5kb2JqCjMgMCBvYmoKPDwKL0NvbnRlbnRzIDcgMCBSIC9NZWRpYUJveCBbIDAgMCA1OTUuMjc1NiA4NDEuODg5OCBdIC9QYXJlbnQgNiAwIFIgL1Jlc291cmNlcyA8PAovRm9udCAxIDAgUiAvUHJvY1NldCBbIC9QREYgL1RleHQgL0ltYWdlQiAvSW1hZ2VDIC9JbWFnZUkgXQo+PiAvUm90YXRlIDAgL1RyYW5zIDw8Cgo+PiAKICAvVHlwZSAvUGFnZQo+PgplbmRvYmoKNCAwIG9iago8PAovUGFnZU1vZGUgL1VzZU5vbmUgL1BhZ2VzIDYgMCBSIC9UeXBlIC9DYXRhbG9nCj4+CmVuZG9iago1IDAgb2JqCjw8Ci9BdXRob3IgKGFub255bW91cykgL0NyZWF0aW9uRGF0ZSAoRDoyMDI2MDkyNTE5NDA1MSswMCcwMCcpIC9DcmVhdG9yIChhbm9ueW1vdXMpIC9LZXl3b3JkcyAoKSAvTW9kRGF0ZSAoRDoyMDI2MDkyNTE5NDA1MSswMCcwMCcpIC9Qcm9kdWNlciAoUmVwb3J0TGFiIFBERiBMaWJyYXJ5IC0gXChvcGVuc291cmNlXCkpIAogIC9TdWJqZWN0ICh1bnNwZWNpZmllZCkgL1RpdGxlICh1bnRpdGxlZCkgL1RyYXBwZWQgL0ZhbHNlCj4+CmVuZG9iago2IDAgb2JqCjw8Ci9Db3VudCAxIC9LaWRzIFsgMyAwIFIgXSAvVHlwZSAvUGFnZXMKPj4KZW5kb2JqCjcgMCBvYmoKPDwKL0ZpbHRlciBbIC9BU0NJSTg1RGVjb2RlIC9GbGF0ZURlY29kZSBdIC9MZW5ndGggMTg3Cj4+CnN0cmVhbQpHYXMyQDRVXStcKGtoWV9NQXQqPmsldVY4YSthaiNENl5gazAjPW4rK2coSXVydTglbEs/MWs8R1A8KEMiT1l0QipbaGxbIitfKSgkZC5IO0kiXkstalJlaycmRDZGU2ZPSXBebzBxNCtVZkdNT3BtTWk7O1RpZWFeNFNBWmFFL1JTN2NCZj0pLj9xPkYqPDBURWxkKiVrL2w4KTBdU2M5PiFBKWRkV0NcWmBvYHVpIVlFJEY0U0NTdH4+ZW5kc3RyZWFtCmVuZG9iagp4cmVmCjAgOAowMDAwMDAwMDAwIDY1NTM1IGYgCjAwMDAwMDAwNjEgMDAwMDAgbiAKMDAwMDAwMDkwMiAwMDAwMCBuIAowMDAwMDAwMTk5IDAwMDAwIG4gCjAwMDAwMDA0MDIgMDAwMDAgbiAKMDAwMDAwMDQ3MCAwMDAwMCBuIAowMDAwMDAwNzMxIDAwMDAwIG4gCjAwMDAwMDA3OTAgMDAwMDAgbiAKdHJhaWxlcgo8PAovSUQgCls8OWE5YzVkNTEzMGQ4ZjVmZTAwZTEwMDE5OGU1N2JhNmU+PDlhOWM1ZDUxMzBkOGY1ZmUwMGUxMDAxOThlNTdiYTZlPl0KJSBSZXBvcnRMYWIgZ2VuZXJhdGVkIFBERiBkb2N1bWVudCAtLSBkaWdlc3QgKG9wZW5zb3VyY2UpCgovSW5mbyA1IDAgUgovUm9vdCA0IDAgUgovU2l6ZSA4Cj4+CnN0YXJ0eHJlZgoxMDY3CiUlRU9GCg==';
@@ -88,6 +89,28 @@ test.describe('Document Intelligence E2E - Happy Path', () => {
     await page.click('button:has-text("Guardar")');
     await expect(page.locator('text=Oferta completada').first()).toBeVisible({ timeout: 15000 });
 
+    // 6.1 Precondición P11: Establecer perfil verificado del proveedor y vincular evidencia técnica válida
+    const connStr = process.env.DATABASE_URL || 'postgresql://test_user:test_password@db-test:5432/test_db';
+    const dbClient = new Client({ connectionString: connStr });
+    await dbClient.connect();
+    try {
+      const offRes = await dbClient.query(`SELECT id, supplier_id FROM supplier_offers ORDER BY id DESC LIMIT 1`);
+      if (offRes.rows.length > 0) {
+        const { id: offerId, supplier_id: supplierId } = offRes.rows[0];
+        await dbClient.query(`
+          INSERT INTO supplier_profiles (supplier_id, validation_status)
+          VALUES ($1, 'VERIFIED')
+          ON CONFLICT (supplier_id) DO UPDATE SET validation_status = 'VERIFIED';
+        `, [supplierId]);
+        await dbClient.query(`
+          INSERT INTO offer_evidences (supplier_offer_id, document_type, fragment, confidence, page)
+          VALUES ($1, 'FICHA_TECNICA', 'Cumplimiento conforme de especificaciones tecnicas computadoras', 0.99, 1);
+        `, [offerId]);
+      }
+    } finally {
+      await dbClient.end();
+    }
+
     // 7. Evaluar Oferta (V6)
     await page.click('button:has-text("Evaluaci")');
     await page.click('button:has-text("Evaluar Oferta")');
@@ -96,12 +119,12 @@ test.describe('Document Intelligence E2E - Happy Path', () => {
     // 8. Proponer Selección (V6)
     await page.click('button:has-text("Selecci")');
     await page.click('button:has-text("Proponer Selecci")');
-    await expect(page.locator('text=Selecci').and(page.locator('text=Propuesta')).first()).toBeVisible({ timeout: 15000 });
+    await expect(page.locator('text=Propuesta de Selección Registrada').first()).toBeVisible({ timeout: 15000 });
 
-    // 9. Adjudicar (V6)
+    // 9. Aprobación Interna Institucional (V6)
     await page.click('button:has-text("Resultado")');
-    await page.click('button:has-text("Aprobar y Adjudicar")');
-    await expect(page.locator('text=Expediente Adjudicado').first()).toBeVisible({ timeout: 15000 });
+    await page.click('button:has-text("Aprobar Propuesta de Selección")');
+    await expect(page.locator('text=Selección Aprobada Internamente').first()).toBeVisible({ timeout: 15000 });
   });
 });
 

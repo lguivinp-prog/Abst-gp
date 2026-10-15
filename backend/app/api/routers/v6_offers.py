@@ -178,34 +178,37 @@ def update_offer(
         # Remove old items to replace them
         db.query(SupplierOfferItem).filter(SupplierOfferItem.supplier_offer_id == offer_id).delete()
 
-        total_amount = Decimal('0.00')
+        if len(item.items) > 0:
+            total_amount = Decimal('0.00')
 
-        for item_data in item.items:
-            if item_data.unit_price is None or item_data.unit_price < 0:
-                raise HTTPException(status_code=400, detail="Invalid unit price")
+            for item_data in item.items:
+                if item_data.unit_price is None or item_data.unit_price < 0:
+                    raise HTTPException(status_code=400, detail="Invalid unit price")
 
-            procurement_item = db.query(CaseProcurementItem).filter_by(id=item_data.procurement_item_id).first()
-            if not procurement_item or procurement_item.case_id != case_id:
-                raise HTTPException(status_code=403, detail=f"Procurement item {item_data.procurement_item_id} is invalid or does not belong to the case")
+                procurement_item = db.query(CaseProcurementItem).filter_by(id=item_data.procurement_item_id).first()
+                if not procurement_item or procurement_item.case_id != case_id:
+                    raise HTTPException(status_code=403, detail=f"Procurement item {item_data.procurement_item_id} is invalid or does not belong to the case")
 
-            qty = Decimal(str(procurement_item.quantity)) if procurement_item.quantity is not None else Decimal('0')
-            u_price = item_data.unit_price
+                qty = Decimal(str(procurement_item.quantity)) if procurement_item.quantity is not None else Decimal('0')
+                u_price = item_data.unit_price
 
-            # Subtotal calculation
-            subtotal = (qty * u_price).quantize(Decimal('0.01'), rounding=ROUND_HALF_UP)
-            total_amount += subtotal
+                # Subtotal calculation
+                subtotal = (qty * u_price).quantize(Decimal('0.01'), rounding=ROUND_HALF_UP)
+                total_amount += subtotal
 
-            offer_item = SupplierOfferItem(
-                supplier_offer_id=offer.id,
-                procurement_item_id=procurement_item.id,
-                description=procurement_item.description,
-                quantity=procurement_item.quantity,
-                unit=procurement_item.unit,
-                unit_price=u_price
-            )
-            db.add(offer_item)
+                offer_item = SupplierOfferItem(
+                    supplier_offer_id=offer.id,
+                    procurement_item_id=procurement_item.id,
+                    description=procurement_item.description,
+                    quantity=procurement_item.quantity,
+                    unit=procurement_item.unit,
+                    unit_price=u_price
+                )
+                db.add(offer_item)
 
-        offer.total_amount = total_amount
+            offer.total_amount = total_amount
+        else:
+            offer.total_amount = None
 
     db.commit()
     db.refresh(offer)

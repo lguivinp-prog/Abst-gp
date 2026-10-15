@@ -36,7 +36,7 @@ export const CaseEvaluations: React.FC<CaseEvaluationsProps> = ({ caseId }) => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [isEvaluating, setIsEvaluating] = useState<number | null>(null);
-  const [activeView, setActiveView] = useState<'matrix' | 'cards'>('matrix');
+  const [activeView, setActiveView] = useState<'matrix' | 'cards'>('cards');
 
   const loadData = async () => {
     setLoading(true);
@@ -62,7 +62,13 @@ export const CaseEvaluations: React.FC<CaseEvaluationsProps> = ({ caseId }) => {
       }
 
       setEvaluations(evalsRes.status === 'fulfilled' ? evalsRes.value : []);
-      setOffers(offersRes.status === 'fulfilled' ? offersRes.value : []);
+      const loadedOffers = offersRes.status === 'fulfilled' ? offersRes.value : [];
+      setOffers(loadedOffers);
+      if (loadedOffers.length >= 2) {
+        setActiveView('matrix');
+      } else {
+        setActiveView('cards');
+      }
       setContractualEvals(contractualRes.status === 'fulfilled' ? contractualRes.value : []);
       setVfmRanking(vfmRes.status === 'fulfilled' ? vfmRes.value : []);
       setRequirements(reqsRes.status === 'fulfilled' ? reqsRes.value : []);
@@ -252,6 +258,9 @@ export const CaseEvaluations: React.FC<CaseEvaluationsProps> = ({ caseId }) => {
                     {comparedOffers.map((offer, idx) => {
                       const displayPrice = offer.total_amount != null ? offer.total_amount : offer.price;
                       const currencyStr = offer.currency || 'PEN';
+                      const offerEvals = evaluations.filter((e) => e.supplier_offer_id === offer.id);
+                      const isEvaluated = offerEvals.length > 0;
+                      const isIncomplete = offer.status === 'PENDING' && !offer.price && !offer.total_amount && !offer.source_document;
                       return (
                         <th key={offer.id} className="p-3 min-w-[220px] max-w-[260px] font-semibold border-r border-gray-200 align-top">
                           <div className="flex flex-col gap-1">
@@ -268,6 +277,20 @@ export const CaseEvaluations: React.FC<CaseEvaluationsProps> = ({ caseId }) => {
                                 {displayPrice != null ? `${currencyStr} ${Number(displayPrice).toLocaleString('es-PE', { minimumFractionDigits: 2 })}` : 'Sin precio'}
                               </span>
                             </div>
+                            <div className="mt-2">
+                              {isIncomplete ? (
+                                <span className="text-xs text-gray-400 italic">Oferta incompleta</span>
+                              ) : (
+                                <Button
+                                  onClick={() => handleEvaluateOffer(offer.id)}
+                                  disabled={isEvaluating === offer.id}
+                                  variant={isEvaluated ? 'outline' : 'primary'}
+                                  className="w-full text-xs py-1"
+                                >
+                                  {isEvaluating === offer.id ? 'Evaluando...' : isEvaluated ? 'Re-evaluar Oferta' : 'Evaluar Oferta'}
+                                </Button>
+                              )}
+                            </div>
                           </div>
                         </th>
                       );
@@ -278,7 +301,7 @@ export const CaseEvaluations: React.FC<CaseEvaluationsProps> = ({ caseId }) => {
                   {/* SECCIÓN 1: REQUISITOS TÉCNICOS */}
                   <tr className="bg-blue-50 font-semibold text-blue-950 text-xs uppercase tracking-wide">
                     <td colSpan={comparedOffers.length + 1} className="p-2.5 pl-3">
-                      1. Requisitos Técnicos y Documentales
+                      1. Requisitos Técnicos y Documentales (Resultados de Requisitos)
                     </td>
                   </tr>
 
