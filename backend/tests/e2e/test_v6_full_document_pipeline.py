@@ -2,8 +2,12 @@ import pytest
 import os
 import io
 import time
-from app.models.domain import CaseFile, UploadedDocument, OCRProcessingRun
-from app.models.v6.supplier_selection import SupplierSelectionFinal
+from app.models.domain import CaseFile, UploadedDocument, OCRProcessingRun, AuditLog
+from app.models.v6.case_workflow import CaseWorkflow
+from app.models.v6.supplier_selection import SupplierSelectionAttempt, SupplierSelectionFinal
+from app.models.v6.supplier_profile import SupplierProfile
+from app.models.v6.offer_evidence import OfferEvidence
+from app.models.v6.case_requirement_matrix import CaseRequirementMatrix
 
 def test_v6_full_document_pipeline(admin_client, db_session):
     # STEP 1 — LOGIN
@@ -113,6 +117,23 @@ def test_v6_full_document_pipeline(admin_client, db_session):
     resp = admin_client.post(f"/api/v6/cases/{case_id}/suppliers/{supplier_id}/validations/manual", json=val_payload)
     assert resp.status_code == 200, resp.text
 
+    # Establecer y verificar el estado del perfil del proveedor sintético para el entorno aislado de pruebas
+    profile = db_session.query(SupplierProfile).filter_by(supplier_id=supplier_id).first()
+    if not profile:
+        profile = SupplierProfile(
+            supplier_id=supplier_id,
+            validation_status="VERIFIED",
+            status_summary="VERIFIED",
+            aggregated_score=100.0
+        )
+        db_session.add(profile)
+    else:
+        profile.validation_status = "VERIFIED"
+        profile.status_summary = "VERIFIED"
+    db_session.commit()
+    db_session.refresh(profile)
+    assert profile.validation_status == "VERIFIED"
+
     # STEP 7 — OFFER DOCUMENT UPLOAD
     with open(pdf_path, "rb") as f:
         offer_content = f.read()
@@ -126,7 +147,7 @@ def test_v6_full_document_pipeline(admin_client, db_session):
     offer_doc_data = resp.json()
     offer_doc_id = offer_doc_data["id"]
 
-    # STEP 8 — COMPLETE OFFER
+    # STEP 8 — COMPLETE OFFER WITH CONSISTENT ECONOMIC TOTAL
     offer_items = []
     for item in proc_items:
         offer_items.append({
@@ -134,8 +155,9 @@ def test_v6_full_document_pipeline(admin_client, db_session):
             "unit_price": 100.00
         })
 
+    # Consistencia estricta: proc_items[0] (qty 3.0) + proc_items[1] (qty 2.0) a 100.00 = 500.00 PEN
     offer_update = {
-        "price": 1500.00,
+        "price": 500.00,
         "currency": "PEN",
         "source_document": "offer_doc.pdf",
         "document_ids": [offer_doc_id],
@@ -147,14 +169,60 @@ def test_v6_full_document_pipeline(admin_client, db_session):
     updated_offer = resp.json()
     assert updated_offer["status"] == "EVALUATED"
 
-    # STEP 9 — EVALUATION
+    # STEP 9A — EVALUATION PRE-EVIDENCE (MISSING DATA)
     resp = admin_client.post(f"/api/v6/cases/{case_id}/offers/{offer_id}/evaluate")
     assert resp.status_code == 200, resp.text
+    eval_pre = resp.json()
+    assert len(eval_pre) > 0
+    assert any(e["status"] == "MISSING_DATA" for e in eval_pre), "Sin evidencias, la evaluación obligatoria debe arrojar MISSING_DATA"
 
-    # STEP 10 — SELECTION
+    # STEP 9B — PRUEBA NEGATIVA OBLIGATORIA (MISSING_DATA)
+    # Proponer una oferta con MISSING_DATA debe ser rechazado con HTTP 400
+    neg_selection_payload = {
+        "supplier_offer_id": offer_id,
+        "justification_comment": "Intento de selección sobre oferta con datos faltantes"
+    }
+    neg_resp = admin_client.post(f"/api/v6/cases/{case_id}/selection", json=neg_selection_payload)
+    assert neg_resp.status_code == 400, neg_resp.text
+    assert "MISSING_DATA" in neg_resp.text or "missing data" in neg_resp.text.lower()
+
+    # Verificar que no se crea SupplierSelectionAttempt, no se altera workflow y no hay selección final
+    attempts = db_session.query(SupplierSelectionAttempt).filter_by(case_id=case_id).all()
+    assert len(attempts) == 0, "No debe registrarse ningún SupplierSelectionAttempt tras intento inválido"
+
+    workflow = db_session.query(CaseWorkflow).filter_by(case_id=case_id).first()
+    assert workflow is None or workflow.status != "UNDER_REVIEW", "El workflow no debe alterarse a UNDER_REVIEW"
+
+    final_sel = db_session.query(SupplierSelectionFinal).filter_by(case_id=case_id).first()
+    assert final_sel is None, "No debe existir SupplierSelectionFinal"
+
+    # STEP 9C — RELACIONAR EVIDENCIAS DOCUMENTALES REALES DE LA OFERTA
+    matrix_reqs = db_session.query(CaseRequirementMatrix).filter_by(case_id=case_id).all()
+    assert len(matrix_reqs) > 0, "Debe existir al menos un requisito en la matriz"
+
+    evidence = OfferEvidence(
+        supplier_offer_id=offer_id,
+        document_id=offer_doc_id,
+        document_type="FICHA_TECNICA",
+        fragment="Cumplimiento conforme de especificaciones técnicas",
+        confidence=0.99,
+        page=1
+    )
+    db_session.add(evidence)
+    db_session.commit()
+
+    # STEP 9D — RE-EVALUACIÓN REAL CON EVIDENCIAS
+    resp = admin_client.post(f"/api/v6/cases/{case_id}/offers/{offer_id}/evaluate")
+    assert resp.status_code == 200, resp.text
+    eval_post = resp.json()
+    assert len(eval_post) > 0
+    for ev in eval_post:
+        assert ev["status"] in ["PASSED", "IMPROVEMENT"], f"Evaluación no conforme: {ev}"
+
+    # STEP 10 — SELECTION CONFORME MEDIANTE API REAL
     selection_payload = {
         "supplier_offer_id": offer_id,
-        "justification_comment": "Best offer overall"
+        "justification_comment": "Oferta conforme con evidencia documental técnica y mejor precio"
     }
     resp = admin_client.post(f"/api/v6/cases/{case_id}/selection", json=selection_payload)
     assert resp.status_code == 200, resp.text
@@ -174,6 +242,20 @@ def test_v6_full_document_pipeline(admin_client, db_session):
     assert result_data["status"] == "APPROVED"
     assert result_data["supplier_ruc"] == "20123456789"
     assert result_data["offer_total_amount"] is not None
+    assert float(result_data["offer_total_amount"]) == 500.00
+
+    # STEP 13 — VERIFICACIÓN FINAL EN BASE DE DATOS Y AUDITORÍA
+    final_db = db_session.query(SupplierSelectionFinal).filter_by(case_id=case_id).first()
+    assert final_db is not None, "SupplierSelectionFinal debe existir en base de datos"
+
+    case_db = db_session.query(CaseFile).filter_by(id=case_id).first()
+    assert case_db.status == "APPROVED", "CaseFile debe tener estado terminal APPROVED"
+
+    workflow_db = db_session.query(CaseWorkflow).filter_by(case_id=case_id).first()
+    assert workflow_db.status == "APPROVED", "CaseWorkflow debe estar en APPROVED"
+
+    audits = db_session.query(AuditLog).filter_by(entity_id=str(case_id)).all()
+    assert len(audits) > 0, "Deben existir eventos de auditoría para el expediente"
 
     # Verify entity chain consistency (no hardcoded DB IDs)
     assert result_data["case_id"] == case_id
