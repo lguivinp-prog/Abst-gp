@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
 import {
   CheckCircle2,
   XCircle,
@@ -37,6 +37,7 @@ export const CaseEvaluations: React.FC<CaseEvaluationsProps> = ({ caseId }) => {
   const [error, setError] = useState<string | null>(null);
   const [isEvaluating, setIsEvaluating] = useState<number | null>(null);
   const [activeView, setActiveView] = useState<'matrix' | 'cards'>('cards');
+  const userManuallyToggledViewRef = useRef<boolean>(false);
 
   const loadData = async () => {
     setLoading(true);
@@ -64,10 +65,12 @@ export const CaseEvaluations: React.FC<CaseEvaluationsProps> = ({ caseId }) => {
       setEvaluations(evalsRes.status === 'fulfilled' ? evalsRes.value : []);
       const loadedOffers = offersRes.status === 'fulfilled' ? offersRes.value : [];
       setOffers(loadedOffers);
-      if (loadedOffers.length >= 2) {
-        setActiveView('matrix');
-      } else {
-        setActiveView('cards');
+      if (!userManuallyToggledViewRef.current) {
+        if (loadedOffers.length >= 2) {
+          setActiveView('matrix');
+        } else {
+          setActiveView('cards');
+        }
       }
       setContractualEvals(contractualRes.status === 'fulfilled' ? contractualRes.value : []);
       setVfmRanking(vfmRes.status === 'fulfilled' ? vfmRes.value : []);
@@ -84,8 +87,14 @@ export const CaseEvaluations: React.FC<CaseEvaluationsProps> = ({ caseId }) => {
   };
 
   useEffect(() => {
+    userManuallyToggledViewRef.current = false;
     loadData();
   }, [caseId]);
+
+  const handleSelectView = (view: 'matrix' | 'cards') => {
+    userManuallyToggledViewRef.current = true;
+    setActiveView(view);
+  };
 
   const handleEvaluateOffer = async (offerId: number) => {
     setIsEvaluating(offerId);
@@ -180,7 +189,7 @@ export const CaseEvaluations: React.FC<CaseEvaluationsProps> = ({ caseId }) => {
         <div className="flex items-center gap-3">
           <div className="view-toggle flex rounded border border-gray-200 overflow-hidden bg-gray-50">
             <button
-              onClick={() => setActiveView('matrix')}
+              onClick={() => handleSelectView('matrix')}
               className={`px-3 py-1.5 text-xs font-medium flex items-center gap-1.5 transition-colors ${
                 activeView === 'matrix' ? 'bg-blue-600 text-white' : 'text-gray-700 hover:bg-gray-100'
               }`}
@@ -189,7 +198,7 @@ export const CaseEvaluations: React.FC<CaseEvaluationsProps> = ({ caseId }) => {
               Matriz Multiproveedor
             </button>
             <button
-              onClick={() => setActiveView('cards')}
+              onClick={() => handleSelectView('cards')}
               className={`px-3 py-1.5 text-xs font-medium flex items-center gap-1.5 transition-colors ${
                 activeView === 'cards' ? 'bg-blue-600 text-white' : 'text-gray-700 hover:bg-gray-100'
               }`}

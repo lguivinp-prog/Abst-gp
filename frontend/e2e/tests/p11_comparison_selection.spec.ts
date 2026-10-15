@@ -172,6 +172,60 @@ test.describe('[UI-MOCK] Fase P11: Matriz Comparativa, Selección Fundamentada y
   });
 
   // ============================================================================
+  // Test 1.1: Persistencia de la vista de evaluación (Matriz/Tarjetas) durante loadData y re-evaluación
+  // ============================================================================
+  test('P11.10: Persistencia de vista de evaluación durante loadData y re-evaluación', async ({ page }) => {
+    await page.addInitScript((token) => {
+      window.localStorage.setItem('access_token', token);
+    }, OPERATOR_TOKEN);
+
+    await page.route('**/*', async (route: any) => {
+      const url = route.request().url();
+      if (url.includes(`/api/v6/cases/${mockCaseId}/evaluations/10/evaluate`)) {
+        return route.fulfill({ json: { success: true } });
+      }
+      return route.continue();
+    });
+
+    await setupApiMocks(page);
+
+    await page.goto(`/expedientes/${mockCaseId}`);
+    await expect(page.getByRole('heading', { name: 'Adquisición de Laptops y Monitores P11' })).toBeVisible({ timeout: 10000 });
+
+    // Navegar a pestaña Evaluación
+    await page.click('button:has-text("Evaluación")');
+
+    // 1. Caso con 2 ofertas: vista inicial es Matriz Multiproveedor
+    await expect(page.locator('text=Matriz Comparativa Multiproveedor')).toBeVisible({ timeout: 10000 });
+
+    // 2. Operador cambia manualmente a "Detalle por Oferta"
+    await page.click('button:has-text("Detalle por Oferta")');
+    await expect(page.locator('.case-evaluations-list')).toBeVisible({ timeout: 5000 });
+    await expect(page.locator('text=Soluciones Tecnológicas Alfa SAC').first()).toBeVisible();
+
+    // 3. Clic en "Actualizar" (dispara loadData) -> la preferencia manual se CONSERVA en Detalle por Oferta
+    await page.click('button:has-text("Actualizar")');
+    await expect(page.locator('.case-evaluations-list')).toBeVisible({ timeout: 5000 });
+    await expect(page.locator('text=Matriz Comparativa Multiproveedor')).not.toBeVisible();
+
+    // 4. Re-evaluar oferta en la vista de tarjetas -> ejecuta handleEvaluateOffer -> llama a loadData()
+    // La preferencia se CONSERVA en Detalle por Oferta
+    const evalButtons = page.locator('.evaluation-actions button');
+    await expect(evalButtons.first()).toBeVisible();
+    await evalButtons.first().click();
+    await expect(page.locator('.case-evaluations-list')).toBeVisible({ timeout: 5000 });
+    await expect(page.locator('text=Matriz Comparativa Multiproveedor')).not.toBeVisible();
+
+    // 5. Operador cambia de nuevo a "Matriz Multiproveedor"
+    await page.click('button:has-text("Matriz Multiproveedor")');
+    await expect(page.locator('text=Matriz Comparativa Multiproveedor')).toBeVisible({ timeout: 5000 });
+
+    // 6. Clic en Actualizar -> se CONSERVA en Matriz
+    await page.click('button:has-text("Actualizar")');
+    await expect(page.locator('text=Matriz Comparativa Multiproveedor')).toBeVisible({ timeout: 5000 });
+  });
+
+  // ============================================================================
   // Test 2: Selección divergente bloqueada sin justificación y fundamentada aceptada
   // ============================================================================
   test('P11.5 & P11.6: Selección divergente bloqueada sin justificación y aceptada con fundamento', async ({ page }) => {

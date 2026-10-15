@@ -77,6 +77,7 @@ class SupplierOfferUpdate(BaseModel):
     document_ids: Optional[List[int]] = None
     status: Optional[str] = None
     items: Optional[List[SupplierOfferItemCreate]] = None
+    clear_items: Optional[bool] = False
 
 @router.post("/cases/{case_id}/offers", response_model=SupplierOfferResponse)
 def attach_offer(
@@ -171,44 +172,50 @@ def update_offer(
             offer_doc = SupplierOfferDocument(offer_id=offer.id, document_id=doc_id)
             db.add(offer_doc)
 
-    if item.items is not None:
+    # Semántica de ítems cotizados:
+    # 1. item.clear_items == True: vaciado explícito autorizado, justificado en el contrato funcional.
+    # 2. item.items con 1 o más registros: sustitución completa de detalle con recálculo económico.
+    # 3. item.items == [] (sin clear_items): lista vacía no destinada a eliminación; se preserva el detalle existente.
+    # 4. item.items is None (omitido o null): actualización parcial; se conservan ítems y total_amount intactos.
+    if item.clear_items:
+        from app.models.v6.supplier_offer_item import SupplierOfferItem
+        db.query(SupplierOfferItem).filter(SupplierOfferItem.supplier_offer_id == offer_id).delete()
+        offer.total_amount = None
+    elif item.items is not None and len(item.items) > 0:
         from app.models.v6.supplier_offer_item import SupplierOfferItem
         from app.models.v6.case_procurement_item import CaseProcurementItem
 
         # Remove old items to replace them
         db.query(SupplierOfferItem).filter(SupplierOfferItem.supplier_offer_id == offer_id).delete()
 
-        if len(item.items) > 0:
-            total_amount = Decimal('0.00')
+        total_amount = Decimal('0.00')
 
-            for item_data in item.items:
-                if item_data.unit_price is None or item_data.unit_price < 0:
-                    raise HTTPException(status_code=400, detail="Invalid unit price")
+        for item_data in item.items:
+            if item_data.unit_price is None or item_data.unit_price < 0:
+                raise HTTPException(status_code=400, detail="Invalid unit price")
 
-                procurement_item = db.query(CaseProcurementItem).filter_by(id=item_data.procurement_item_id).first()
-                if not procurement_item or procurement_item.case_id != case_id:
-                    raise HTTPException(status_code=403, detail=f"Procurement item {item_data.procurement_item_id} is invalid or does not belong to the case")
+            procurement_item = db.query(CaseProcurementItem).filter_by(id=item_data.procurement_item_id).first()
+            if not procurement_item or procurement_item.case_id != case_id:
+                raise HTTPException(status_code=403, detail=f"Procurement item {item_data.procurement_item_id} is invalid or does not belong to the case")
 
-                qty = Decimal(str(procurement_item.quantity)) if procurement_item.quantity is not None else Decimal('0')
-                u_price = item_data.unit_price
+            qty = Decimal(str(procurement_item.quantity)) if procurement_item.quantity is not None else Decimal('0')
+            u_price = item_data.unit_price
 
-                # Subtotal calculation
-                subtotal = (qty * u_price).quantize(Decimal('0.01'), rounding=ROUND_HALF_UP)
-                total_amount += subtotal
+            # Subtotal calculation
+            subtotal = (qty * u_price).quantize(Decimal('0.01'), rounding=ROUND_HALF_UP)
+            total_amount += subtotal
 
-                offer_item = SupplierOfferItem(
-                    supplier_offer_id=offer.id,
-                    procurement_item_id=procurement_item.id,
-                    description=procurement_item.description,
-                    quantity=procurement_item.quantity,
-                    unit=procurement_item.unit,
-                    unit_price=u_price
-                )
-                db.add(offer_item)
+            offer_item = SupplierOfferItem(
+                supplier_offer_id=offer.id,
+                procurement_item_id=procurement_item.id,
+                description=procurement_item.description,
+                quantity=procurement_item.quantity,
+                unit=procurement_item.unit,
+                unit_price=u_price
+            )
+            db.add(offer_item)
 
-            offer.total_amount = total_amount
-        else:
-            offer.total_amount = None
+        offer.total_amount = total_amount
 
     db.commit()
     db.refresh(offer)

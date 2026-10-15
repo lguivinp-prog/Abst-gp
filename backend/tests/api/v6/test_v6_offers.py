@@ -229,3 +229,139 @@ def test_offers_itemized_calculations_and_rollback(client: TestClient, db_sessio
     db_session.rollback() # just to clear any aborted transaction state
     offer_items_count = db_session.query(SupplierOfferItem).filter_by(supplier_offer_id=offer_id).count()
     assert offer_items_count == 2
+
+def test_offer_items_contract_semantics(client: TestClient, db_session: Session, reviewed_case_file):
+    from app.models.v6.case_procurement_item import CaseProcurementItem
+    from app.models.v6.supplier_offer_item import SupplierOfferItem
+    from app.models.v6.supplier_offer import SupplierOffer
+
+    # Setup procurement items
+    pi1 = CaseProcurementItem(
+        case_id=reviewed_case_file.id,
+        item_number="001",
+        description="Monitor 27 inch",
+        quantity=5.0,
+        unit="UND"
+    )
+    pi2 = CaseProcurementItem(
+        case_id=reviewed_case_file.id,
+        item_number="002",
+        description="Teclado mecanico",
+        quantity=10.0,
+        unit="UND"
+    )
+    db_session.add_all([pi1, pi2])
+    db_session.commit()
+    db_session.refresh(pi1)
+    db_session.refresh(pi2)
+
+    # Create supplier and offer
+    sup_res = client.post(
+        f"/api/v6/cases/{reviewed_case_file.id}/suppliers",
+        json={"ruc": "20555666777", "business_name": "Tech Detail SAC"},
+        headers={"Authorization": "Bearer test_token"}
+    )
+    assert sup_res.status_code == 200
+    offers = client.get(
+        f"/api/v6/cases/{reviewed_case_file.id}/offers",
+        headers={"Authorization": "Bearer test_token"}
+    ).json()
+    offer_id = offers[0]["id"]
+
+    # Initial detail substitution: 5*100 + 10*50 = 1000.00
+    res_sub = client.put(
+        f"/api/v6/cases/{reviewed_case_file.id}/offers/{offer_id}",
+        json={
+            "price": 1000.00,
+            "currency": "PEN",
+            "items": [
+                {"procurement_item_id": pi1.id, "unit_price": 100.00},
+                {"procurement_item_id": pi2.id, "unit_price": 50.00}
+            ]
+        },
+        headers={"Authorization": "Bearer test_token"}
+    )
+    assert res_sub.status_code == 200
+    data = res_sub.json()
+    assert float(data["total_amount"]) == 1000.00
+    assert len(data["items"]) == 2
+
+    # Case 1: items OMITIDO (partial update: only change status) -> items and total_amount MUST be preserved
+    res_omitted = client.put(
+        f"/api/v6/cases/{reviewed_case_file.id}/offers/{offer_id}",
+        json={"status": "UNDER_REVIEW"},
+        headers={"Authorization": "Bearer test_token"}
+    )
+    assert res_omitted.status_code == 200
+    data_omitted = res_omitted.json()
+    assert data_omitted["status"] == "UNDER_REVIEW"
+    assert float(data_omitted["total_amount"]) == 1000.00
+    assert len(data_omitted["items"]) == 2
+    assert db_session.query(SupplierOfferItem).filter_by(supplier_offer_id=offer_id).count() == 2
+
+    # Case 2: items = null (explicit null) -> items and total_amount MUST be preserved
+    res_null = client.put(
+        f"/api/v6/cases/{reviewed_case_file.id}/offers/{offer_id}",
+        json={"items": None, "source_document": "cotizacion_v2.pdf"},
+        headers={"Authorization": "Bearer test_token"}
+    )
+    assert res_null.status_code == 200
+    data_null = res_null.json()
+    assert data_null["source_document"] == "cotizacion_v2.pdf"
+    assert float(data_null["total_amount"]) == 1000.00
+    assert len(data_null["items"]) == 2
+    assert db_session.query(SupplierOfferItem).filter_by(supplier_offer_id=offer_id).count() == 2
+
+    # Case 3: items = [] (empty list without clear_items) -> MUST NOT delete existing items
+    res_empty = client.put(
+        f"/api/v6/cases/{reviewed_case_file.id}/offers/{offer_id}",
+        json={"items": []},
+        headers={"Authorization": "Bearer test_token"}
+    )
+    assert res_empty.status_code == 200
+    data_empty = res_empty.json()
+    assert float(data_empty["total_amount"]) == 1000.00
+    assert len(data_empty["items"]) == 2
+    assert db_session.query(SupplierOfferItem).filter_by(supplier_offer_id=offer_id).count() == 2
+
+    # Case 4: Detail substitution with new prices (5*120 + 10*40 = 1000.00)
+    res_sub2 = client.put(
+        f"/api/v6/cases/{reviewed_case_file.id}/offers/{offer_id}",
+        json={
+            "items": [
+                {"procurement_item_id": pi1.id, "unit_price": 120.00},
+                {"procurement_item_id": pi2.id, "unit_price": 40.00}
+            ]
+        },
+        headers={"Authorization": "Bearer test_token"}
+    )
+    assert res_sub2.status_code == 200
+    data_sub2 = res_sub2.json()
+    assert float(data_sub2["total_amount"]) == 1000.00
+    assert len(data_sub2["items"]) == 2
+    items_in_db = db_session.query(SupplierOfferItem).filter_by(supplier_offer_id=offer_id).all()
+    assert len(items_in_db) == 2
+    prices = {it.procurement_item_id: float(it.unit_price) for it in items_in_db}
+    assert prices[pi1.id] == 120.00
+    assert prices[pi2.id] == 40.00
+
+    # Case 5: Explicit clearing: clear_items = True -> Clears items and sets total_amount = None
+    res_clear = client.put(
+        f"/api/v6/cases/{reviewed_case_file.id}/offers/{offer_id}",
+        json={"clear_items": True},
+        headers={"Authorization": "Bearer test_token"}
+    )
+    assert res_clear.status_code == 200
+    data_clear = res_clear.json()
+    assert data_clear["total_amount"] is None
+    assert len(data_clear["items"]) == 0
+    assert db_session.query(SupplierOfferItem).filter_by(supplier_offer_id=offer_id).count() == 0
+
+    # Case 6: Selection blocked when case requires procurement items and offer detail was cleared
+    sel_res = client.post(
+        f"/api/v6/cases/{reviewed_case_file.id}/selection",
+        json={"supplier_offer_id": offer_id, "justification_comment": "Propuesta sin detalle"},
+        headers={"Authorization": "Bearer test_token"}
+    )
+    assert sel_res.status_code == 400
+    assert "Incomplete offer" in sel_res.json()["detail"]
