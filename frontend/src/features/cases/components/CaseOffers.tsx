@@ -86,7 +86,7 @@ export const CaseOffers: React.FC<CaseOffersProps> = ({ caseId, caseStatus }) =>
       currency: offer.currency || 'PEN',
       source_document: offer.source_document,
       status: offer.status,
-      items: initialItems
+      items: initialItems && initialItems.length > 0 ? initialItems : undefined
     });
   };
 

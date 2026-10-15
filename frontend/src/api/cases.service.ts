@@ -189,7 +189,7 @@ export const casesService = {
     }
   },
 
-  proposeSelection: async (id: string, data: { supplier_offer_id: number; justification_comment: string }): Promise<any> => {
+  proposeSelection: async (id: string, data: { supplier_offer_id: number; justification_comment?: string }): Promise<any> => {
     try {
       const response = await apiClient.post(`/api/v6/cases/${id}/selection`, data);
       return response.data;

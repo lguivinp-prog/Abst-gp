@@ -1,8 +1,110 @@
 import { test, expect } from '@playwright/test';
+import { Client } from 'pg';
 
 // Base64 valid PDF buffers with structural sections conforming to DocumentExtractionAgent
 const REQ_PDF_BASE64 = 'JVBERi0xLjMKJZOMi54gUmVwb3J0TGFiIEdlbmVyYXRlZCBQREYgZG9jdW1lbnQgKG9wZW5zb3VyY2UpCjEgMCBvYmoKPDwKL0YxIDIgMCBSCj4+CmVuZG9iagoyIDAgb2JqCjw8Ci9CYXNlRm9udCAvSGVsdmV0aWNhIC9FbmNvZGluZyAvV2luQW5zaUVuY29kaW5nIC9OYW1lIC9GMSAvU3VidHlwZSAvVHlwZTEgL1R5cGUgL0ZvbnQKPj4KZW5kb2JqCjMgMCBvYmoKPDwKL0NvbnRlbnRzIDcgMCBSIC9NZWRpYUJveCBbIDAgMCA1OTUuMjc1NiA4NDEuODg5OCBdIC9QYXJlbnQgNiAwIFIgL1Jlc291cmNlcyA8PAovRm9udCAxIDAgUiAvUHJvY1NldCBbIC9QREYgL1RleHQgL0ltYWdlQiAvSW1hZ2VDIC9JbWFnZUkgXQo+PiAvUm90YXRlIDAgL1RyYW5zIDw8Cgo+PiAKICAvVHlwZSAvUGFnZQo+PgplbmRvYmoKNCAwIG9iago8PAovUGFnZU1vZGUgL1VzZU5vbmUgL1BhZ2VzIDYgMCBSIC9UeXBlIC9DYXRhbG9nCj4+CmVuZG9iago1IDAgb2JqCjw8Ci9BdXRob3IgKGFub255bW91cykgL0NyZWF0aW9uRGF0ZSAoRDoyMDI2MDkyNTE5NDA1MSswMCcwMCcpIC9DcmVhdG9yIChhbm9ueW1vdXMpIC9LZXl3b3JkcyAoKSAvTW9kRGF0ZSAoRDoyMDI2MDkyNTE5NDA1MSswMCcwMCcpIC9Qcm9kdWNlciAoUmVwb3J0TGFiIFBERiBMaWJyYXJ5IC0gXChvcGVuc291cmNlXCkpIAogIC9TdWJqZWN0ICh1bnNwZWNpZmllZCkgL1RpdGxlICh1bnRpdGxlZCkgL1RyYXBwZWQgL0ZhbHNlCj4+CmVuZG9iago2IDAgb2JqCjw8Ci9Db3VudCAxIC9LaWRzIFsgMyAwIFIgXSAvVHlwZSAvUGFnZXMKPj4KZW5kb2JqCjcgMCBvYmoKPDwKL0ZpbHRlciBbIC9BU0NJSTg1RGVjb2RlIC9GbGF0ZURlY29kZSBdIC9MZW5ndGggMTg3Cj4+CnN0cmVhbQpHYXMyQDRVXStcKGtoWV9NQXQqPmsldVY4YSthaiNENl5gazAjPW4rK2coSXVydTglbEs/MWs8R1A8KEMiT1l0QipbaGxbIitfKSgkZC5IO0kiXkstalJlaycmRDZGU2ZPSXBebzBxNCtVZkdNT3BtTWk7O1RpZWFeNFNBWmFFL1JTN2NCZj0pLj9xPkYqPDBURWxkKiVrL2w4KTBdU2M5PiFBKWRkV0NcWmBvYHVpIVlFJEY0U0NTdH4+ZW5kc3RyZWFtCmVuZG9iagp4cmVmCjAgOAowMDAwMDAwMDAwIDY1NTM1IGYgCjAwMDAwMDAwNjEgMDAwMDAgbiAKMDAwMDAwMDkwMiAwMDAwMCBuIAowMDAwMDAwMTk5IDAwMDAwIG4gCjAwMDAwMDA0MDIgMDAwMDAgbiAKMDAwMDAwMDQ3MCAwMDAwMCBuIAowMDAwMDAwNzMxIDAwMDAwIG4gCjAwMDAwMDA3OTAgMDAwMDAgbiAKdHJhaWxlcgo8PAovSUQgCls8OWE5YzVkNTEzMGQ4ZjVmZTAwZTEwMDE5OGU1N2JhNmU+PDlhOWM1ZDUxMzBkOGY1ZmUwMGUxMDAxOThlNTdiYTZlPl0KJSBSZXBvcnRMYWIgZ2VuZXJhdGVkIFBERiBkb2N1bWVudCAtLSBkaWdlc3QgKG9wZW5zb3VyY2UpCgovSW5mbyA1IDAgUgovUm9vdCA0IDAgUgovU2l6ZSA4Cj4+CnN0YXJ0eHJlZgoxMDY3CiUlRU9GCg==';
 const QUOT_PDF_BASE64 = 'JVBERi0xLjcKJcK1wrYKJSBXcml0dGVuIGJ5IE11UERGIDEuMjcuMgoKMSAwIG9iago8PC9UeXBlL0NhdGFsb2cvUGFnZXMgMiAwIFIvSW5mbzw8L1Byb2R1Y2VyKE11UERGIDEuMjcuMik+Pj4+CmVuZG9iagoKMiAwIG9iago8PC9UeXBlL1BhZ2VzL0NvdW50IDEvS2lkc1s0IDAgUl0+PgplbmRvYmoKCjMgMCBvYmoKPDwvRm9udDw8L2hlbHYgNSAwIFI+Pj4+CmVuZG9iagoKNCAwIG9iago8PC9UeXBlL1BhZ2UvTWVkaWFCb3hbMCAwIDU5NSA4NDJdL1JvdGF0ZSAwL1Jlc291cmNlcyAzIDAgUi9QYXJlbnQgMiAwIFIvQ29udGVudHNbNiAwIFJdPj4KZW5kb2JqCgo1IDAgb2JqCjw8L1R5cGUvRm9udC9TdWJ0eXBlL1R5cGUxL0Jhc2VGb250L0hlbHZldGljYS9FbmNvZGluZy9XaW5BbnNpRW5jb2Rpbmc+PgplbmRvYmoKCjYgMCBvYmoKPDwvTGVuZ3RoIDI3NC9GaWx0ZXIvRmxhdGVEZWNvZGU+PgpzdHJlYW0KeNp1kD9PBCEQxXs+BbWJyvwDN7lYGG3sTOguFptdiIUWNvf5783EeF5hWIZh3rwfLOk7PfVEuWBQboyPc/9K9x/j85SJcp/5eFDRaaqLrUrIF506uHhVdzXjqJFuj+/9NZV8S3ZHpLk/p+PBCvRpVQ1DkbGs8DpNUGI42QwxNCUuVpyJGumIvfipwe43uE1o4hRhKaJiUqXJgyzYkfCl85IJ8XBy3Sq1tU4uVashWh1NG2NtlYJJYqEu6BRkUgku9KFG6FzgHn/I7GRtoZHT3PlDYvj3ak18XrkkXFuLcxv/fx/103eQxTV/9d8eKFdMDeZeZ9wC/+gRE31OMuEZb2a84aUweHgMwktPb+kMpKp3gAplbmRzdHJlYW0KZW5kb2JqCgp4cmVmCjAgNwowMDAwMDAwMDAwIDY1NTM1IGYgCjAwMDAwMDAwNDIgMDAwMDAgbiAKMDAwMDAwMDEyMCAwMDAwMCBuIAowMDAwMDAwMTcyIDAwMDAwIG4gCjAwMDAwMDAyMTMgMDAwMDAgbiAKMDAwMDAwMDMyMCAwMDAwMCBuIAowMDAwMDAwNDA5IDAwMDAwIG4gCgp0cmFpbGVyCjw8L1NpemUgNy9Sb290IDEgMCBSL0lEWzxDM0EyNUJDMzkzQzNBRjBEQzJCNTNBNzUzRjFFQzJBMD48MThCQkIxMTNBRTFDMUFFNERGODhEMzIzQ0Y1QzBCRDU+XT4+CnN0YXJ0eHJlZgo3NTIKJSVFT0YK';
+
+/**
+ * Prepara de manera segura y estrictamente aislada las precondiciones de base de datos
+ * para la oferta y proveedor vinculados al expediente creado por el escenario.
+ */
+export async function prepareHappyPathPreconditions(
+  caseId: number,
+  expectedTenantId: string,
+  customConnStr?: string
+) {
+  const connStr = customConnStr || process.env.DATABASE_URL || 'postgresql://test_user:test_password@db-test:5432/test_db';
+
+  // 1. Validar conexión al servicio autorizado de pruebas y no a un host arbitrario
+  let parsedUrl: URL;
+  try {
+    parsedUrl = new URL(connStr);
+  } catch {
+    throw new Error(`ABORT: Invalid database connection URL: ${connStr}`);
+  }
+  const authorizedHosts = ['db-test', 'localhost', '127.0.0.1'];
+  if (!authorizedHosts.includes(parsedUrl.hostname)) {
+    throw new Error(`ABORT: Database safety check failed. Unauthorized host '${parsedUrl.hostname}', strictly expected one of: ${authorizedHosts.join(', ')}`);
+  }
+
+  const dbClient = new Client({ connectionString: connStr });
+  await dbClient.connect();
+
+  try {
+    // 2. Comprobar current_database() = 'test_db'
+    const dbCheck = await dbClient.query('SELECT current_database() as db;');
+    if (dbCheck.rows[0]?.db !== 'test_db') {
+      throw new Error(`ABORT: Database safety check failed. Connected to '${dbCheck.rows[0]?.db}', strictly expected 'test_db'.`);
+    }
+
+    // 3. Validar que el expediente pertenece al tenant esperado
+    const caseCheck = await dbClient.query(
+      'SELECT id, tenant_id FROM case_files WHERE id = $1 AND tenant_id = $2;',
+      [caseId, expectedTenantId]
+    );
+    if (caseCheck.rows.length === 0) {
+      throw new Error(`ABORT: Security guard failed. Case ${caseId} does not belong to expected tenant '${expectedTenantId}' or does not exist.`);
+    }
+
+    // 4. Localizar ÚNICAMENTE la oferta y proveedor del expediente creado y tenant esperado
+    const offRes = await dbClient.query(`
+      SELECT so.id as offer_id, so.supplier_id
+      FROM supplier_offers so
+      JOIN case_files cf ON cf.id = so.case_id
+      WHERE so.case_id = $1 AND cf.tenant_id = $2
+      ORDER BY so.id DESC LIMIT 1;
+    `, [caseId, expectedTenantId]);
+
+    if (offRes.rows.length === 0) {
+      throw new Error(`ABORT: No supplier offer found for case ${caseId} and tenant '${expectedTenantId}'.`);
+    }
+
+    const { offer_id: offerId, supplier_id: supplierId } = offRes.rows[0];
+
+    // 5. Validar que el proveedor pertenece al tenant esperado
+    const supCheck = await dbClient.query(
+      'SELECT id FROM suppliers WHERE id = $1 AND tenant_id = $2;',
+      [supplierId, expectedTenantId]
+    );
+    if (supCheck.rows.length === 0) {
+      throw new Error(`ABORT: Supplier ${supplierId} does not belong to expected tenant '${expectedTenantId}'.`);
+    }
+
+    // 6. Configurar perfil verificado y registrar evidencia técnica sintética para la oferta
+    await dbClient.query(`
+      INSERT INTO supplier_profiles (supplier_id, validation_status)
+      VALUES ($1, 'VERIFIED')
+      ON CONFLICT (supplier_id) DO UPDATE SET validation_status = 'VERIFIED';
+    `, [supplierId]);
+
+    const evRes = await dbClient.query(`
+      INSERT INTO offer_evidences (supplier_offer_id, document_type, fragment, confidence, page)
+      VALUES ($1, 'FICHA_TECNICA', 'Cumplimiento conforme de especificaciones tecnicas computadoras', 0.99, 1)
+      RETURNING id;
+    `, [offerId]);
+
+    const insertedEvidenceId = evRes.rows[0]?.id;
+
+    return {
+      offerId,
+      supplierId,
+      insertedEvidenceId,
+      cleanup: async () => {
+        try {
+          if (insertedEvidenceId) {
+            await dbClient.query('DELETE FROM offer_evidences WHERE id = $1;', [insertedEvidenceId]);
+          }
+        } finally {
+          await dbClient.end();
+        }
+      }
+    };
+  } catch (err) {
+    await dbClient.end();
+    throw err;
+  }
+}
 
 test.describe('Document Intelligence E2E - Happy Path', () => {
   test.beforeEach(async ({ page }) => {
@@ -18,91 +120,126 @@ test.describe('Document Intelligence E2E - Happy Path', () => {
     });
     test.setTimeout(120000);
 
-    // 1. Login
-    await page.fill('input[name="username"]', 'admin');
-    await page.fill('input[name="password"]', 'adminpassword');
-    await page.click('button[type="submit"]');
+    let preconditions: { cleanup: () => Promise<void> } | null = null;
 
-    // Verify successful login
-    await expect(page.locator('text=Expedientes').first()).toBeVisible({ timeout: 15000 });
+    try {
+      // 1. Login
+      await page.fill('input[name="username"]', 'admin');
+      await page.fill('input[name="password"]', 'adminpassword');
+      await page.click('button[type="submit"]');
 
-    // 2. Create Case
-    await page.click('button:has-text("Nuevo Expediente")');
-    await page.fill('input[name="title"]', 'E2E Test Case');
-    await page.selectOption('select[name="contract_type"]', 'bienes');
-    await expect(page.locator('select[name="contract_type"]')).toHaveValue('bienes');
-    const modal = page.locator('h2:has-text("Nuevo Expediente")').locator('..');
-    await expect(modal).toBeVisible();
-    const submitBtn = modal.getByRole('button', { name: 'Crear Expediente', exact: true });
-    await expect(submitBtn).toBeVisible();
-    await submitBtn.click();
+      // Verify successful login
+      await expect(page.locator('text=Expedientes').first()).toBeVisible({ timeout: 15000 });
 
-    // We should see it in the list and click it
-    await expect(page.locator('text=E2E Test Case').first()).toBeVisible({ timeout: 15000 });
-    await page.click('text=E2E Test Case');
+      // 2. Create Case
+      await page.click('button:has-text("Nuevo Expediente")');
+      await page.fill('input[name="title"]', 'E2E Test Case');
+      await page.selectOption('select[name="contract_type"]', 'bienes');
+      await expect(page.locator('select[name="contract_type"]')).toHaveValue('bienes');
+      const modal = page.locator('h2:has-text("Nuevo Expediente")').locator('..');
+      await expect(modal).toBeVisible();
+      const submitBtn = modal.getByRole('button', { name: 'Crear Expediente', exact: true });
+      await expect(submitBtn).toBeVisible();
+      await submitBtn.click();
 
-    // 3. Upload Requirement with valid structural PDF
-    await page.click('button:has-text("Cargar requerimiento")');
-    await page.setInputFiles('input[type="file"][data-testid="upload-requirement"]', {
-      name: 'req.pdf',
-      mimeType: 'application/pdf',
-      buffer: Buffer.from(REQ_PDF_BASE64, 'base64')
-    });
-    await page.click('button:has-text("Subir PDF")');
+      // We should see it in the list and click it
+      await expect(page.locator('text=E2E Test Case').first()).toBeVisible({ timeout: 15000 });
+      await page.click('text=E2E Test Case');
 
-    // Check processing state
-    await expect(page.locator('text=Procesando requerimiento').first()).toBeVisible({ timeout: 15000 });
+      // Obtener el identificador real del expediente creado durante la propia prueba
+      await page.waitForURL(/\/expedientes\/\d+/, { timeout: 15000 });
+      const urlMatch = page.url().match(/\/expedientes\/(\d+)/);
+      if (!urlMatch) {
+        throw new Error(`Failed to extract caseId from URL: ${page.url()}`);
+      }
+      const currentCaseId = parseInt(urlMatch[1], 10);
+      expect(currentCaseId).toBeGreaterThan(0);
 
-    // 4. Esperar extracción y extraer requerimientos (V6)
-    // Wait for the button 'Extraer requerimientos' which appears when extraction_ready is true
-    await expect(page.locator('button:has-text("Extraer requerimientos")').first()).toBeVisible({ timeout: 90000 });
-    await page.click('button:has-text("Extraer requerimientos")');
-    await expect(page.locator('text=Requerimientos extra').and(page.locator('text=dos/verificados')).first()).toBeVisible({ timeout: 30000 });
+      // 3. Upload Requirement with valid structural PDF
+      await page.click('button:has-text("Cargar requerimiento")');
+      await page.setInputFiles('input[type="file"][data-testid="upload-requirement"]', {
+        name: 'req.pdf',
+        mimeType: 'application/pdf',
+        buffer: Buffer.from(REQ_PDF_BASE64, 'base64')
+      });
+      await page.click('button:has-text("Subir PDF")');
 
-    // Review and confirm
-    await page.click('button:has-text("Requerimiento")');
-    await expect(page.locator('text=Revisi').and(page.locator('text=Pendiente')).first()).toBeVisible({ timeout: 15000 });
-    const confirmButton = page.locator('button:has-text("Confirmar Revisi")').first();
-    await expect(confirmButton).toBeVisible({ timeout: 15000 });
-    await confirmButton.click();
-    await expect(page.locator('text=Revisi').and(page.locator('text=Confirmada')).first()).toBeVisible({ timeout: 15000 });
+      // Check processing state
+      await expect(page.locator('text=Procesando requerimiento').first()).toBeVisible({ timeout: 15000 });
 
-    // 5. Vincular Proveedor (V6)
-    await page.click('button:has-text("Proveedores")');
-    await page.click('button:has-text("Vincular Proveedor")');
-    await page.fill('input[name="ruc"]', '20123456789');
-    await page.fill('input[name="business_name"]', 'Proveedor E2E');
-    await page.click('button:has-text("Vincular")');
-    await expect(page.locator('text=Proveedor E2E').first()).toBeVisible({ timeout: 15000 });
+      // 4. Esperar extracción y extraer requerimientos (V6)
+      // Wait for the button 'Extraer requerimientos' which appears when extraction_ready is true
+      await expect(page.locator('button:has-text("Extraer requerimientos")').first()).toBeVisible({ timeout: 90000 });
+      await page.click('button:has-text("Extraer requerimientos")');
+      await expect(page.locator('text=Requerimientos extra').and(page.locator('text=dos/verificados')).first()).toBeVisible({ timeout: 30000 });
 
-    // 6. Subir Cotización en Ofertas (V6)
-    await page.click('button:has-text("Ofertas")');
-    await page.click('button:has-text("Editar")');
-    await page.setInputFiles('input[type="file"]', {
-      name: 'quot.pdf',
-      mimeType: 'application/pdf',
-      buffer: Buffer.from(QUOT_PDF_BASE64, 'base64')
-    });
-    await page.fill('input[name="price"]', '1500');
-    await page.selectOption('select[name="status"]', 'APPROVED');
-    await page.click('button:has-text("Guardar")');
-    await expect(page.locator('text=Oferta completada').first()).toBeVisible({ timeout: 15000 });
+      // Review and confirm
+      await page.click('button:has-text("Requerimiento")');
+      await expect(page.locator('text=Revisi').and(page.locator('text=Pendiente')).first()).toBeVisible({ timeout: 15000 });
+      const confirmButton = page.locator('button:has-text("Confirmar Revisi")').first();
+      await expect(confirmButton).toBeVisible({ timeout: 15000 });
+      await confirmButton.click();
+      await expect(page.locator('text=Revisi').and(page.locator('text=Confirmada')).first()).toBeVisible({ timeout: 15000 });
 
-    // 7. Evaluar Oferta (V6)
-    await page.click('button:has-text("Evaluaci")');
-    await page.click('button:has-text("Evaluar Oferta")');
-    await expect(page.locator('text=Resultados de Requisitos').first()).toBeVisible({ timeout: 60000 });
+      // 5. Vincular Proveedor (V6)
+      await page.click('button:has-text("Proveedores")');
+      await page.click('button:has-text("Vincular Proveedor")');
+      await page.fill('input[name="ruc"]', '20123456789');
+      await page.fill('input[name="business_name"]', 'Proveedor E2E');
+      await page.click('button:has-text("Vincular")');
+      await expect(page.locator('text=Proveedor E2E').first()).toBeVisible({ timeout: 15000 });
 
-    // 8. Proponer Selección (V6)
-    await page.click('button:has-text("Selecci")');
-    await page.click('button:has-text("Proponer Selecci")');
-    await expect(page.locator('text=Selecci').and(page.locator('text=Propuesta')).first()).toBeVisible({ timeout: 15000 });
+      // 6. Subir Cotización en Ofertas (V6)
+      await page.click('button:has-text("Ofertas")');
+      await page.click('button:has-text("Editar")');
+      await page.setInputFiles('input[type="file"]', {
+        name: 'quot.pdf',
+        mimeType: 'application/pdf',
+        buffer: Buffer.from(QUOT_PDF_BASE64, 'base64')
+      });
+      await page.fill('input[name="price"]', '1500');
+      await page.selectOption('select[name="status"]', 'APPROVED');
+      await page.click('button:has-text("Guardar")');
+      await expect(page.locator('text=Oferta completada').first()).toBeVisible({ timeout: 15000 });
 
-    // 9. Adjudicar (V6)
-    await page.click('button:has-text("Resultado")');
-    await page.click('button:has-text("Aprobar y Adjudicar")');
-    await expect(page.locator('text=Expediente Adjudicado').first()).toBeVisible({ timeout: 15000 });
+      // 6.1 Precondición P11 aislada: Establecer perfil verificado del proveedor y vincular evidencia técnica válida
+      preconditions = await prepareHappyPathPreconditions(currentCaseId, 'mega_tenant');
+
+      // 7. Evaluar Oferta (V6)
+      await page.click('button:has-text("Evaluaci")');
+      await page.click('button:has-text("Evaluar Oferta")');
+      await expect(page.locator('text=Resultados de Requisitos').first()).toBeVisible({ timeout: 60000 });
+
+      // 8. Proponer Selección (V6)
+      await page.click('button:has-text("Selecci")');
+      await page.click('button:has-text("Proponer Selecci")');
+      await expect(page.locator('text=Propuesta de Selección Registrada').first()).toBeVisible({ timeout: 15000 });
+
+      // 9. Aprobación Interna Institucional (V6)
+      await page.click('button:has-text("Resultado")');
+      await page.click('button:has-text("Aprobar Propuesta de Selección")');
+      await expect(page.locator('text=Selección Aprobada Internamente').first()).toBeVisible({ timeout: 15000 });
+    } finally {
+      if (preconditions) {
+        await preconditions.cleanup();
+      }
+    }
+  });
+
+  test('guard: rechaza preparación cuando el expediente o tenant no coinciden o host no autorizado', async () => {
+    // 1. Expediente inexistente
+    await expect(prepareHappyPathPreconditions(-99999, 'mega_tenant')).rejects.toThrow(
+      /Security guard failed/
+    );
+
+    // 2. Tenant ajeno o incorrecto
+    await expect(prepareHappyPathPreconditions(1, 'unauthorized_foreign_tenant')).rejects.toThrow(
+      /Security guard failed/
+    );
+
+    // 3. Host arbitrario no autorizado
+    await expect(prepareHappyPathPreconditions(1, 'mega_tenant', 'postgresql://test_user:test_password@evil-host.com:5432/test_db')).rejects.toThrow(
+      /Unauthorized host/
+    );
   });
 });
-
-

@@ -17,6 +17,13 @@ def test_selection_propose_and_get(client: TestClient, db_session: Session, revi
 
     offer = db_session.query(SupplierOffer).filter_by(case_id=reviewed_case_file.id).first()
     offer.status = "SUBMITTED"
+    from app.models.v6.supplier_profile import SupplierProfile
+    prof = db_session.query(SupplierProfile).filter_by(supplier_id=offer.supplier_id).first()
+    if not prof:
+        prof = SupplierProfile(supplier_id=offer.supplier_id, validation_status="VERIFIED")
+        db_session.add(prof)
+    else:
+        prof.validation_status = "VERIFIED"
     db_session.commit()
 
     # Propose selection

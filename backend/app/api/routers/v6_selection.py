@@ -52,7 +52,8 @@ def propose_selection(
             supplier_offer_id=req.supplier_offer_id,
             justification=req.justification_comment,
             user_id=current_user.id,
-            tenant_id=current_user.tenant_id
+            tenant_id=current_user.tenant_id,
+            user_role=current_user.role
         )
         return {"case_id": case.id, "status": "UNDER_REVIEW"}
     except ValueError as e:
