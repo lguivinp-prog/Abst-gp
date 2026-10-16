@@ -8,6 +8,10 @@ from app.models.v6.supplier_selection import SupplierSelectionAttempt, SupplierS
 from app.models.v6.supplier_profile import SupplierProfile
 from app.models.v6.offer_evidence import OfferEvidence
 from app.models.v6.case_requirement_matrix import CaseRequirementMatrix
+from app.models.v6.offer_evaluation import OfferEvaluation
+from reportlab.lib.pagesizes import letter
+from reportlab.pdfgen import canvas
+import fitz
 
 def test_v6_full_document_pipeline(admin_client, db_session):
     # STEP 1 — LOGIN
@@ -134,14 +138,33 @@ def test_v6_full_document_pipeline(admin_client, db_session):
     db_session.refresh(profile)
     assert profile.validation_status == "VERIFIED"
 
-    # STEP 7 — OFFER DOCUMENT UPLOAD
-    with open(pdf_path, "rb") as f:
-        offer_content = f.read()
+    # STEP 7 — SYNTHETIC OFFER DOCUMENT GENERATION AND UPLOAD (INDEPENDENT SOURCE)
+    offer_pdf_buffer = io.BytesIO()
+    c = canvas.Canvas(offer_pdf_buffer, pagesize=letter)
+    c.setFont("Helvetica-Bold", 12)
+    c.drawString(50, 750, "OFERTA TECNICA Y ECONOMICA - E2E TEST SUPPLIER SAC")
+    c.setFont("Helvetica", 10)
+    c.drawString(50, 720, "Item 1: Tinta original para EPSON L14150 negro frasco 65-130 mL aprox.")
+    c.drawString(50, 700, "Item 2: Tinta original para EPSON L14150 cian frasco 65-130 mL estabilidad 100%")
+    c.drawString(50, 680, "Disponibilidad permanente para atencion y entrega de suministros urgentes.")
+    c.drawString(50, 660, "Plazo de entrega garantizado de 2 dias calendario posteriores a notificacion.")
+    c.drawString(50, 640, "Entrega sujeta a verificacion con sello de recepcion V B.")
+    c.save()
+    offer_pdf_bytes = offer_pdf_buffer.getvalue()
+
+    # Comprobar que la oferta es independiente del documento de requerimientos
+    assert offer_pdf_bytes != file_content, "La oferta sintética debe ser independiente del requerimiento"
+
+    # Extraer texto del PDF de oferta para verificar procedencia real de fragmentos
+    offer_doc_fitz = fitz.open(stream=offer_pdf_bytes, filetype="pdf")
+    extracted_offer_text = "".join(p.get_text() for p in offer_doc_fitz)
+    offer_doc_fitz.close()
+    assert "OFERTA TECNICA Y ECONOMICA" in extracted_offer_text
 
     resp = admin_client.post(
         f"/api/v6/cases/{case_id}/documents",
         data={"document_type": "oferta"},
-        files={"file": ("offer_doc.pdf", io.BytesIO(offer_content), "application/pdf")}
+        files={"file": ("synthetic_offer_e2e.pdf", io.BytesIO(offer_pdf_bytes), "application/pdf")}
     )
     assert resp.status_code == 200, resp.text
     offer_doc_data = resp.json()
@@ -159,7 +182,7 @@ def test_v6_full_document_pipeline(admin_client, db_session):
     offer_update = {
         "price": 500.00,
         "currency": "PEN",
-        "source_document": "offer_doc.pdf",
+        "source_document": "synthetic_offer_e2e.pdf",
         "document_ids": [offer_doc_id],
         "status": "EVALUATED",
         "items": offer_items
@@ -196,46 +219,178 @@ def test_v6_full_document_pipeline(admin_client, db_session):
     final_sel = db_session.query(SupplierSelectionFinal).filter_by(case_id=case_id).first()
     assert final_sel is None, "No debe existir SupplierSelectionFinal"
 
-    # STEP 9C — RELACIONAR EVIDENCIAS DOCUMENTALES REALES DE LA OFERTA
+    # STEP 9C — RELACIONAR EVIDENCIAS DOCUMENTALES REALES DE LA OFERTA SINTÉTICA
     matrix_reqs = db_session.query(CaseRequirementMatrix).filter_by(case_id=case_id).all()
     assert len(matrix_reqs) > 0, "Debe existir al menos un requisito en la matriz"
 
-    evidence = OfferEvidence(
+    frag_supplies = "Disponibilidad permanente para atencion y entrega de suministros urgentes."
+    frag_delivery = "Plazo de entrega garantizado de 2 dias calendario posteriores a notificacion."
+    frag_reception = "Entrega sujeta a verificacion con sello de recepcion V B."
+    frag_items = "Item 1: Tinta original para EPSON L14150 negro frasco 65-130 mL aprox."
+
+    # Comprobar procedencia documental de cada fragmento frente al texto del PDF de oferta
+    for frag in [frag_supplies, frag_delivery, frag_reception, frag_items]:
+        assert frag in extracted_offer_text, f"Fragmento no coincide con el texto extraído del PDF de oferta: {frag}"
+
+    ev_supplies = OfferEvidence(
         supplier_offer_id=offer_id,
         document_id=offer_doc_id,
-        document_type="FICHA_TECNICA",
-        fragment="Cumplimiento conforme de especificaciones técnicas",
-        confidence=0.99,
+        document_type="OFERTA_TECNICA",
+        fragment=frag_supplies,
+        confidence=0.98,
         page=1
     )
-    db_session.add(evidence)
+    ev_delivery = OfferEvidence(
+        supplier_offer_id=offer_id,
+        document_id=offer_doc_id,
+        document_type="OFERTA_TECNICA",
+        fragment=frag_delivery,
+        confidence=0.98,
+        page=1
+    )
+    ev_reception = OfferEvidence(
+        supplier_offer_id=offer_id,
+        document_id=offer_doc_id,
+        document_type="OFERTA_TECNICA",
+        fragment=frag_reception,
+        confidence=0.98,
+        page=1
+    )
+    ev_items = OfferEvidence(
+        supplier_offer_id=offer_id,
+        document_id=offer_doc_id,
+        document_type="OFERTA_TECNICA",
+        fragment=frag_items,
+        confidence=0.98,
+        page=1
+    )
+    db_session.add_all([ev_supplies, ev_delivery, ev_reception, ev_items])
     db_session.commit()
 
     for req in matrix_reqs:
+        desc_lower = (req.description or "").lower()
+        if "suministros" in desc_lower or "impresoras" in desc_lower:
+            target_evidence = ev_supplies
+        elif "plazo" in desc_lower or "entrega" in desc_lower or "dias" in desc_lower:
+            target_evidence = ev_delivery
+        elif "sello" in desc_lower or "recepcion" in desc_lower:
+            target_evidence = ev_reception
+        else:
+            target_evidence = ev_items
+
         link_resp = admin_client.post(
             f"/api/v6/cases/{case_id}/offers/{offer_id}/requirements/{req.id}/evidence",
-            json={"offer_evidence_id": evidence.id}
+            json={"offer_evidence_id": target_evidence.id}
         )
         assert link_resp.status_code == 200, link_resp.text
         link_id = link_resp.json()["id"]
         rev_resp = admin_client.put(
             f"/api/v6/cases/{case_id}/evidence/{link_id}/review",
-            json={"verification_status": "VERIFIED", "review_notes": "Conforme con especificaciones técnicas"}
+            json={
+                "verification_status": "VERIFIED",
+                "review_notes": f"Verificación conforme de evidencia documental para requisito {req.id}"
+            }
         )
         assert rev_resp.status_code == 200, rev_resp.text
 
-    # STEP 9D — RE-EVALUACIÓN REAL CON EVIDENCIAS
+    # STEP 9D — RE-EVALUACIÓN AUTOMÁTICA Y VERIFICACIÓN DE REQUIERE_REVISION
     resp = admin_client.post(f"/api/v6/cases/{case_id}/offers/{offer_id}/evaluate")
     assert resp.status_code == 200, resp.text
     eval_post = resp.json()
     assert len(eval_post) > 0
+
+    # Comprobar que la evaluación automática es no concluyente cuando corresponde
+    supplies_eval = next((e for e in eval_post if "suministros" in (e.get("requirement_description") or "").lower()), None)
+    assert supplies_eval is not None, "Debe existir evaluación para el requisito de suministros"
+    assert supplies_eval["status"] == "REQUIERE_REVISION", (
+        f"El motor debe devolver legítimamente REQUIERE_REVISION para el requisito de suministros contextual: {supplies_eval}"
+    )
+
+    unresolved_evals = [e for e in eval_post if e["status"] == "REQUIERE_REVISION"]
+    assert len(unresolved_evals) > 0, "Debe existir al menos un requisito en REQUIERE_REVISION antes de revisión humana"
+
+    # STEP 9E — PRUEBA NEGATIVA: BLOQUEO DE SELECCIÓN CON REQUIERE_REVISION ANTES DE REVISIÓN HUMANA
+    neg_sel_payload = {
+        "supplier_offer_id": offer_id,
+        "justification_comment": "Intento de selección mientras persisten requisitos en REQUIERE_REVISION"
+    }
+    neg_resp = admin_client.post(f"/api/v6/cases/{case_id}/selection", json=neg_sel_payload)
+    assert neg_resp.status_code == 400, f"Debe rechazarse la selección con requisitos en REQUIERE_REVISION: {neg_resp.text}"
+    assert "pending mandatory evaluations" in neg_resp.text.lower() or "ineligible" in neg_resp.text.lower()
+
+    # Comprobar que no hubo mutación de SupplierSelectionAttempt, SupplierSelectionFinal ni workflow
+    attempts_review = db_session.query(SupplierSelectionAttempt).filter_by(case_id=case_id).all()
+    assert len(attempts_review) == 0, "No debe registrarse SupplierSelectionAttempt con evaluaciones pendientes"
+
+    workflow_review = db_session.query(CaseWorkflow).filter_by(case_id=case_id).first()
+    assert workflow_review is None or workflow_review.status != "UNDER_REVIEW", "El workflow no debe estar en UNDER_REVIEW"
+
+    final_review = db_session.query(SupplierSelectionFinal).filter_by(case_id=case_id).first()
+    assert final_review is None, "No debe existir SupplierSelectionFinal antes de decisión humana"
+
+    sel_get = admin_client.get(f"/api/v6/cases/{case_id}/selection")
+    assert sel_get.status_code == 200
+    assert sel_get.json() is None
+
+    # STEP 9F — REVISIÓN TÉCNICA HUMANA MOTIVADA Y AUDITADA MEDIANTE ENDPOINT AUTORIZADO
     for ev in eval_post:
-        assert ev["status"] in ["PASSED", "IMPROVEMENT"], f"Evaluación no conforme: {ev}"
+        if ev["status"] == "REQUIERE_REVISION":
+            desc = ev.get("requirement_description", "")
+            if "suministros" in desc.lower():
+                explanation = (
+                    "Acreditación técnica humana motivada: Se verifica en la oferta técnica la disponibilidad permanente "
+                    "de stock y atención de suministros urgentes para la operatividad de las oficinas."
+                )
+            elif "plazo" in desc.lower() or "entrega" in desc.lower():
+                explanation = (
+                    "Acreditación técnica humana motivada: El plazo de entrega ofertado de 2 días calendario satisface "
+                    "plenamente el requerimiento institucional."
+                )
+            elif "sello" in desc.lower() or "recepcion" in desc.lower():
+                explanation = (
+                    "Acreditación técnica humana motivada: La recepción de los bienes se encuentra conforme con la "
+                    "verificación en almacén y sello de recepción institucional."
+                )
+            else:
+                explanation = (
+                    f"Acreditación técnica humana motivada con sustento en la oferta técnica del proveedor para: {desc}"
+                )
+
+            update_payload = {
+                "status": "PASSED",
+                "explanation": explanation
+            }
+            put_resp = admin_client.put(
+                f"/api/v6/cases/{case_id}/evaluations/{ev['id']}",
+                json=update_payload
+            )
+            assert put_resp.status_code == 200, f"Fallo al actualizar evaluación {ev['id']}: {put_resp.text}"
+            ev_updated = put_resp.json()
+            assert ev_updated["status"] == "PASSED"
+            assert ev_updated["validated_by"] is not None, "validated_by debe estar persistido"
+            assert ev_updated["validated_at"] is not None, "validated_at debe estar persistido"
+
+            # Verificar auditoría de la decisión humana
+            audit_entry = db_session.query(AuditLog).filter_by(
+                action="UPDATE_EVALUATION",
+                entity_id=str(ev["id"])
+            ).first()
+            assert audit_entry is not None, f"Debe existir registro de auditoría para evaluación {ev['id']}"
+            assert audit_entry.status == "SUCCESS"
+
+    # STEP 9G — VERIFICAR QUE TODOS LOS REQUISITOS OBLIGATORIOS ESTÉN ACREDITADOS SIN SOBRESCRITURA
+    get_evals_resp = admin_client.get(f"/api/v6/cases/{case_id}/offers/{offer_id}/evaluations")
+    assert get_evals_resp.status_code == 200
+    final_evals_list = get_evals_resp.json()
+    assert len(final_evals_list) > 0
+    for fe in final_evals_list:
+        assert fe["status"] in ["PASSED", "IMPROVEMENT"], f"Evaluación no conforme antes de selección: {fe}"
+        assert fe["validated_by"] is not None or (fe.get("evaluation_confidence") or 0) >= 0.85
 
     # STEP 10 — SELECTION CONFORME MEDIANTE API REAL
     selection_payload = {
         "supplier_offer_id": offer_id,
-        "justification_comment": "Oferta conforme con evidencia documental técnica y mejor precio"
+        "justification_comment": "Oferta conforme con evidencia documental técnica, revisión humana motivada y mejor precio"
     }
     resp = admin_client.post(f"/api/v6/cases/{case_id}/selection", json=selection_payload)
     assert resp.status_code == 200, resp.text
@@ -269,6 +424,14 @@ def test_v6_full_document_pipeline(admin_client, db_session):
 
     audits = db_session.query(AuditLog).filter_by(entity_id=str(case_id)).all()
     assert len(audits) > 0, "Deben existir eventos de auditoría para el expediente"
+
+    # Comprobar ausencia de reevaluación automática posterior que sobrescriba la decisión humana
+    terminal_evals = db_session.query(OfferEvaluation).filter_by(supplier_offer_id=offer_id).all()
+    assert len(terminal_evals) > 0
+    for te in terminal_evals:
+        assert te.status in ["PASSED", "IMPROVEMENT"]
+        if te.validated_by is not None:
+            assert te.validated_at is not None
 
     # Verify entity chain consistency (no hardcoded DB IDs)
     assert result_data["case_id"] == case_id
