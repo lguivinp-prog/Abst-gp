@@ -64,8 +64,11 @@ def run_e2e_seed():
             print("E2E User 'admin' created.")
         else:
             admin_user.password_hash = hashed
+            admin_user.failed_login_count = 0
+            admin_user.locked_until = None
+            admin_user.is_active = True
             db.commit()
-            print("E2E User 'admin' already exists. Password hash updated.")
+            print("E2E User 'admin' already exists. Password hash updated and account unlocked.")
 
     except Exception as e:
         db.rollback()

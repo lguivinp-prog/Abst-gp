@@ -16,3 +16,9 @@ class OfferEvidence(Base):
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     
     offer = relationship("SupplierOffer", backref="evidences")
+    requirement_associations = relationship(
+        "OfferRequirementEvidence",
+        back_populates="evidence",
+        cascade="all, delete-orphan",
+        passive_deletes=True
+    )

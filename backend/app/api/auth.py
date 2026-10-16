@@ -121,8 +121,8 @@ def verify_case_access(case_id: int, current_user: User = Depends(get_current_ac
         CaseFile.tenant_id == current_user.tenant_id
     )
     
-    # Implicitly filter by user if not ADMIN
-    if current_user.role != "ADMIN":
+    # Implicitly filter by user if not ADMIN or SUPERVISOR
+    if current_user.role not in ["ADMIN", "SUPERVISOR"]:
         case_query = case_query.filter(CaseFile.assigned_to_user_id == current_user.id)
         
     case = case_query.first()

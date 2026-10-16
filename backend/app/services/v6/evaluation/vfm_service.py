@@ -80,8 +80,64 @@ class ValueForMoneyService:
 
                 # Únicamente los estados positivos expresamente aceptados por el contrato funcional acreditan cumplimiento
                 non_compliant = [e for e in eval_map.values() if e.status not in {"PASSED", "IMPROVEMENT", "CUMPLE", "CUMPLE_Y_MEJORA"}]
+
+                # CORRECCIÓN 3: Cerrar el bypass de VFM mediante régimen explícito y persistente
+                from app.models.domain import CaseFile, UploadedDocument
+                from app.models.v6.offer_requirement_evidence import OfferRequirementEvidence
+                from app.models.v6.offer_evidence import OfferEvidence
+
+                case_obj = self.db.query(CaseFile).filter_by(id=case_id).first()
+                traceability_regime = getattr(case_obj, "traceability_regime", "P12_STRICT") or "P12_STRICT"
+
+                # Delimitar retrocompatibilidad histórica (Punto 2)
+                # Mantener consulta y preservación de expedientes históricos con decisiones terminales pasadas.
+                # Para todo expediente nuevo o decisión posterior (nueva oferta, nueva propuesta), exigir trazabilidad estricta.
+                is_terminal_historical = False
+                if traceability_regime == "HISTORICAL_P11":
+                    if case_obj and case_obj.status in ["APPROVED", "COMPLETED"]:
+                        is_terminal_historical = True
+                    else:
+                        from app.models.v6.supplier_selection import SupplierSelectionFinal
+                        if self.db.query(SupplierSelectionFinal).filter_by(case_id=case_id).first():
+                            is_terminal_historical = True
+
+                requires_strict_traceability = (traceability_regime == "P12_STRICT") or (not is_terminal_historical)
+                unbacked_positive = False
+
+                if requires_strict_traceability:
+                    for e in list(eval_map.values()):
+                        if e.status in {"PASSED", "IMPROVEMENT", "CUMPLE", "CUMPLE_Y_MEJORA"}:
+                            req_evs = self.db.query(OfferRequirementEvidence).filter_by(
+                                supplier_offer_id=offer.id,
+                                requirement_id=e.requirement_id,
+                                verification_status="VERIFIED"
+                            ).all()
+                            valid_count = 0
+                            for ev in req_evs:
+                                if not ev.offer_evidence_id or not ev.document_id:
+                                    continue
+                                oe = self.db.query(OfferEvidence).filter_by(id=ev.offer_evidence_id, supplier_offer_id=offer.id).first()
+                                if not oe:
+                                    continue
+                                doc = self.db.query(UploadedDocument).filter_by(id=ev.document_id, case_id=case_id).first()
+                                if not doc:
+                                    continue
+                                if oe.document_id is not None and oe.document_id != ev.document_id:
+                                    continue
+                                if not ev.fragment or not ev.fragment.strip():
+                                    continue
+                                valid_count += 1
+
+                            if valid_count == 0:
+                                unbacked_positive = True
+                                if e not in non_compliant:
+                                    non_compliant.append(e)
+
                 if non_compliant:
-                    if any(e.status in ["FAILED", "REJECTED", "NO_CUMPLE"] for e in non_compliant):
+                    if unbacked_positive:
+                        reason = "MISSING_DATA_MANDATORY_REQUIREMENTS"
+                        is_eval = True
+                    elif any(e.status in ["FAILED", "REJECTED", "NO_CUMPLE"] for e in non_compliant):
                         reason = "FAILED_MANDATORY_REQUIREMENTS"
                         is_eval = True
                     elif any(e.status == "CONFLICT" for e in non_compliant):
@@ -92,6 +148,9 @@ class ValueForMoneyService:
                         is_eval = True
                     elif any(e.status == "OBSERVED" for e in non_compliant):
                         reason = "OBSERVED_MANDATORY_REQUIREMENTS"
+                        is_eval = True
+                    elif any(e.status in ["REQUIERE_REVISION", "PENDING_REVIEW"] for e in non_compliant):
+                        reason = "REQUIRES_REVIEW_MANDATORY_REQUIREMENTS"
                         is_eval = True
                     elif any(e.status in ["PENDING", None, ""] for e in non_compliant):
                         reason = "MANDATORY_EVALUATIONS_PENDING"

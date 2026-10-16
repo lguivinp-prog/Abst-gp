@@ -213,7 +213,7 @@ class SelectionService:
                     raise ValueError("Cannot propose an ineligible offer: Mandatory requirement evaluation has missing data (MISSING_DATA).")
                 elif reason == "OBSERVED_MANDATORY_REQUIREMENTS":
                     raise ValueError("Cannot propose an ineligible offer: Mandatory requirement evaluation has unresolved observations (OBSERVED).")
-                elif reason in ("MANDATORY_EVALUATIONS_PENDING", "UNRESOLVED_MANDATORY_REQUIREMENTS"):
+                elif reason in ("MANDATORY_EVALUATIONS_PENDING", "UNRESOLVED_MANDATORY_REQUIREMENTS", "REQUIRES_REVIEW_MANDATORY_REQUIREMENTS"):
                     raise ValueError("Cannot propose an offer with pending mandatory evaluations.")
                 elif reason == "INCOMPATIBLE_CURRENCIES_NO_CONVERSION_RULE":
                     raise ValueError("Cannot propose offer: Incompatible currencies in case without conversion rule.")

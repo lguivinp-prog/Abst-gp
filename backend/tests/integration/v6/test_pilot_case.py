@@ -46,6 +46,19 @@ def test_pilot_case_execution(admin_client: TestClient, db_session: Session, set
     db_session.add(evidence)
     db_session.commit()
 
+    # Link and verify requirement evidence (P12 traceability)
+    link_res = admin_client.post(
+        f"/api/v6/cases/{case.id}/offers/{offer.id}/requirements/{req.id}/evidence",
+        json={"offer_evidence_id": evidence.id}
+    )
+    assert link_res.status_code == 200
+    link_id = link_res.json()["id"]
+    rev_res = admin_client.put(
+        f"/api/v6/cases/{case.id}/evidence/{link_id}/review",
+        json={"verification_status": "VERIFIED", "review_notes": "Acreditado para piloto"}
+    )
+    assert rev_res.status_code == 200
+
     # 5. Evaluate Offer
     eval_res = admin_client.post(f"/api/v6/cases/{case.id}/offers/{offer.id}/evaluate")
     assert eval_res.status_code == 200

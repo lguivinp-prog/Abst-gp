@@ -29,6 +29,7 @@ from .supplier_offer_item import SupplierOfferItem
 from .supplier_offer_contract_term import SupplierOfferContractTerm
 from .evaluation_factor import EvaluationFactor
 from .contractual_condition import ContractualCondition
+from .offer_requirement_evidence import OfferRequirementEvidence
 
 __all__ = [
     "CaseRequirementMatrix", "Supplier", "SupplierOffer", "RequirementEvidence", 
@@ -42,5 +43,6 @@ __all__ = [
     "TenantConfiguration", "TenantConfigurationHistory",
     "StructuredTable", "StructuredRow", "StructuredCell",
     "CaseProcurementItem", "SupplierOfferItem",
-    "SupplierOfferContractTerm", "EvaluationFactor", "ContractualCondition"
+    "SupplierOfferContractTerm", "EvaluationFactor", "ContractualCondition",
+    "OfferRequirementEvidence"
 ]

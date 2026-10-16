@@ -211,6 +211,19 @@ def test_v6_full_document_pipeline(admin_client, db_session):
     db_session.add(evidence)
     db_session.commit()
 
+    for req in matrix_reqs:
+        link_resp = admin_client.post(
+            f"/api/v6/cases/{case_id}/offers/{offer_id}/requirements/{req.id}/evidence",
+            json={"offer_evidence_id": evidence.id}
+        )
+        assert link_resp.status_code == 200, link_resp.text
+        link_id = link_resp.json()["id"]
+        rev_resp = admin_client.put(
+            f"/api/v6/cases/{case_id}/evidence/{link_id}/review",
+            json={"verification_status": "VERIFIED", "review_notes": "Conforme con especificaciones técnicas"}
+        )
+        assert rev_resp.status_code == 200, rev_resp.text
+
     # STEP 9D — RE-EVALUACIÓN REAL CON EVIDENCIAS
     resp = admin_client.post(f"/api/v6/cases/{case_id}/offers/{offer_id}/evaluate")
     assert resp.status_code == 200, resp.text

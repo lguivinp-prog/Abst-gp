@@ -1,10 +1,13 @@
 from app.models.base import Base
-from sqlalchemy import Column, Integer, String, DateTime, ForeignKey, Float, Text
+from sqlalchemy import Column, Integer, String, DateTime, ForeignKey, Float, Text, UniqueConstraint
 from sqlalchemy.sql import func
 from sqlalchemy.orm import relationship
 
 class OfferEvaluation(Base):
     __tablename__ = "offer_evaluations"
+    __table_args__ = (
+        UniqueConstraint("supplier_offer_id", "requirement_id", name="uq_offer_evaluations_offer_req"),
+    )
     
     id = Column(Integer, primary_key=True, index=True)
     supplier_offer_id = Column(Integer, ForeignKey("supplier_offers.id", ondelete="CASCADE"), nullable=False, index=True)

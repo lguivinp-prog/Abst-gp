@@ -36,6 +36,19 @@ def test_full_v6_end_to_end_flow(admin_client: TestClient, db_session: Session, 
     db_session.add(ev)
     db_session.commit()
 
+    # Link and verify requirement evidence (P12 traceability)
+    link_res = admin_client.post(
+        f"/api/v6/cases/{case.id}/offers/{offer.id}/requirements/{req.id}/evidence",
+        json={"offer_evidence_id": ev.id}
+    )
+    assert link_res.status_code == 200
+    link_id = link_res.json()["id"]
+    rev_res = admin_client.put(
+        f"/api/v6/cases/{case.id}/evidence/{link_id}/review",
+        json={"verification_status": "VERIFIED", "review_notes": "Acreditado tecnicamente"}
+    )
+    assert rev_res.status_code == 200
+
     # 5. Trigger Validation
     val_res = admin_client.post(f"/api/v6/cases/{case.id}/suppliers/{supplier.id}/validations", json={"source": "SUNAT"})
     assert val_res.status_code == 200
