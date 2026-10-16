@@ -1,5 +1,29 @@
 import { test, expect } from '@playwright/test';
 import { Client } from 'pg';
+import zlib from 'zlib';
+
+/**
+ * Extrae texto legible a partir de los streams de un archivo PDF sintético en buffer
+ */
+function extractPdfText(pdfBuffer: Buffer): string {
+  const content = pdfBuffer.toString('binary');
+  const streamRegex = /stream\r?\n([\s\S]*?)\r?\nendstream/g;
+  let match: RegExpExecArray | null;
+  let fullText = '';
+  while ((match = streamRegex.exec(content)) !== null) {
+    let streamStr = '';
+    try {
+      streamStr = zlib.inflateSync(Buffer.from(match[1], 'binary')).toString('utf8');
+    } catch {
+      streamStr = match[1];
+    }
+    const decoded = streamStr.replace(/<([0-9a-fA-F]+)>/g, (_, hex) =>
+      Buffer.from(hex, 'hex').toString('utf8')
+    );
+    fullText += decoded + '\n';
+  }
+  return fullText;
+}
 
 // Base64 valid PDF buffers with structural sections conforming to DocumentExtractionAgent
 const REQ_PDF_BASE64 = 'JVBERi0xLjMKJZOMi54gUmVwb3J0TGFiIEdlbmVyYXRlZCBQREYgZG9jdW1lbnQgKG9wZW5zb3VyY2UpCjEgMCBvYmoKPDwKL0YxIDIgMCBSCj4+CmVuZG9iagoyIDAgb2JqCjw8Ci9CYXNlRm9udCAvSGVsdmV0aWNhIC9FbmNvZGluZyAvV2luQW5zaUVuY29kaW5nIC9OYW1lIC9GMSAvU3VidHlwZSAvVHlwZTEgL1R5cGUgL0ZvbnQKPj4KZW5kb2JqCjMgMCBvYmoKPDwKL0NvbnRlbnRzIDcgMCBSIC9NZWRpYUJveCBbIDAgMCA1OTUuMjc1NiA4NDEuODg5OCBdIC9QYXJlbnQgNiAwIFIgL1Jlc291cmNlcyA8PAovRm9udCAxIDAgUiAvUHJvY1NldCBbIC9QREYgL1RleHQgL0ltYWdlQiAvSW1hZ2VDIC9JbWFnZUkgXQo+PiAvUm90YXRlIDAgL1RyYW5zIDw8Cgo+PiAKICAvVHlwZSAvUGFnZQo+PgplbmRvYmoKNCAwIG9iago8PAovUGFnZU1vZGUgL1VzZU5vbmUgL1BhZ2VzIDYgMCBSIC9UeXBlIC9DYXRhbG9nCj4+CmVuZG9iago1IDAgb2JqCjw8Ci9BdXRob3IgKGFub255bW91cykgL0NyZWF0aW9uRGF0ZSAoRDoyMDI2MDkyNTE5NDA1MSswMCcwMCcpIC9DcmVhdG9yIChhbm9ueW1vdXMpIC9LZXl3b3JkcyAoKSAvTW9kRGF0ZSAoRDoyMDI2MDkyNTE5NDA1MSswMCcwMCcpIC9Qcm9kdWNlciAoUmVwb3J0TGFiIFBERiBMaWJyYXJ5IC0gXChvcGVuc291cmNlXCkpIAogIC9TdWJqZWN0ICh1bnNwZWNpZmllZCkgL1RpdGxlICh1bnRpdGxlZCkgL1RyYXBwZWQgL0ZhbHNlCj4+CmVuZG9iago2IDAgb2JqCjw8Ci9Db3VudCAxIC9LaWRzIFsgMyAwIFIgXSAvVHlwZSAvUGFnZXMKPj4KZW5kb2JqCjcgMCBvYmoKPDwKL0ZpbHRlciBbIC9BU0NJSTg1RGVjb2RlIC9GbGF0ZURlY29kZSBdIC9MZW5ndGggMTg3Cj4+CnN0cmVhbQpHYXMyQDRVXStcKGtoWV9NQXQqPmsldVY4YSthaiNENl5gazAjPW4rK2coSXVydTglbEs/MWs8R1A8KEMiT1l0QipbaGxbIitfKSgkZC5IO0kiXkstalJlaycmRDZGU2ZPSXBebzBxNCtVZkdNT3BtTWk7O1RpZWFeNFNBWmFFL1JTN2NCZj0pLj9xPkYqPDBURWxkKiVrL2w4KTBdU2M5PiFBKWRkV0NcWmBvYHVpIVlFJEY0U0NTdH4+ZW5kc3RyZWFtCmVuZG9iagp4cmVmCjAgOAowMDAwMDAwMDAwIDY1NTM1IGYgCjAwMDAwMDAwNjEgMDAwMDAgbiAKMDAwMDAwMDkwMiAwMDAwMCBuIAowMDAwMDAwMTk5IDAwMDAwIG4gCjAwMDAwMDA0MDIgMDAwMDAgbiAKMDAwMDAwMDQ3MCAwMDAwMCBuIAowMDAwMDAwNzMxIDAwMDAwIG4gCjAwMDAwMDA3OTAgMDAwMDAgbiAKdHJhaWxlcgo8PAovSUQgCls8OWE5YzVkNTEzMGQ4ZjVmZTAwZTEwMDE5OGU1N2JhNmU+PDlhOWM1ZDUxMzBkOGY1ZmUwMGUxMDAxOThlNTdiYTZlPl0KJSBSZXBvcnRMYWIgZ2VuZXJhdGVkIFBERiBkb2N1bWVudCAtLSBkaWdlc3QgKG9wZW5zb3VyY2UpCgovSW5mbyA1IDAgUgovUm9vdCA0IDAgUgovU2l6ZSA4Cj4+CnN0YXJ0eHJlZgoxMDY3CiUlRU9GCg==';
@@ -107,6 +131,9 @@ export async function prepareHappyPathPreconditions(
     }
     const mandatoryReqs = reqRes.rows;
 
+    // Extraer texto legible de la cotización para comprobación de presencia real
+    const quotationPdfText = extractPdfText(Buffer.from(QUOT_PDF_BASE64, 'base64'));
+
     // 9. Registrar OfferEvidence asociado al UploadedDocument real con fragmentos procedentes de la cotización
     const createdEvidences: Array<{
       evidenceId: number;
@@ -118,13 +145,23 @@ export async function prepareHappyPathPreconditions(
 
     for (const req of mandatoryReqs) {
       let fragment = '';
-      const descLower = req.description.toLowerCase();
+      const descLower = (req.description || '').toLowerCase();
       if (descLower.includes('computadoras') || descLower.includes('bienes')) {
         fragment = 'Suministro e instalacion de 10 Computadoras de escritorio modelo corporativo.';
       } else if (descLower.includes('cantidad') || descLower.includes('10')) {
         fragment = 'Cantidad: 10 unidades de Computadoras.';
       } else {
-        fragment = 'Cumplimiento conforme de especificaciones tecnicas: Computadoras de ultima generacion.';
+        // CORRECCIÓN 1: Eliminar el fallback genérico. Fallar explícitamente si no hay acreditación documental
+        throw new Error(
+          `ABORT: No documentary evidence corresponding to mandatory requirement '${req.description}' (id: ${req.id}) found in quotation PDF.`
+        );
+      }
+
+      // Comprobar estrictamente que el fragmento figura en el texto extraído del PDF cargado
+      if (!quotationPdfText.includes(fragment)) {
+        throw new Error(
+          `ABORT: Documentary fragment '${fragment}' for requirement '${req.description}' does not exist in quotation PDF text.`
+        );
       }
 
       const evInsert = await dbClient.query(`
@@ -152,15 +189,10 @@ export async function prepareHappyPathPreconditions(
       dbClient,
       cleanup: async () => {
         try {
-          // Teardown seguro dentro del entorno de pruebas respetando integridad referencial
-          await dbClient.query('DELETE FROM supplier_selection_final WHERE case_id = $1;', [caseId]);
-          await dbClient.query('DELETE FROM supplier_selection_attempts WHERE case_id = $1;', [caseId]);
-          await dbClient.query('DELETE FROM case_workflows WHERE case_id = $1;', [caseId]);
-          await dbClient.query('DELETE FROM offer_requirement_evidences WHERE case_id = $1;', [caseId]);
-          await dbClient.query('DELETE FROM offer_evaluations WHERE supplier_offer_id = $1;', [offerId]);
-          await dbClient.query('DELETE FROM offer_evidences WHERE supplier_offer_id = $1;', [offerId]);
-        } catch (cleanupErr) {
-          console.warn('Preconditions cleanup warning:', cleanupErr);
+          // CORRECCIÓN 2: Preservación del resultado terminal
+          // Dejar intacta la cadena terminal del expediente (APPROVED) dentro del entorno de pruebas
+          // hasta el teardown aislado del pipeline. No destruir selecciones finales, intentos,
+          // workflows ni evaluaciones.
         } finally {
           await dbClient.end();
         }
@@ -392,9 +424,32 @@ test.describe('Document Intelligence E2E - Happy Path', () => {
       expect(caseStatusCheck.rows[0]?.status).not.toBe('UNDER_REVIEW');
 
       // 7.2 Revisión Técnica Humana Fundamentada por Requisito vía PUT /api/v6/cases/{case_id}/evaluations/{eval_id}
+      // Resolver mediante PASSED única y exclusivamente aquellos requisitos que cuenten con acreditación técnica individual y motivada
       for (const ev of initialEvals) {
         const reqObj = preconditions.mandatoryReqs.find((r: any) => r.id === ev.requirement_id);
-        const reqDesc = reqObj?.description || `Requisito #${ev.requirement_id}`;
+        if (!reqObj) {
+          throw new Error(`Evaluación ${ev.id} corresponde a un requisito no identificado en la matriz.`);
+        }
+
+        // Localizar la evidencia documental verificada para este requisito específico
+        const matchedEv = preconditions.createdEvidences.find((e: any) => e.requirementId === ev.requirement_id);
+        if (!matchedEv) {
+          // Si no existe evidencia pertinente para el requisito, fallar explícitamente el test y no forzar PASSED
+          throw new Error(
+            `No existe acreditación técnica documental para el requisito obligatorio '${reqObj.description}' (id: ${ev.requirement_id}). No se puede aprobar.`
+          );
+        }
+
+        // Fundamentación individual y concreta por requisito, vinculada a la evidencia documental verídica
+        let motivation = '';
+        const descLower = (reqObj.description || '').toLowerCase();
+        if (descLower.includes('computadoras') || descLower.includes('bienes')) {
+          motivation = `Acreditación técnica individual para ${reqObj.description}: la cotización comercial ID ${matchedEv.documentId} (pág. ${matchedEv.page}) acredita de forma expresa el fragmento "${matchedEv.fragment}", cumpliendo íntegramente las especificaciones de computadoras de escritorio modelo corporativo.`;
+        } else if (descLower.includes('cantidad') || descLower.includes('10')) {
+          motivation = `Acreditación cuantitativa individual para ${reqObj.description}: la cotización comercial ID ${matchedEv.documentId} (pág. ${matchedEv.page}) acredita de forma expresa el fragmento "${matchedEv.fragment}", dando cumplimiento íntegro a la entrega de 10 unidades requeridas.`;
+        } else {
+          motivation = `Acreditación técnica individual para ${reqObj.description}: sustentada con evidencia documental verificada ID ${matchedEv.evidenceId} del documento fuente ID ${matchedEv.documentId}: "${matchedEv.fragment}".`;
+        }
 
         const humanReviewRes = await page.request.put(
           `/api/v6/cases/${currentCaseId}/evaluations/${ev.id}`,
@@ -405,7 +460,7 @@ test.describe('Document Intelligence E2E - Happy Path', () => {
             },
             data: {
               status: 'PASSED',
-              explanation: `Decisión técnica humana fundamentada para ${reqDesc}: las especificaciones técnicas y compromisos contenidos en la cotización comercial acreditada satisfacen íntegramente la necesidad institucional.`
+              explanation: motivation
             }
           }
         );
@@ -522,5 +577,83 @@ test.describe('Document Intelligence E2E - Happy Path', () => {
     await expect(prepareHappyPathPreconditions(1, 'mega_tenant', 'postgresql://test_user:test_password@evil-host.com:5432/test_db')).rejects.toThrow(
       /Unauthorized host/
     );
+
+    // 4. Verificación negativa adicional: cuando no existe fragmento documental pertinente, la prueba debe rechazar la preparación sin crear acreditación positiva
+    const connStr = process.env.DATABASE_URL || 'postgresql://test_user:test_password@db-test:5432/test_db';
+    const testDb = new Client({ connectionString: connStr });
+    await testDb.connect();
+    try {
+      // Crear caso sintético temporal
+      const tempCase = await testDb.query(`
+        INSERT INTO case_files (tenant_id, title, status, contract_type, created_at)
+        VALUES ('mega_tenant', 'Guard Test Case', 'WAITING_QUOTATION', 'bienes', NOW())
+        RETURNING id;
+      `);
+      const tempCaseId = tempCase.rows[0].id;
+
+      // Obtener o crear proveedor de prueba
+      let supplierId: number;
+      const supRes = await testDb.query(
+        "SELECT id FROM suppliers WHERE tenant_id = 'mega_tenant' LIMIT 1;"
+      );
+      if (supRes.rows.length > 0) {
+        supplierId = supRes.rows[0].id;
+      } else {
+        const newSup = await testDb.query(`
+          INSERT INTO suppliers (tenant_id, legal_name, tax_id, created_at)
+          VALUES ('mega_tenant', 'Proveedor Guard SAC', '20999888772', NOW())
+          RETURNING id;
+        `);
+        supplierId = newSup.rows[0].id;
+      }
+
+      // Crear oferta para el caso
+      const offRes = await testDb.query(`
+        INSERT INTO supplier_offers (case_id, supplier_id, status, evaluation_status, currency, created_at)
+        VALUES ($1, $2, 'RECEIVED', 'UNDER_REVIEW', 'PEN', NOW())
+        RETURNING id;
+      `, [tempCaseId, supplierId]);
+      const tempOfferId = offRes.rows[0].id;
+
+      // Subir documento de cotización sintético
+      await testDb.query(`
+        INSERT INTO uploaded_documents (case_id, original_filename, document_type, stored_path, mime_type, processing_status, created_at)
+        VALUES ($1, 'quot.pdf', 'oferta', '/app/uploads/guard_quot.pdf', 'application/pdf', 'COMPLETED', NOW());
+      `, [tempCaseId]);
+
+      // Insertar requisito obligatorio sin respaldo en la cotización
+      const dummyReq = await testDb.query(`
+        INSERT INTO case_requirement_matrices (case_id, requirement_type, description, mandatory, status, flows_to_contract, created_at)
+        VALUES ($1, 'TECHNICAL', 'Requisito No Contenido: Suministro de 500 Vehiculos Blindados', true, 'REVIEW_REQUIRED', false, NOW())
+        RETURNING id;
+      `, [tempCaseId]);
+      const dummyReqId = dummyReq.rows[0].id;
+
+      try {
+        await expect(prepareHappyPathPreconditions(tempCaseId, 'mega_tenant')).rejects.toThrow(
+          /No documentary evidence corresponding to mandatory requirement/
+        );
+
+        // Confirmar que no se creó ninguna evidencia positiva ni vinculación para este requisito sin sustento
+        const evCheck = await testDb.query(
+          'SELECT id FROM offer_requirement_evidences WHERE requirement_id = $1;',
+          [dummyReqId]
+        );
+        expect(evCheck.rows.length).toBe(0);
+
+        const offEvCheck = await testDb.query(
+          'SELECT id FROM offer_evidences WHERE supplier_offer_id = $1;',
+          [tempOfferId]
+        );
+        expect(offEvCheck.rows.length).toBe(0);
+      } finally {
+        await testDb.query('DELETE FROM case_requirement_matrices WHERE case_id = $1;', [tempCaseId]);
+        await testDb.query('DELETE FROM uploaded_documents WHERE case_id = $1;', [tempCaseId]);
+        await testDb.query('DELETE FROM supplier_offers WHERE id = $1;', [tempOfferId]);
+        await testDb.query('DELETE FROM case_files WHERE id = $1;', [tempCaseId]);
+      }
+    } finally {
+      await testDb.end();
+    }
   });
 });
