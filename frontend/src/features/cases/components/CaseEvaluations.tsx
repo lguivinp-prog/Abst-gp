@@ -10,12 +10,13 @@ import {
   List as ListIcon,
   Info,
   ShieldAlert,
-  FileText
+  FileText,
+  X
 } from 'lucide-react';
 import { Button } from '../../../components/ui/Button';
 import { Badge } from '../../../components/ui/Badge';
 import { evaluationService } from '../../../api/v6/evaluation.service';
-import type { EvaluationResponse } from '../../../api/v6/evaluation.types';
+import type { EvaluationResponse, RequirementEvidenceResponse } from '../../../api/v6/evaluation.types';
 import { offerService } from '../../../api/v6/offer.service';
 import type { SupplierOfferResponse } from '../../../api/v6/offer.types';
 import { requirementsService } from '../../../api/v6/requirements.service';
@@ -38,6 +39,18 @@ export const CaseEvaluations: React.FC<CaseEvaluationsProps> = ({ caseId }) => {
   const [isEvaluating, setIsEvaluating] = useState<number | null>(null);
   const [activeView, setActiveView] = useState<'matrix' | 'cards'>('cards');
   const userManuallyToggledViewRef = useRef<boolean>(false);
+
+  // P12: Modal de Trazabilidad y Verificación de Evidencia
+  const [selectedEvidenceCell, setSelectedEvidenceCell] = useState<{
+    offer: SupplierOfferResponse;
+    requirement: RequirementResponse;
+    evaluation?: EvaluationResponse;
+  } | null>(null);
+  const [cellEvidences, setCellEvidences] = useState<RequirementEvidenceResponse[]>([]);
+  const [loadingEvidence, setLoadingEvidence] = useState(false);
+  const [evidenceActionLoading, setEvidenceActionLoading] = useState<number | null>(null);
+  const [reviewNotes, setReviewNotes] = useState<{ [id: number]: string }>({});
+  const [reviewError, setReviewError] = useState<string | null>(null);
 
   const loadData = async () => {
     setLoading(true);
@@ -149,6 +162,65 @@ export const CaseEvaluations: React.FC<CaseEvaluationsProps> = ({ caseId }) => {
     });
   }, [comparedOffers, evaluations]);
 
+  const openEvidenceModal = async (offer: SupplierOfferResponse, req: RequirementResponse, evalItem?: EvaluationResponse) => {
+    setSelectedEvidenceCell({ offer, requirement: req, evaluation: evalItem });
+    setLoadingEvidence(true);
+    setReviewError(null);
+    try {
+      const data = await evaluationService.getRequirementEvidence(caseId, offer.id, req.id);
+      setCellEvidences(data);
+    } catch (err) {
+      setCellEvidences([]);
+    } finally {
+      setLoadingEvidence(false);
+    }
+  };
+
+  const closeEvidenceModal = () => {
+    setSelectedEvidenceCell(null);
+    setCellEvidences([]);
+    setReviewError(null);
+  };
+
+  const handleReviewEvidence = async (evidenceId: number, status: 'VERIFIED' | 'REJECTED' | 'OBSERVED') => {
+    setEvidenceActionLoading(evidenceId);
+    setReviewError(null);
+    try {
+      const notes = reviewNotes[evidenceId] || '';
+      await evaluationService.reviewRequirementEvidence(caseId, evidenceId, {
+        verification_status: status,
+        notes: notes.trim() ? notes : undefined
+      });
+      if (selectedEvidenceCell) {
+        const data = await evaluationService.getRequirementEvidence(caseId, selectedEvidenceCell.offer.id, selectedEvidenceCell.requirement.id);
+        setCellEvidences(data);
+      }
+      await loadData();
+    } catch (err) {
+      if (err instanceof AppError) {
+        setReviewError(err.message);
+      } else {
+        setReviewError('Error al actualizar la revisión de la evidencia.');
+      }
+    } finally {
+      setEvidenceActionLoading(null);
+    }
+  };
+
+  const getVerificationStatusBadge = (status: string) => {
+    switch (status) {
+      case 'VERIFIED':
+        return <Badge variant="success"><CheckCircle2 size={12} className="mr-1" /> Verificada</Badge>;
+      case 'REJECTED':
+        return <Badge variant="danger"><XCircle size={12} className="mr-1" /> Rechazada</Badge>;
+      case 'OBSERVED':
+        return <Badge variant="warning"><AlertTriangle size={12} className="mr-1" /> Observada</Badge>;
+      case 'PENDING':
+      default:
+        return <Badge variant="secondary"><Clock size={12} className="mr-1" /> Pendiente de revisión</Badge>;
+    }
+  };
+
   const getStatusBadge = (status: string) => {
     switch (status) {
       case 'PASSED':
@@ -158,6 +230,8 @@ export const CaseEvaluations: React.FC<CaseEvaluationsProps> = ({ caseId }) => {
       case 'CUMPLE_Y_MEJORA':
         return <Badge variant="success"><CheckCircle2 size={13} className="mr-1" /> Cumple y Mejora</Badge>;
       case 'CONFLICT':
+        return <Badge variant="danger"><AlertTriangle size={13} className="mr-1" /> Conflicto</Badge>;
+      case 'FAILED':
       case 'NO_CUMPLE':
         return <Badge variant="danger"><XCircle size={13} className="mr-1" /> No Cumple</Badge>;
       case 'MISSING_DATA':
@@ -357,7 +431,19 @@ export const CaseEvaluations: React.FC<CaseEvaluationsProps> = ({ caseId }) => {
                               {isIncomplete ? (
                                 <span className="text-gray-400 italic">Oferta incompleta</span>
                               ) : isUnevaluated ? (
-                                <span className="text-gray-400 italic">No evaluado</span>
+                                <div className="space-y-1.5">
+                                  <span className="text-gray-400 italic block">No evaluado</span>
+                                  <Button
+                                    size="sm"
+                                    variant="outline"
+                                    onClick={() => openEvidenceModal(offer, req, undefined)}
+                                    className="w-full text-[11px] py-1 flex items-center justify-center gap-1 text-blue-700 border-blue-200 hover:bg-blue-50"
+                                    data-testid={`btn-ver-evidencia-${offer.id}-${req.id}`}
+                                  >
+                                    <FileText size={12} />
+                                    Ver evidencia
+                                  </Button>
+                                </div>
                               ) : (
                                 <div className="space-y-1.5">
                                   <div>{getStatusBadge(ev.status)}</div>
@@ -374,6 +460,16 @@ export const CaseEvaluations: React.FC<CaseEvaluationsProps> = ({ caseId }) => {
                                       <span className="text-amber-700 font-semibold">⚠️ Revisión humana</span>
                                     )}
                                   </div>
+                                  <Button
+                                    size="sm"
+                                    variant="outline"
+                                    onClick={() => openEvidenceModal(offer, req, ev)}
+                                    className="w-full mt-1.5 text-[11px] py-1 flex items-center justify-center gap-1 text-blue-700 border-blue-200 hover:bg-blue-50"
+                                    data-testid={`btn-ver-evidencia-${offer.id}-${req.id}`}
+                                  >
+                                    <FileText size={12} />
+                                    Ver evidencia
+                                  </Button>
                                 </div>
                               )}
                             </td>
@@ -613,6 +709,19 @@ export const CaseEvaluations: React.FC<CaseEvaluationsProps> = ({ caseId }) => {
                                 Confianza determinista: {(evalItem.evaluation_confidence * 100).toFixed(1)}%
                               </span>
                             )}
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={() => {
+                                const req = requirements.find((r) => r.id === evalItem.requirement_id);
+                                if (req) openEvidenceModal(offer, req, evalItem);
+                              }}
+                              className="mt-2 text-xs py-1 flex items-center gap-1.5 text-blue-700 border-blue-200 hover:bg-blue-50 w-fit"
+                              data-testid={`btn-ver-evidencia-card-${offer.id}-${evalItem.requirement_id}`}
+                            >
+                              <FileText size={13} />
+                              Ver evidencia
+                            </Button>
                           </div>
                         </div>
                       ))}
@@ -656,6 +765,233 @@ export const CaseEvaluations: React.FC<CaseEvaluationsProps> = ({ caseId }) => {
               </div>
             );
           })}
+        </div>
+      )}
+
+      {/* MODAL DE TRAZABILIDAD Y VERIFICACIÓN DE EVIDENCIA (P12) */}
+      {selectedEvidenceCell && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4 backdrop-blur-sm animate-fadeIn">
+          <div className="bg-white rounded-xl shadow-2xl max-w-2xl w-full max-h-[90vh] flex flex-col overflow-hidden border border-gray-200">
+            {/* Modal Header */}
+            <div className="p-4 bg-gradient-to-r from-blue-900 to-indigo-900 text-white flex justify-between items-start">
+              <div>
+                <div className="flex items-center gap-2">
+                  <FileText className="text-blue-300" size={18} />
+                  <h3 className="text-base font-bold text-white">Trazabilidad Documental y Evidencia Verificable</h3>
+                </div>
+                <p className="text-xs text-blue-200 mt-1">
+                  Proveedor: <span className="font-semibold text-white">{selectedEvidenceCell.offer.supplier?.business_name || `Proveedor #${selectedEvidenceCell.offer.supplier_id}`}</span> | Requisito #{selectedEvidenceCell.requirement.id}
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={closeEvidenceModal}
+                className="text-blue-200 hover:text-white p-1 rounded-lg hover:bg-white/10 transition-colors"
+                title="Cerrar modal"
+              >
+                <X size={20} />
+              </button>
+            </div>
+
+            {/* Modal Body */}
+            <div className="p-6 overflow-y-auto space-y-5">
+              {/* Context Card */}
+              <div className="bg-gray-50 border border-gray-200 rounded-lg p-3.5 space-y-2">
+                <div className="flex justify-between items-center">
+                  <span className="text-xs font-semibold text-gray-700">Requisito a Verificar:</span>
+                  <div className="flex items-center gap-1.5">
+                    <Badge variant="secondary" className="text-[10px]">
+                      {selectedEvidenceCell.requirement.requirement_type || 'TÉCNICO'}
+                    </Badge>
+                    {selectedEvidenceCell.requirement.mandatory && (
+                      <Badge variant="warning" className="text-[10px]">Obligatorio</Badge>
+                    )}
+                  </div>
+                </div>
+                <p className="text-xs text-gray-900 font-medium leading-relaxed">
+                  {selectedEvidenceCell.requirement.description}
+                </p>
+                {selectedEvidenceCell.requirement.value && (
+                  <p className="text-xs text-gray-500">
+                    Valor base / esperado: <span className="font-semibold text-gray-700">{selectedEvidenceCell.requirement.value}</span>
+                  </p>
+                )}
+                {/* Current Evaluation Status */}
+                <div className="pt-2 border-t border-gray-200 flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs text-gray-500">Resultado de evaluación:</span>
+                    {selectedEvidenceCell.evaluation ? (
+                      getStatusBadge(selectedEvidenceCell.evaluation.status)
+                    ) : (
+                      <span className="text-xs text-gray-400 italic">No evaluado</span>
+                    )}
+                  </div>
+                  {selectedEvidenceCell.evaluation?.evaluation_confidence != null && (
+                    <span className="text-[11px] text-gray-500">
+                      Confianza OCR: {(selectedEvidenceCell.evaluation.evaluation_confidence * 100).toFixed(0)}%
+                    </span>
+                  )}
+                </div>
+                {selectedEvidenceCell.evaluation?.explanation && (
+                  <div className="bg-blue-50 border border-blue-100 rounded p-2 text-xs text-blue-900">
+                    <span className="font-semibold">Explicación del motor: </span>
+                    {selectedEvidenceCell.evaluation.explanation}
+                  </div>
+                )}
+              </div>
+
+              {/* Review error alert if any */}
+              {reviewError && (
+                <div className="p-3 bg-red-50 border border-red-200 rounded-lg text-xs text-red-700 flex items-center gap-2">
+                  <AlertTriangle size={16} className="text-red-500 shrink-0" />
+                  <span>{reviewError}</span>
+                </div>
+              )}
+
+              {/* Evidences list */}
+              <div>
+                <h4 className="text-xs font-bold uppercase tracking-wider text-gray-700 mb-2.5 flex items-center justify-between">
+                  <span>Evidencias Documentales Vinculadas ({cellEvidences.length})</span>
+                  <span className="text-[11px] font-normal text-gray-500 lowercase">asociaciones independientes por requisito</span>
+                </h4>
+
+                {loadingEvidence ? (
+                  <div className="py-8 text-center text-xs text-gray-500 flex flex-col items-center gap-2">
+                    <RefreshCw className="animate-spin text-blue-600" size={20} />
+                    <span>Cargando trazabilidad documental...</span>
+                  </div>
+                ) : cellEvidences.length === 0 ? (
+                  <div className="border border-dashed border-amber-300 bg-amber-50 rounded-lg p-4 text-center space-y-1.5">
+                    <AlertTriangle className="text-amber-600 mx-auto" size={24} />
+                    <p className="text-xs font-semibold text-amber-900">Sin evidencia específica vinculada</p>
+                    <p className="text-xs text-amber-700 max-w-md mx-auto">
+                      Esta oferta no cuenta con asociaciones documentales verificables para este requisito concreto. Por principio de no presunción (P12), la falta de evidencia específica resulta en <strong>MISSING_DATA</strong> y bloquea la selección.
+                    </p>
+                  </div>
+                ) : (
+                  <div className="space-y-3">
+                    {cellEvidences.map((evItem) => (
+                      <div
+                        key={evItem.id}
+                        className="border border-gray-200 rounded-lg p-3.5 bg-white shadow-sm space-y-3 transition-all hover:border-blue-300"
+                        data-testid={`evidence-item-${evItem.id}`}
+                      >
+                        <div className="flex justify-between items-start gap-2">
+                          <div className="space-y-0.5">
+                            <span className="text-xs font-bold text-gray-900 flex items-center gap-1.5">
+                              <FileText size={14} className="text-blue-600" />
+                              {evItem.source_document || 'Documento fuente no registrado'}
+                            </span>
+                            {evItem.page != null && (
+                              <span className="inline-block text-[11px] text-gray-500 bg-gray-100 px-1.5 py-0.5 rounded font-mono">
+                                Página {evItem.page}
+                              </span>
+                            )}
+                          </div>
+                          <div>
+                            {getVerificationStatusBadge(evItem.verification_status)}
+                          </div>
+                        </div>
+
+                        {/* Fragment quote */}
+                        {evItem.fragment && (
+                          <div className="bg-slate-50 border-l-4 border-blue-500 p-2.5 rounded-r text-xs text-slate-800 font-sans italic leading-relaxed">
+                            "{evItem.fragment}"
+                          </div>
+                        )}
+
+                        {/* Verification metadata */}
+                        <div className="grid grid-cols-2 gap-2 text-[11px] bg-gray-50 p-2 rounded border border-gray-100 text-gray-600">
+                          <div>
+                            <span className="text-gray-400 block">Persona que validó:</span>
+                            <span className="font-medium text-gray-800">
+                              {evItem.verified_by_username || (evItem.verified_by ? `Usuario #${evItem.verified_by}` : 'Pendiente de verificación')}
+                            </span>
+                          </div>
+                          <div>
+                            <span className="text-gray-400 block">Fecha de verificación:</span>
+                            <span className="font-medium text-gray-800">
+                              {evItem.verified_at ? new Date(evItem.verified_at).toLocaleString('es-PE') : 'No registrado'}
+                            </span>
+                          </div>
+                          {evItem.notes && (
+                            <div className="col-span-2 pt-1 border-t border-gray-200">
+                              <span className="text-gray-400 block">Observaciones / Motivo:</span>
+                              <span className="text-gray-800 italic">{evItem.notes}</span>
+                            </div>
+                          )}
+                        </div>
+
+                        {/* Review Action Controls */}
+                        <div className="pt-2 border-t border-gray-200 space-y-2">
+                          <div className="flex gap-2 items-center">
+                            <input
+                              type="text"
+                              placeholder="Observación o motivo de revisión (opcional)..."
+                              value={reviewNotes[evItem.id] || ''}
+                              onChange={(e) => setReviewNotes({ ...reviewNotes, [evItem.id]: e.target.value })}
+                              className="text-xs p-1.5 border border-gray-300 rounded flex-1 focus:ring-1 focus:ring-blue-500 outline-none"
+                              data-testid={`input-notes-${evItem.id}`}
+                            />
+                          </div>
+                          <div className="flex gap-2 justify-end">
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={() => handleReviewEvidence(evItem.id, 'OBSERVED')}
+                              disabled={evidenceActionLoading === evItem.id}
+                              className="text-xs py-1 text-amber-700 border-amber-300 hover:bg-amber-50"
+                              data-testid={`btn-observar-${evItem.id}`}
+                            >
+                              <AlertTriangle size={13} className="mr-1" />
+                              Observar
+                            </Button>
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={() => handleReviewEvidence(evItem.id, 'REJECTED')}
+                              disabled={evidenceActionLoading === evItem.id}
+                              className="text-xs py-1 text-red-700 border-red-300 hover:bg-red-50"
+                              data-testid={`btn-rechazar-${evItem.id}`}
+                            >
+                              <XCircle size={13} className="mr-1" />
+                              Rechazar
+                            </Button>
+                            <Button
+                              size="sm"
+                              variant="primary"
+                              onClick={() => handleReviewEvidence(evItem.id, 'VERIFIED')}
+                              disabled={evidenceActionLoading === evItem.id}
+                              className="text-xs py-1 bg-emerald-600 hover:bg-emerald-700 text-white"
+                              data-testid={`btn-validar-${evItem.id}`}
+                            >
+                              <CheckCircle2 size={13} className="mr-1" />
+                              Confirmar y Validar
+                            </Button>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              {/* Disclaimer */}
+              <div className="p-2.5 bg-blue-50/70 border border-blue-200 rounded text-[11px] text-blue-800 flex items-start gap-2">
+                <Info size={14} className="text-blue-600 shrink-0 mt-0.5" />
+                <span>
+                  <strong>Control Normativo P12:</strong> La confianza de extracción OCR y las sugerencias del motor son estrictamente referenciales. El cumplimiento técnico o jurídico requiere constatación humana expresa del fragmento y documento fuente.
+                </span>
+              </div>
+            </div>
+
+            {/* Modal Footer */}
+            <div className="p-3.5 bg-gray-100 border-t border-gray-200 flex justify-end">
+              <Button variant="secondary" onClick={closeEvidenceModal}>
+                Cerrar
+              </Button>
+            </div>
+          </div>
         </div>
       )}
     </div>

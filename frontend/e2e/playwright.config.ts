@@ -12,6 +12,14 @@ export default defineConfig({
     baseURL: process.env.BASE_URL || 'http://localhost:5173',
     trace: 'on-first-retry',
     screenshot: 'only-on-failure',
+    launchOptions: {
+      ...(process.env.PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH
+        ? {
+            executablePath: process.env.PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH,
+          }
+        : {}),
+      args: ['--no-sandbox', '--disable-setuid-sandbox'],
+    },
   },
   projects: [
     {

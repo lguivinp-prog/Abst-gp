@@ -1,5 +1,5 @@
 import { v6Client } from './v6Client';
-import type { EvaluationResponse, EvaluationUpdate } from './evaluation.types';
+import type { EvaluationResponse, EvaluationUpdate, RequirementEvidenceResponse, RequirementEvidenceReview, RequirementEvidenceCreate } from './evaluation.types';
 import { handleApiError } from '../apiError';
 
 export const evaluationPaths = {
@@ -55,6 +55,49 @@ export const evaluationService = {
   getVFMRanking: async (caseId: string): Promise<any[]> => {
     try {
       return await v6Client.get<any[]>(evaluationPaths.vfm(caseId));
+    } catch (error) {
+      throw handleApiError(error);
+    }
+  },
+
+  getRequirementEvidence: async (caseId: string, offerId: number, requirementId: number): Promise<RequirementEvidenceResponse[]> => {
+    try {
+      return await v6Client.get<RequirementEvidenceResponse[]>(`/cases/${caseId}/offers/${offerId}/requirements/${requirementId}/evidence`);
+    } catch (error) {
+      throw handleApiError(error);
+    }
+  },
+
+  linkRequirementEvidence: async (caseId: string, offerId: number, requirementId: number, data: RequirementEvidenceCreate): Promise<RequirementEvidenceResponse> => {
+    try {
+      return await v6Client.post<RequirementEvidenceResponse, RequirementEvidenceCreate>(
+        `/cases/${caseId}/offers/${offerId}/requirements/${requirementId}/evidence`,
+        data
+      );
+    } catch (error) {
+      throw handleApiError(error);
+    }
+  },
+
+  getAllCaseEvidence: async (caseId: string): Promise<RequirementEvidenceResponse[]> => {
+    try {
+      return await v6Client.get<RequirementEvidenceResponse[]>(`/cases/${caseId}/evidence`);
+    } catch (error) {
+      throw handleApiError(error);
+    }
+  },
+
+  reviewRequirementEvidence: async (caseId: string, evidenceLinkId: number, data: RequirementEvidenceReview): Promise<RequirementEvidenceResponse> => {
+    try {
+      return await v6Client.put<RequirementEvidenceResponse, RequirementEvidenceReview>(`/cases/${caseId}/evidence/${evidenceLinkId}/review`, data);
+    } catch (error) {
+      throw handleApiError(error);
+    }
+  },
+
+  unlinkRequirementEvidence: async (caseId: string, evidenceLinkId: number): Promise<void> => {
+    try {
+      await v6Client.delete(`/cases/${caseId}/evidence/${evidenceLinkId}`);
     } catch (error) {
       throw handleApiError(error);
     }

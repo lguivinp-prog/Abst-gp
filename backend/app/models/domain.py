@@ -185,6 +185,7 @@ class CaseFile(Base):
     siga_number = Column(String, nullable=True)
     office_unit = Column(String, nullable=True)
     status = Column(String(50), default="CREATED", nullable=False)
+    traceability_regime = Column(String(50), default="P12_STRICT", server_default="P12_STRICT", nullable=False)
     created_by = Column(Integer, ForeignKey("users.id"))
     assigned_to_user_id = Column(Integer, ForeignKey("users.id"), nullable=True)
     assigned_by_user_id = Column(Integer, ForeignKey("users.id"), nullable=True)

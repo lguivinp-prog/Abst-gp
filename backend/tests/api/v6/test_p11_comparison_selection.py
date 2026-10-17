@@ -2,7 +2,7 @@ import json
 import pytest
 from fastapi.testclient import TestClient
 from sqlalchemy.orm import Session
-from app.models.domain import CaseFile, User, AuditLog
+from app.models.domain import CaseFile, User, AuditLog, UploadedDocument
 from app.models.v6.supplier import Supplier
 from app.models.v6.supplier_profile import SupplierProfile
 from app.models.v6.supplier_offer import SupplierOffer
@@ -10,11 +10,54 @@ from app.models.v6.supplier_offer_item import SupplierOfferItem
 from app.models.v6.case_procurement_item import CaseProcurementItem
 from app.models.v6.case_requirement_matrix import CaseRequirementMatrix
 from app.models.v6.offer_evaluation import OfferEvaluation
+from app.models.v6.offer_evidence import OfferEvidence
+from app.models.v6.offer_requirement_evidence import OfferRequirementEvidence
 from app.models.v6.contractual_condition import ContractualCondition
 from app.models.v6.supplier_selection import SupplierSelectionAttempt, SupplierSelectionFinal
 from app.models.v6.case_workflow import CaseWorkflow
 from app.api.auth import get_current_active_user, get_current_user
 from app.main import app
+
+def attach_verified_evidence(db_session: Session, case_id: int, offer_id: int, requirement_id: int, fragment: str = "Garantía técnica y cumplimiento especificado de 48 meses."):
+    doc = db_session.query(UploadedDocument).filter_by(case_id=case_id).first()
+    if not doc:
+        doc = UploadedDocument(
+            case_id=case_id,
+            document_type="quotation",
+            original_filename="propuesta_tecnica.pdf",
+            stored_path="/tmp/propuesta_tecnica.pdf",
+            mime_type="application/pdf",
+            processing_status="completed"
+        )
+        db_session.add(doc)
+        db_session.commit()
+
+    oe = OfferEvidence(
+        supplier_offer_id=offer_id,
+        document_id=doc.id,
+        document_type="FICHA_TECNICA",
+        fragment=fragment,
+        confidence=0.98,
+        page=1
+    )
+    db_session.add(oe)
+    db_session.commit()
+
+    ore = OfferRequirementEvidence(
+        case_id=case_id,
+        supplier_offer_id=offer_id,
+        requirement_id=requirement_id,
+        offer_evidence_id=oe.id,
+        document_id=doc.id,
+        source_document="propuesta_tecnica.pdf",
+        page=1,
+        fragment=fragment,
+        verification_status="VERIFIED",
+        verified_by=1
+    )
+    db_session.add(ore)
+    db_session.commit()
+    return ore
 
 def get_operator_client():
     op_user = User(
@@ -58,6 +101,7 @@ def get_admin_client():
 def cleanup_overrides():
     app.dependency_overrides.pop(get_current_active_user, None)
     app.dependency_overrides.pop(get_current_user, None)
+
 
 # ==============================================================================
 # ESCENARIOS A, B, C: Matriz Comparativa, Evaluación y Selección Coincidente
@@ -189,6 +233,7 @@ def test_p11_scenarios_a_b_c_comparison_and_matching_selection(
     )
     db_session.add_all([eval1, cond1, eval2, cond2])
     db_session.commit()
+    attach_verified_evidence(db_session, case.id, offer1.id, req1.id, fragment="Garantía ofrecida de 48 meses on-site")
 
     # Verificación Escenario B: Consultar ranking VFM y evaluaciones
     vfm_res = admin_client.get(f"/api/v6/cases/{case.id}/evaluations/vfm")
@@ -450,6 +495,7 @@ def test_p11_scenario_i_requirement_change_invalidates_and_reconfirm(
     eval_req = OfferEvaluation(supplier_offer_id=offer.id, requirement_id=req.id, status="PASSED", evaluation_confidence=0.95)
     db_session.add_all([cond, eval_req])
     db_session.commit()
+    attach_verified_evidence(db_session, case.id, offer.id, req.id, fragment="Plazo de entrega confirmado de 5 días hábiles")
 
     # 1. Modificar requerimiento cuando el caso está en WAITING_QUOTATION
     update_res = admin_client.put(
@@ -1206,6 +1252,7 @@ def test_p11_mandatory_passed_and_conflict_blocks_selection(admin_client: TestCl
         ev2 = OfferEvaluation(supplier_offer_id=offer.id, requirement_id=req2.id, status="CONFLICT", explanation="Conflicto en ficha técnica")
         db_session.add_all([ev1, ev2])
         db_session.commit()
+        attach_verified_evidence(db_session, case.id, offer.id, req1.id, fragment="Cumple memoria RAM 32GB")
 
         from app.services.v6.evaluation.vfm_service import ValueForMoneyService
         vfm = ValueForMoneyService(db_session).calculate_vfm(case.id)
@@ -1253,6 +1300,7 @@ def test_p11_mandatory_passed_and_missing_data_blocks_selection(admin_client: Te
         ev2 = OfferEvaluation(supplier_offer_id=offer.id, requirement_id=req2.id, status="MISSING_DATA", explanation="Falta adjuntar certificado")
         db_session.add_all([ev1, ev2])
         db_session.commit()
+        attach_verified_evidence(db_session, case.id, offer.id, req1.id, fragment="Cumple memoria RAM 32GB")
 
         from app.services.v6.evaluation.vfm_service import ValueForMoneyService
         vfm = ValueForMoneyService(db_session).calculate_vfm(case.id)
@@ -1297,6 +1345,7 @@ def test_p11_mandatory_observed_and_pending_blocks_selection(admin_client: TestC
         ev2 = OfferEvaluation(supplier_offer_id=offer.id, requirement_id=req2.id, status="PASSED", explanation="Aprobado")
         db_session.add_all([ev1, ev2])
         db_session.commit()
+        attach_verified_evidence(db_session, case.id, offer.id, req2.id, fragment="Aprobado y conforme con especificaciones")
 
         from app.services.v6.evaluation.vfm_service import ValueForMoneyService
         vfm = ValueForMoneyService(db_session).calculate_vfm(case.id)
@@ -1348,6 +1397,8 @@ def test_p11_mandatory_all_passed_allows_selection(admin_client: TestClient, db_
         ev2 = OfferEvaluation(supplier_offer_id=offer.id, requirement_id=req2.id, status="IMPROVEMENT", explanation="Mejora 2")
         db_session.add_all([ev1, ev2])
         db_session.commit()
+        attach_verified_evidence(db_session, case.id, offer.id, req1.id, fragment="Cumple especificaciones técnicas 1")
+        attach_verified_evidence(db_session, case.id, offer.id, req2.id, fragment="Mejora acreditada especificaciones técnicas 2")
 
         from app.services.v6.evaluation.vfm_service import ValueForMoneyService
         vfm = ValueForMoneyService(db_session).calculate_vfm(case.id)
