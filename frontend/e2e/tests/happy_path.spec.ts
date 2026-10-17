@@ -2,6 +2,58 @@ import { test, expect } from '@playwright/test';
 import { Client } from 'pg';
 import zlib from 'zlib';
 
+/** Hosts authorized for E2E test database connections */
+const AUTHORIZED_DB_HOSTS = ['db-test', 'localhost', '127.0.0.1'];
+const AUTHORIZED_DB_NAME = 'test_db';
+const AUTHORIZED_DB_USER = 'test_user';
+
+/**
+ * Validates that a PostgreSQL connection string targets an authorized test environment.
+ * Must be called before ANY write operation against the database.
+ * Rejects unauthorized hosts, databases, and users without exposing credentials.
+ */
+function assertSafeTestConnection(connStr: string): void {
+  let parsedUrl: URL;
+  try {
+    parsedUrl = new URL(connStr);
+  } catch {
+    throw new Error('ABORT: Database safety check failed. Malformed connection URL.');
+  }
+  if (!AUTHORIZED_DB_HOSTS.includes(parsedUrl.hostname)) {
+    throw new Error(
+      `ABORT: Database safety check failed. Unauthorized host '${parsedUrl.hostname}', strictly expected one of: ${AUTHORIZED_DB_HOSTS.join(', ')}`
+    );
+  }
+  const dbName = parsedUrl.pathname.replace(/^\//, '');
+  if (dbName !== AUTHORIZED_DB_NAME) {
+    throw new Error(
+      `ABORT: Database safety check failed. Target database '${dbName}' is not the authorized test database '${AUTHORIZED_DB_NAME}'.`
+    );
+  }
+  if (parsedUrl.username !== AUTHORIZED_DB_USER) {
+    throw new Error(
+      `ABORT: Database safety check failed. Target user '${parsedUrl.username}' is not the authorized test user '${AUTHORIZED_DB_USER}'.`
+    );
+  }
+}
+
+/**
+ * Validates that an active PostgreSQL session is connected to the authorized database and user.
+ */
+async function assertSafeDatabaseSession(client: Client): Promise<void> {
+  const check = await client.query('SELECT current_database() as db, current_user as u;');
+  if (check.rows[0]?.db !== AUTHORIZED_DB_NAME) {
+    throw new Error(
+      `ABORT: Database safety check failed. Connected to database '${check.rows[0]?.db}', strictly expected '${AUTHORIZED_DB_NAME}'.`
+    );
+  }
+  if (check.rows[0]?.u !== AUTHORIZED_DB_USER) {
+    throw new Error(
+      `ABORT: Database safety check failed. Connected as user '${check.rows[0]?.u}', strictly expected '${AUTHORIZED_DB_USER}'.`
+    );
+  }
+}
+
 /**
  * Extrae texto legible a partir de los streams de un archivo PDF sintético en buffer
  */
@@ -43,27 +95,15 @@ export async function prepareHappyPathPreconditions(
 ) {
   const connStr = customConnStr || process.env.DATABASE_URL || 'postgresql://test_user:test_password@db-test:5432/test_db';
 
-  // 1. Validar conexión al servicio autorizado de pruebas y no a un host arbitrario
-  let parsedUrl: URL;
-  try {
-    parsedUrl = new URL(connStr);
-  } catch {
-    throw new Error(`ABORT: Invalid database connection URL: ${connStr}`);
-  }
-  const authorizedHosts = ['db-test', 'localhost', '127.0.0.1'];
-  if (!authorizedHosts.includes(parsedUrl.hostname)) {
-    throw new Error(`ABORT: Database safety check failed. Unauthorized host '${parsedUrl.hostname}', strictly expected one of: ${authorizedHosts.join(', ')}`);
-  }
+  // 1. Validar conexión al servicio autorizado de pruebas antes de cualquier escritura
+  assertSafeTestConnection(connStr);
 
   const dbClient = new Client({ connectionString: connStr });
   await dbClient.connect();
 
   try {
-    // 2. Comprobar current_database() = 'test_db'
-    const dbCheck = await dbClient.query('SELECT current_database() as db;');
-    if (dbCheck.rows[0]?.db !== 'test_db') {
-      throw new Error(`ABORT: Database safety check failed. Connected to '${dbCheck.rows[0]?.db}', strictly expected 'test_db'.`);
-    }
+    // 2. Comprobar current_database() y current_user a nivel de sesión activa
+    await assertSafeDatabaseSession(dbClient);
 
     // 3. Validar que el expediente pertenece al tenant esperado
     const caseCheck = await dbClient.query(
@@ -98,14 +138,7 @@ export async function prepareHappyPathPreconditions(
       throw new Error(`ABORT: Supplier ${supplierId} does not belong to expected tenant '${expectedTenantId}'.`);
     }
 
-    // 6. Configurar perfil verificado del proveedor
-    await dbClient.query(`
-      INSERT INTO supplier_profiles (supplier_id, validation_status)
-      VALUES ($1, 'VERIFIED')
-      ON CONFLICT (supplier_id) DO UPDATE SET validation_status = 'VERIFIED';
-    `, [supplierId]);
-
-    // 7. Identificar el UploadedDocument real de la cotización cargada durante la prueba para el expediente
+    // 6. Identificar el UploadedDocument real de la cotización ANTES de cualquier mutación
     const docRes = await dbClient.query(`
       SELECT id, original_filename, stored_path
       FROM uploaded_documents
@@ -118,7 +151,7 @@ export async function prepareHappyPathPreconditions(
     }
     const quotationDoc = docRes.rows[0];
 
-    // 8. Identificar los requisitos extraídos y sus valores obligatorios
+    // 7. Identificar los requisitos extraídos y sus valores obligatorios ANTES de cualquier mutación
     const reqRes = await dbClient.query(`
       SELECT id, description, value, mandatory
       FROM case_requirement_matrices
@@ -131,18 +164,10 @@ export async function prepareHappyPathPreconditions(
     }
     const mandatoryReqs = reqRes.rows;
 
-    // Extraer texto legible de la cotización para comprobación de presencia real
+    // 8. Extraer texto legible de la cotización y resolver TODOS los fragmentos ANTES de comenzar inserciones
     const quotationPdfText = extractPdfText(Buffer.from(QUOT_PDF_BASE64, 'base64'));
 
-    // 9. Registrar OfferEvidence asociado al UploadedDocument real con fragmentos procedentes de la cotización
-    const createdEvidences: Array<{
-      evidenceId: number;
-      requirementId: number;
-      documentId: number;
-      fragment: string;
-      page: number;
-    }> = [];
-
+    const resolvedFragments: Array<{ req: typeof mandatoryReqs[0]; fragment: string }> = [];
     for (const req of mandatoryReqs) {
       let fragment = '';
       const descLower = (req.description || '').toLowerCase();
@@ -151,7 +176,7 @@ export async function prepareHappyPathPreconditions(
       } else if (descLower.includes('cantidad') || descLower.includes('10')) {
         fragment = 'Cantidad: 10 unidades de Computadoras.';
       } else {
-        // CORRECCIÓN 1: Eliminar el fallback genérico. Fallar explícitamente si no hay acreditación documental
+        // Fallar explícitamente si no hay acreditación documental — antes de cualquier INSERT
         throw new Error(
           `ABORT: No documentary evidence corresponding to mandatory requirement '${req.description}' (id: ${req.id}) found in quotation PDF.`
         );
@@ -163,41 +188,68 @@ export async function prepareHappyPathPreconditions(
           `ABORT: Documentary fragment '${fragment}' for requirement '${req.description}' does not exist in quotation PDF text.`
         );
       }
-
-      const evInsert = await dbClient.query(`
-        INSERT INTO offer_evidences (supplier_offer_id, document_id, document_type, fragment, confidence, page, created_at)
-        VALUES ($1, $2, 'FICHA_TECNICA', $3, 0.99, 1, NOW())
-        RETURNING id;
-      `, [offerId, quotationDoc.id, fragment]);
-
-      const evId = evInsert.rows[0].id;
-      createdEvidences.push({
-        evidenceId: evId,
-        requirementId: req.id,
-        documentId: quotationDoc.id,
-        fragment,
-        page: 1
-      });
+      resolvedFragments.push({ req, fragment });
     }
 
-    return {
-      offerId,
-      supplierId,
-      quotationDocId: quotationDoc.id,
-      mandatoryReqs,
-      createdEvidences,
-      dbClient,
-      cleanup: async () => {
-        try {
-          // CORRECCIÓN 2: Preservación del resultado terminal
-          // Dejar intacta la cadena terminal del expediente (APPROVED) dentro del entorno de pruebas
-          // hasta el teardown aislado del pipeline. No destruir selecciones finales, intentos,
-          // workflows ni evaluaciones.
-        } finally {
-          await dbClient.end();
-        }
+    // 9. Todas las comprobaciones documentales pasaron — iniciar transacción atómica para las mutaciones
+    await dbClient.query('BEGIN');
+    try {
+      // 9.1 Configurar perfil verificado del proveedor (dentro de la transacción)
+      await dbClient.query(`
+        INSERT INTO supplier_profiles (supplier_id, validation_status)
+        VALUES ($1, 'VERIFIED')
+        ON CONFLICT (supplier_id) DO UPDATE SET validation_status = 'VERIFIED';
+      `, [supplierId]);
+
+      // 9.2 Registrar OfferEvidence asociado al UploadedDocument real con fragmentos previamente verificados
+      const createdEvidences: Array<{
+        evidenceId: number;
+        requirementId: number;
+        documentId: number;
+        fragment: string;
+        page: number;
+      }> = [];
+
+      for (const { req, fragment } of resolvedFragments) {
+        const evInsert = await dbClient.query(`
+          INSERT INTO offer_evidences (supplier_offer_id, document_id, document_type, fragment, confidence, page, created_at)
+          VALUES ($1, $2, 'FICHA_TECNICA', $3, 0.99, 1, NOW())
+          RETURNING id;
+        `, [offerId, quotationDoc.id, fragment]);
+
+        const evId = evInsert.rows[0].id;
+        createdEvidences.push({
+          evidenceId: evId,
+          requirementId: req.id,
+          documentId: quotationDoc.id,
+          fragment,
+          page: 1
+        });
       }
-    };
+
+      await dbClient.query('COMMIT');
+
+      return {
+        offerId,
+        supplierId,
+        quotationDocId: quotationDoc.id,
+        mandatoryReqs,
+        createdEvidences,
+        dbClient,
+        cleanup: async () => {
+          try {
+            // Preservación del resultado terminal: dejar intacta la cadena del expediente (APPROVED)
+            // hasta el teardown aislado del pipeline. No destruir selecciones finales, intentos,
+            // workflows ni evaluaciones.
+          } finally {
+            await dbClient.end();
+          }
+        }
+      };
+    } catch (txErr) {
+      await dbClient.query('ROLLBACK');
+      throw txErr;
+    }
   } catch (err) {
     await dbClient.end();
     throw err;
@@ -549,12 +601,73 @@ test.describe('Document Intelligence E2E - Happy Path', () => {
       expect(finalSelection.rows.length).toBe(1);
       expect(finalSelection.rows[0]?.supplier_offer_id).toBe(preconditions.offerId);
 
+      const attemptsCheck = await preconditions.dbClient.query(
+        'SELECT id, status, supplier_offer_id FROM supplier_selection_attempts WHERE case_id = $1;',
+        [currentCaseId]
+      );
+      expect(attemptsCheck.rows.length).toBe(1);
+      expect(attemptsCheck.rows[0]?.supplier_offer_id).toBe(preconditions.offerId);
+
+      const workflowApprovedCheck = await preconditions.dbClient.query(
+        'SELECT status FROM case_workflows WHERE case_id = $1;',
+        [currentCaseId]
+      );
+      expect(workflowApprovedCheck.rows.length).toBe(1);
+      expect(workflowApprovedCheck.rows[0]?.status).toBe('APPROVED');
+
       const approvalAudit = await preconditions.dbClient.query(
         `SELECT id, action, entity_type FROM audit_logs
          WHERE entity_type = 'CaseFile' AND entity_id = $1 AND action = 'APPROVE_SELECTION' AND status = 'SUCCESS';`,
         [String(currentCaseId)]
       );
       expect(approvalAudit.rows.length).toBeGreaterThanOrEqual(1);
+
+      // 9.1 Cerrar conexión del fixture y reabrir una conexión PostgreSQL segura independiente
+      // para verificar que el resultado terminal aprobado permanece íntegro y persistido.
+      const offerId = preconditions.offerId;
+      await preconditions.cleanup();
+      preconditions = null;
+
+      const verifyConnStr = process.env.DATABASE_URL || 'postgresql://test_user:test_password@db-test:5432/test_db';
+      assertSafeTestConnection(verifyConnStr);
+      const postApprovalDb = new Client({ connectionString: verifyConnStr });
+      await postApprovalDb.connect();
+      try {
+        await assertSafeDatabaseSession(postApprovalDb);
+
+        const postCaseCheck = await postApprovalDb.query(
+          'SELECT id, status FROM case_files WHERE id = $1 AND tenant_id = $2;',
+          [currentCaseId, 'mega_tenant']
+        );
+        expect(postCaseCheck.rows.length).toBe(1);
+        expect(postCaseCheck.rows[0]?.status).toBe('APPROVED');
+
+        const postFinalCheck = await postApprovalDb.query(
+          `SELECT ssf.id, ssf.case_id, ssa.supplier_offer_id
+           FROM supplier_selection_final ssf
+           JOIN supplier_selection_attempts ssa ON ssa.id = ssf.attempt_id
+           WHERE ssf.case_id = $1;`,
+          [currentCaseId]
+        );
+        expect(postFinalCheck.rows.length).toBe(1);
+        expect(postFinalCheck.rows[0]?.supplier_offer_id).toBe(offerId);
+
+        const postAttemptCheck = await postApprovalDb.query(
+          'SELECT id, status, supplier_offer_id FROM supplier_selection_attempts WHERE case_id = $1;',
+          [currentCaseId]
+        );
+        expect(postAttemptCheck.rows.length).toBe(1);
+        expect(postAttemptCheck.rows[0]?.supplier_offer_id).toBe(offerId);
+
+        const postWorkflowCheck = await postApprovalDb.query(
+          'SELECT id, status FROM case_workflows WHERE case_id = $1;',
+          [currentCaseId]
+        );
+        expect(postWorkflowCheck.rows.length).toBe(1);
+        expect(postWorkflowCheck.rows[0]?.status).toBe('APPROVED');
+      } finally {
+        await postApprovalDb.end();
+      }
     } finally {
       if (preconditions) {
         await preconditions.cleanup();
@@ -573,71 +686,103 @@ test.describe('Document Intelligence E2E - Happy Path', () => {
       /Security guard failed/
     );
 
-    // 3. Host arbitrario no autorizado
+    // 3. Host arbitrario no autorizado (aborta antes de conectar)
     await expect(prepareHappyPathPreconditions(1, 'mega_tenant', 'postgresql://test_user:test_password@evil-host.com:5432/test_db')).rejects.toThrow(
       /Unauthorized host/
     );
 
-    // 4. Verificación negativa adicional: cuando no existe fragmento documental pertinente, la prueba debe rechazar la preparación sin crear acreditación positiva
+    // 4. Base de datos distinta de test_db (aborta antes de conectar)
+    await expect(prepareHappyPathPreconditions(1, 'mega_tenant', 'postgresql://test_user:test_password@db-test:5432/production_db')).rejects.toThrow(
+      /not the authorized test database/
+    );
+
+    // 5. Usuario distinto de test_user (aborta antes de conectar)
+    await expect(prepareHappyPathPreconditions(1, 'mega_tenant', 'postgresql://unauthorized_user:test_password@db-test:5432/test_db')).rejects.toThrow(
+      /not the authorized test user/
+    );
+
+    // 6. Verificación negativa: requisito sin respaldo documental — no debe crear evidencias ni modificar perfil del proveedor
     const connStr = process.env.DATABASE_URL || 'postgresql://test_user:test_password@db-test:5432/test_db';
+    // Aplicar guard centralizado antes de cualquier escritura en la prueba negativa
+    assertSafeTestConnection(connStr);
     const testDb = new Client({ connectionString: connStr });
     await testDb.connect();
     try {
-      // Crear caso sintético temporal
-      const tempCase = await testDb.query(`
-        INSERT INTO case_files (tenant_id, title, status, contract_type, created_at)
-        VALUES ('mega_tenant', 'Guard Test Case', 'WAITING_QUOTATION', 'bienes', NOW())
-        RETURNING id;
-      `);
-      const tempCaseId = tempCase.rows[0].id;
+      // Verificar current_database() y current_user antes de mutaciones
+      await assertSafeDatabaseSession(testDb);
 
-      // Obtener o crear proveedor de prueba
-      let supplierId: number;
-      const supRes = await testDb.query(
-        "SELECT id FROM suppliers WHERE tenant_id = 'mega_tenant' LIMIT 1;"
-      );
-      if (supRes.rows.length > 0) {
-        supplierId = supRes.rows[0].id;
-      } else {
-        const newSup = await testDb.query(`
-          INSERT INTO suppliers (tenant_id, legal_name, tax_id, created_at)
-          VALUES ('mega_tenant', 'Proveedor Guard SAC', '20999888772', NOW())
-          RETURNING id;
-        `);
-        supplierId = newSup.rows[0].id;
-      }
-
-      // Crear oferta para el caso
-      const offRes = await testDb.query(`
-        INSERT INTO supplier_offers (case_id, supplier_id, status, evaluation_status, currency, created_at)
-        VALUES ($1, $2, 'RECEIVED', 'UNDER_REVIEW', 'PEN', NOW())
-        RETURNING id;
-      `, [tempCaseId, supplierId]);
-      const tempOfferId = offRes.rows[0].id;
-
-      // Subir documento de cotización sintético
-      await testDb.query(`
-        INSERT INTO uploaded_documents (case_id, original_filename, document_type, stored_path, mime_type, processing_status, created_at)
-        VALUES ($1, 'quot.pdf', 'oferta', '/app/uploads/guard_quot.pdf', 'application/pdf', 'COMPLETED', NOW());
-      `, [tempCaseId]);
-
-      // Insertar requisito obligatorio sin respaldo en la cotización
-      const dummyReq = await testDb.query(`
-        INSERT INTO case_requirement_matrices (case_id, requirement_type, description, mandatory, status, flows_to_contract, created_at)
-        VALUES ($1, 'TECHNICAL', 'Requisito No Contenido: Suministro de 500 Vehiculos Blindados', true, 'REVIEW_REQUIRED', false, NOW())
-        RETURNING id;
-      `, [tempCaseId]);
-      const dummyReqId = dummyReq.rows[0].id;
+      let tempCaseId: number | null = null;
+      let tempSupplierId: number | null = null;
+      let tempOfferId: number | null = null;
+      let tempDocId: number | null = null;
+      let tempReqId: number | null = null;
 
       try {
+        // Obtener proveedor existente (si no existe, crear uno y trackear su ID para limpieza)
+        const supRes = await testDb.query(
+          "SELECT id FROM suppliers WHERE tenant_id = 'mega_tenant' LIMIT 1;"
+        );
+        let supplierId: number;
+        if (supRes.rows.length > 0) {
+          supplierId = supRes.rows[0].id;
+        } else {
+          const newSup = await testDb.query(`
+            INSERT INTO suppliers (tenant_id, business_name, ruc, created_at)
+            VALUES ('mega_tenant', 'Proveedor Guard SAC', '20999888772', NOW())
+            RETURNING id;
+          `);
+          tempSupplierId = newSup.rows[0].id;
+          supplierId = newSup.rows[0].id;
+        }
+
+        // Capturar el estado del perfil del proveedor ANTES de la preparación fallida
+        const profileBefore = await testDb.query(
+          'SELECT validation_status FROM supplier_profiles WHERE supplier_id = $1;',
+          [supplierId]
+        );
+        const profileStatusBefore = profileBefore.rows.length > 0 ? profileBefore.rows[0].validation_status : null;
+
+        // Crear caso sintético temporal
+        const tempCase = await testDb.query(`
+          INSERT INTO case_files (tenant_id, title, status, contract_type, created_at)
+          VALUES ('mega_tenant', 'Guard Test Case', 'WAITING_QUOTATION', 'bienes', NOW())
+          RETURNING id;
+        `);
+        tempCaseId = tempCase.rows[0].id;
+
+        // Crear oferta para el caso
+        const offRes = await testDb.query(`
+          INSERT INTO supplier_offers (case_id, supplier_id, status, evaluation_status, currency, created_at)
+          VALUES ($1, $2, 'RECEIVED', 'UNDER_REVIEW', 'PEN', NOW())
+          RETURNING id;
+        `, [tempCaseId, supplierId]);
+        tempOfferId = offRes.rows[0].id;
+
+        // Subir documento de cotización sintético
+        const docRes = await testDb.query(`
+          INSERT INTO uploaded_documents (case_id, original_filename, document_type, stored_path, mime_type, processing_status, created_at)
+          VALUES ($1, 'quot.pdf', 'oferta', '/app/uploads/guard_quot.pdf', 'application/pdf', 'COMPLETED', NOW())
+          RETURNING id;
+        `, [tempCaseId]);
+        tempDocId = docRes.rows[0].id;
+
+        // Insertar requisito obligatorio sin respaldo en la cotización
+        const dummyReq = await testDb.query(`
+          INSERT INTO case_requirement_matrices (case_id, requirement_type, description, mandatory, status, flows_to_contract, created_at)
+          VALUES ($1, 'TECHNICAL', 'Requisito No Contenido: Suministro de 500 Vehiculos Blindados', true, 'REVIEW_REQUIRED', false, NOW())
+          RETURNING id;
+        `, [tempCaseId]);
+        tempReqId = dummyReq.rows[0].id;
+
+        // 6a. Confirmar que la preparación es rechazada
         await expect(prepareHappyPathPreconditions(tempCaseId, 'mega_tenant')).rejects.toThrow(
           /No documentary evidence corresponding to mandatory requirement/
         );
 
-        // Confirmar que no se creó ninguna evidencia positiva ni vinculación para este requisito sin sustento
+        // 6b. Confirmar que no se creó ninguna evidencia positiva ni vinculación para este requisito sin sustento
         const evCheck = await testDb.query(
           'SELECT id FROM offer_requirement_evidences WHERE requirement_id = $1;',
-          [dummyReqId]
+          [tempReqId]
         );
         expect(evCheck.rows.length).toBe(0);
 
@@ -646,11 +791,59 @@ test.describe('Document Intelligence E2E - Happy Path', () => {
           [tempOfferId]
         );
         expect(offEvCheck.rows.length).toBe(0);
+
+        // 6c. Confirmar que el perfil del proveedor NO fue alterado por la preparación fallida
+        const profileAfter = await testDb.query(
+          'SELECT validation_status FROM supplier_profiles WHERE supplier_id = $1;',
+          [supplierId]
+        );
+        const profileStatusAfter = profileAfter.rows.length > 0 ? profileAfter.rows[0].validation_status : null;
+        expect(profileStatusAfter).toBe(profileStatusBefore);
       } finally {
-        await testDb.query('DELETE FROM case_requirement_matrices WHERE case_id = $1;', [tempCaseId]);
-        await testDb.query('DELETE FROM uploaded_documents WHERE case_id = $1;', [tempCaseId]);
-        await testDb.query('DELETE FROM supplier_offers WHERE id = $1;', [tempOfferId]);
-        await testDb.query('DELETE FROM case_files WHERE id = $1;', [tempCaseId]);
+        // Limpieza segura: operar exclusivamente sobre IDs creados por este test, en orden inverso de dependencias.
+        // Asegurar que el fallo de un DELETE no impida intentar eliminar los demás registros, acumulando errores sin silenciarlos.
+        const cleanupErrors: Error[] = [];
+        if (tempReqId !== null) {
+          try {
+            await testDb.query('DELETE FROM case_requirement_matrices WHERE id = $1;', [tempReqId]);
+          } catch (e: any) {
+            cleanupErrors.push(e);
+          }
+        }
+        if (tempDocId !== null) {
+          try {
+            await testDb.query('DELETE FROM uploaded_documents WHERE id = $1;', [tempDocId]);
+          } catch (e: any) {
+            cleanupErrors.push(e);
+          }
+        }
+        if (tempOfferId !== null) {
+          try {
+            await testDb.query('DELETE FROM supplier_offers WHERE id = $1;', [tempOfferId]);
+          } catch (e: any) {
+            cleanupErrors.push(e);
+          }
+        }
+        if (tempCaseId !== null) {
+          try {
+            await testDb.query('DELETE FROM case_files WHERE id = $1;', [tempCaseId]);
+          } catch (e: any) {
+            cleanupErrors.push(e);
+          }
+        }
+        if (tempSupplierId !== null) {
+          try {
+            await testDb.query('DELETE FROM suppliers WHERE id = $1;', [tempSupplierId]);
+          } catch (e: any) {
+            cleanupErrors.push(e);
+          }
+        }
+        if (cleanupErrors.length > 0) {
+          throw new Error(
+            `Teardown failed with ${cleanupErrors.length} error(s):\n` +
+            cleanupErrors.map(e => e.message).join('\n')
+          );
+        }
       }
     } finally {
       await testDb.end();
