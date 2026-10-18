@@ -90,6 +90,7 @@ services:
     volumes:
       - ../backend:/app
       - test-uploads:/app/uploads
+      - ../paddleocr_cache:/root/.paddleocr
     command: ["rq", "worker", "-u", "redis://redis-test:6379/1", "default", "document_tasks", "ocr_tasks"]
 
   frontend-test:
@@ -112,8 +113,10 @@ services:
     environment:
       - BASE_URL=http://frontend-test:5173
       - API_URL=http://backend-app:8000
+      - DATABASE_URL=postgresql://test_user:test_password@db-test:5432/test_db
     volumes:
       - ../frontend/e2e:/e2e
+      - test-uploads:/app/uploads
     working_dir: /e2e
     command: ["/bin/sh", "-c", "sleep infinity"]
 

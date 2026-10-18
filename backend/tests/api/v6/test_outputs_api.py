@@ -15,7 +15,7 @@ def test_prepare_output_api(admin_client: TestClient, db_session: Session, setup
     workflow = CaseWorkflow(case_id=case.id, status="APPROVED")
     db_session.add(workflow)
     
-    offer = SupplierOffer(case_id=case.id, supplier_id=1, status="PENDING", evaluation_status="APPROVED")
+    offer = SupplierOffer(case_id=case.id, supplier_id=1, price=5000.0, total_amount=5000.0, status="PENDING", evaluation_status="APPROVED")
     db_session.add(offer)
     db_session.commit()
     

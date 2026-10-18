@@ -4,6 +4,7 @@ import { Badge } from '../../../components/ui/Badge';
 import { casesService } from '../../../api/cases.service';
 import { useAuth } from '../../auth/AuthContext';
 import { CheckCircle2, Clock, ShieldCheck, AlertCircle, Info } from 'lucide-react';
+import { TechnicalReportPanel } from './TechnicalReportPanel';
 import './CaseEvaluations.css';
 
 interface CaseResultProps {
@@ -199,6 +200,13 @@ export const CaseResult: React.FC<CaseResultProps> = ({ caseId }) => {
           </p>
         </div>
       )}
+
+      {/* P13: Panel de Informe Técnico de Evaluación y Selección Interna */}
+      <TechnicalReportPanel
+        caseId={caseId}
+        caseStatus={result ? 'APPROVED' : selection?.status}
+        onRefresh={loadData}
+      />
     </div>
   );
 };

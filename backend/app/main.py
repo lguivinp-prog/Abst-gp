@@ -19,6 +19,29 @@ app = FastAPI(
 
 setup_exception_handlers(app)
 
+@app.on_event("startup")
+def startup_orphan_reconciliation():
+    """
+    R3-09: Reconciliación automática integrada en el ciclo de vida de la aplicación.
+    Limpia archivos temporales huérfanos y artefactos no referenciados de manera durable.
+    """
+    try:
+        import os
+        from app.core.database import SessionLocal
+        from app.services.v6.reporting.pdf_report_generator import PdfReportGenerator
+        db = SessionLocal()
+        try:
+            reports_root = os.path.join(settings.UPLOADS_DIR, "reports")
+            if os.path.exists(reports_root):
+                PdfReportGenerator.reconcile_all_orphans(db, reports_root, max_age_seconds=3600)
+        finally:
+            db.close()
+    except Exception:
+        import logging
+        logging.getLogger("app.p13.reconciliation").exception(
+            "P13: falló la reconciliación de archivos; intervención operativa requerida"
+        )
+
 # Telemetría OpenTelemetry y Prometheus
 app.add_middleware(OpenTelemetryMiddleware)
 

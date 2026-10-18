@@ -8,6 +8,7 @@ export interface DecodedToken {
 export type Role = "ADMIN" | "OPERATOR" | "READONLY" | string;
 
 export interface User {
+  id?: number;
   username: string;
   role: Role;
   // Note: tenant_id is NOT in the JWT payload by default. The backend resolves it dynamically.

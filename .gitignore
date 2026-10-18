@@ -65,3 +65,5 @@ test-results/
 .env
 .env.*
 !.env.example
+paddleocr_cache/
+audit_gpt_p13/
