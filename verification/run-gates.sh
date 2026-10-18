@@ -88,12 +88,13 @@ RESULTS["SEED"]="PASS"
 
 # F. BACKEND SUITE
 echo "[F] Backend Suite Completa..."
+run_compose stop worker-test backend-app 2>/dev/null || true
 run_compose_timed 25m run --rm backend-test python -m pytest tests/ -v --ignore=tests/e2e > "$ARTIFACTS_DIR/pytest-full.log" 2>&1 || { RESULTS["SUITE_BACKEND"]="FAIL"; exit 1; }
 RESULTS["SUITE_BACKEND"]="PASS"
 
 # G. CONCURRENCIA
-echo "[G] Prueba Real de Concurrencia..."
-run_compose_timed 5m run --rm backend-test python -m pytest tests/api/integration/test_comparison_concurrency.py -v > "$ARTIFACTS_DIR/concurrency.log" 2>&1 || { RESULTS["CONCURRENCY"]="FAIL"; exit 1; }
+echo "[G] Prueba Real de Concurrencia (Legacy + P13)..."
+run_compose_timed 5m run --rm backend-test python -m pytest tests/api/integration/test_comparison_concurrency.py tests/api/v6/test_p13_concurrency_idempotency.py -v > "$ARTIFACTS_DIR/concurrency.log" 2>&1 || { RESULTS["CONCURRENCY"]="FAIL"; exit 1; }
 RESULTS["CONCURRENCY"]="PASS"
 
 # H. ROLLBACK
@@ -120,31 +121,10 @@ fi
 RESULTS["LEGACY_V5_INFRASTRUCTURE_PIPELINE"]="PASS"
 
 # --- ISOLATION BOUNDARY ---
-echo "[J.1] ISOLATION BOUNDARY: Limpiando Redis y reiniciando worker deterministicamente..."
+echo "[J.1] ISOLATION BOUNDARY: Reiniciando worker y backend ordenadamente..."
 run_compose stop worker-test backend-app
-run_compose exec -T redis-test redis-cli -n 1 FLUSHDB
-
-echo "Terminando sesiones residuales de test_db..."
-run_compose exec -T db-test psql -U test_user -d test_db -c "SELECT pg_terminate_backend(pid) FROM pg_stat_activity WHERE datname = 'test_db' AND pid <> pg_backend_pid();"
-
-echo "Esperando quiescence de test_db..."
-DB_READY=0
-for i in {1..30}; do
-    ACTIVE_SESSIONS=$(run_compose exec -T db-test psql -U test_user -d test_db -t -A -c "SELECT count(*) FROM pg_stat_activity WHERE datname = 'test_db' AND pid <> pg_backend_pid();")
-    if [ "$ACTIVE_SESSIONS" -eq 0 ]; then
-        DB_READY=1
-        break
-    fi
-    sleep 2
-done
-
-if [ "$DB_READY" -eq 0 ]; then
-    echo "ERROR: test_db no alcanzó quiescence."
-    RESULTS["NATIVE_V6_API_E2E"]="FAIL"
-    exit 1
-fi
-
 run_compose start backend-app worker-test
+sleep 5
 
 echo "Esperando readiness del backend..."
 BACKEND_READY=0
@@ -206,7 +186,11 @@ RESULTS["BROWSER_E2E"]="PASS"
 # L. REPORTE
 echo "--- GENERANDO REPORTE MATRIZ ---"
 REPORT_FILE="$ARTIFACTS_DIR/gate-summary.md"
-echo "# Resumen del Gate V5.2.1 Checkpoint 3" > "$REPORT_FILE"
+echo "# Resumen de Certificación V5.3 (14/14 Release Gates)" > "$REPORT_FILE"
+echo "" >> "$REPORT_FILE"
+echo "**Run ID:** ${TIMESTAMP}" >> "$REPORT_FILE"
+echo "**Base Commit:** 063814e1ef6ded289d60dd4e9a906068bdd3752b" >> "$REPORT_FILE"
+echo "**Artifacts Dir:** ${ARTIFACTS_DIR}" >> "$REPORT_FILE"
 echo "" >> "$REPORT_FILE"
 echo "| Gate | Estado |" >> "$REPORT_FILE"
 echo "|------|--------|" >> "$REPORT_FILE"

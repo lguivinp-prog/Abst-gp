@@ -1,6 +1,7 @@
 ﻿from app.services.v6.engines.accuracy_gate import ContractAccuracyGate
 from app.models.v6.case_workflow import CaseWorkflow
 from app.models.v6.supplier_offer import SupplierOffer
+from app.models.v6.supplier import Supplier
 from app.models.v6.offer_evaluation import OfferEvaluation
 from app.models.domain import CaseFile
 from sqlalchemy.orm import Session
@@ -25,7 +26,12 @@ def test_accuracy_gate_fails_if_conflict_exists(db_session: Session):
     workflow = CaseWorkflow(case_id=case.id, status="APPROVED")
     db_session.add(workflow)
     
-    offer = SupplierOffer(case_id=case.id, supplier_id=1, status="PENDING", evaluation_status="HAS_CONFLICTS")
+    # The case-specific supplier must exist on a pristine CI database.
+    supplier = Supplier(tenant_id="mega_tenant", ruc="20100070970", business_name="Proveedor CI para conflicto")
+    db_session.add(supplier)
+    db_session.flush()
+
+    offer = SupplierOffer(case_id=case.id, supplier_id=supplier.id, status="PENDING", evaluation_status="HAS_CONFLICTS")
     db_session.add(offer)
     db_session.commit()
     

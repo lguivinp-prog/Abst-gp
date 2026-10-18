@@ -88,6 +88,7 @@ def db_session():
     
     with engine.begin() as conn:
         ensure_safe_test_db(conn)
+        conn.execute(text("SET LOCAL lock_timeout = '5s'"))
         conn.execute(text(f"TRUNCATE TABLE {', '.join(tables)} RESTART IDENTITY CASCADE"))
         conn.execute(text("INSERT INTO tenants (id, name, created_at) VALUES ('mega_tenant', 'Mega Tenant', NOW()) ON CONFLICT DO NOTHING"))
         conn.execute(text("INSERT INTO rollout_tenant_assignments (tenant_id, routing_mode, assignment_version) VALUES ('mega_tenant', 'FORCE_LEGACY', 'v1') ON CONFLICT DO NOTHING"))
@@ -104,8 +105,13 @@ def db_session():
     
     yield session
     
-    session.rollback()
-    session.close()
+    try:
+        session.rollback()
+    except Exception:
+        pass
+    finally:
+        session.close()
+        TestingSessionLocal.remove()
     
     # Limpiar overrides de dependencias
     from app.main import app
@@ -114,6 +120,7 @@ def db_session():
     # Truncate tables between tests (preservando esquema y tablas de config)
     with engine.begin() as conn:
         ensure_safe_test_db(conn)
+        conn.execute(text("SET LOCAL lock_timeout = '5s'"))
         # RESTART IDENTITY asegura que las IDs vuelvan a 1. CASCADE limpia dependencias.
         conn.execute(text(f"TRUNCATE TABLE {', '.join(tables)} RESTART IDENTITY CASCADE"))
         

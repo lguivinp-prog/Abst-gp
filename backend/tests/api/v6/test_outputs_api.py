@@ -4,6 +4,7 @@ from app.models.domain import CaseFile, AuditLog
 from app.models.v6.case_workflow import CaseWorkflow
 from app.models.v6.supplier_selection import SupplierSelectionFinal, SupplierSelectionAttempt
 from app.models.v6.supplier_offer import SupplierOffer
+from app.models.v6.supplier import Supplier
 from app.models.v6.generated_output import GeneratedOutput
 
 def test_prepare_output_api(admin_client: TestClient, db_session: Session, setup_mega_tenant):
@@ -15,7 +16,12 @@ def test_prepare_output_api(admin_client: TestClient, db_session: Session, setup
     workflow = CaseWorkflow(case_id=case.id, status="APPROVED")
     db_session.add(workflow)
     
-    offer = SupplierOffer(case_id=case.id, supplier_id=1, status="PENDING", evaluation_status="APPROVED")
+    # Each test creates its own supplier; never depend on persistent CI/seed rows.
+    supplier = Supplier(tenant_id="mega_tenant", ruc="20100070970", business_name="Proveedor CI para prueba")
+    db_session.add(supplier)
+    db_session.flush()
+
+    offer = SupplierOffer(case_id=case.id, supplier_id=supplier.id, price=5000.0, total_amount=5000.0, status="PENDING", evaluation_status="APPROVED")
     db_session.add(offer)
     db_session.commit()
     

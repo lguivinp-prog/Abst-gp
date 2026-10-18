@@ -16,15 +16,18 @@ Write-Host "============================================="
 $Results = [ordered]@{}
 
 function Run-Compose {
-    & docker compose -p $ProjectName -f $ComposeFile $args
+    & docker compose -p $ProjectName -f $ComposeFile @args
+    if ($LASTEXITCODE -ne 0) {
+        throw "docker compose execution failed with exit code $LASTEXITCODE"
+    }
 }
 
 function Cleanup {
     Write-Host "--- Ejecutando Cleanup ---"
+    docker compose -p $ProjectName -f $ComposeFile logs | Out-File -FilePath "$ArtifactsDir/docker-compose.log" -Encoding utf8
     if ($KeepEnv -eq "1") {
         Write-Host "KEEP_ENV=1: Omitiendo cleanup de contenedores."
     } else {
-        docker compose -p $ProjectName -f $ComposeFile logs | Out-File -FilePath "$ArtifactsDir/docker-compose.log" -Encoding utf8
         docker compose -p $ProjectName -f $ComposeFile down -v --remove-orphans
     }
 }
@@ -74,20 +77,38 @@ try {
         throw $_
     }
 
+    # E.2 BOOTSTRAP SEED
+    Write-Host "[E.2] Bootstrap Base Data..."
+    try {
+        Run-Compose run --rm backend-test python scripts/seed_base.py | Out-File -FilePath "$ArtifactsDir/seed.log" -Encoding utf8
+        $Results["SEED"] = "PASS"
+    } catch {
+        $Results["SEED"] = "FAIL"
+        throw $_
+    }
+
     # F. BACKEND SUITE
     Write-Host "[F] Backend Suite Completa..."
+    try {
+        & docker compose -p $ProjectName -f $ComposeFile stop worker-test backend-app 2>&1 | Out-Null
+    } catch {}
+    $global:LASTEXITCODE = 0
     try {
         Run-Compose run --rm backend-test python -m pytest tests/ -v --ignore=tests/e2e | Out-File -FilePath "$ArtifactsDir/pytest-full.log" -Encoding utf8
         $Results["SUITE_BACKEND"] = "PASS"
     } catch {
+        Write-Host "=== ERROR EXCEPTION IN SUITE_BACKEND ==="
+        Write-Host "Message: $_"
+        Write-Host "Exception: $($_.Exception)"
+        Write-Host "ScriptStackTrace: $($_.ScriptStackTrace)"
         $Results["SUITE_BACKEND"] = "FAIL"
         throw $_
     }
 
     # G. CONCURRENCIA
-    Write-Host "[G] Prueba Real de Concurrencia..."
+    Write-Host "[G] Prueba Real de Concurrencia (Legacy + P13)..."
     try {
-        Run-Compose run --rm backend-test python -m pytest tests/api/integration/test_comparison_concurrency.py -v | Out-File -FilePath "$ArtifactsDir/concurrency.log" -Encoding utf8
+        Run-Compose run --rm backend-test python -m pytest tests/api/integration/test_comparison_concurrency.py tests/api/v6/test_p13_concurrency_idempotency.py -v | Out-File -FilePath "$ArtifactsDir/concurrency.log" -Encoding utf8
         $Results["CONCURRENCY"] = "PASS"
     } catch {
         $Results["CONCURRENCY"] = "FAIL"
@@ -114,21 +135,46 @@ try {
         throw $_
     }
 
-    # J. API E2E
-    Write-Host "[J] API E2E..."
+    # J. LEGACY V5 INFRASTRUCTURE PIPELINE
+    Write-Host "[J] LEGACY_V5_INFRASTRUCTURE_PIPELINE..."
     Run-Compose up -d backend-app worker-test
     Write-Host "Esperando a backend y worker..."
     Start-Sleep -Seconds 15
     try {
-        Run-Compose run --rm backend-test python -m pytest tests/e2e/test_full_document_pipeline.py -v | Out-File -FilePath "$ArtifactsDir/api_e2e.log" -Encoding utf8
-        $Results["API_E2E"] = "PASS"
+        Run-Compose run --rm backend-test python -m pytest tests/e2e/test_full_document_pipeline.py -v | Out-File -FilePath "$ArtifactsDir/legacy_e2e.log" -Encoding utf8
+        $Results["LEGACY_V5_INFRASTRUCTURE_PIPELINE"] = "PASS"
     } catch {
-        $Results["API_E2E"] = "FAIL"
+        $Results["LEGACY_V5_INFRASTRUCTURE_PIPELINE"] = "FAIL"
+        throw $_
+    }
+
+    # J.1 ISOLATION BOUNDARY
+    Write-Host "[J.1] ISOLATION BOUNDARY: Reiniciando worker y backend ordenadamente..."
+    Run-Compose stop worker-test backend-app
+    Run-Compose start backend-app worker-test
+    Start-Sleep -Seconds 5
+
+    # J.2 NATIVE V6 API E2E
+    Write-Host "[J.2] NATIVE_V6_API_E2E..."
+    try {
+        Run-Compose run --rm backend-test python -m pytest tests/e2e/test_v6_full_document_pipeline.py -v | Out-File -FilePath "$ArtifactsDir/native_v6_e2e.log" -Encoding utf8
+        $Results["NATIVE_V6_API_E2E"] = "PASS"
+    } catch {
+        $Results["NATIVE_V6_API_E2E"] = "FAIL"
         throw $_
     }
 
     # K. BROWSER E2E
     Write-Host "[K] Browser E2E..."
+    Write-Host "[K.1] Bootstrap E2E Data para Browser..."
+    try {
+        Run-Compose run --rm -e ALLOW_E2E_SEED=true backend-test python scripts/seed_e2e.py | Out-File -FilePath "$ArtifactsDir/seed_e2e.log" -Encoding utf8
+        $Results["SEED_E2E"] = "PASS"
+    } catch {
+        $Results["SEED_E2E"] = "FAIL"
+        throw $_
+    }
+
     Run-Compose up -d frontend-test
     Write-Host "Instalando Playwright dependencias en test container y ejecutando pruebas..."
     try {
@@ -143,12 +189,16 @@ try {
     # L. REPORTE
     Write-Host "--- GENERANDO REPORTE MATRIZ ---"
     $ReportFile = "$ArtifactsDir/gate-summary.md"
-    "# Resumen de Certificación V5.3 (11/11 Release Gates)" | Out-File -FilePath $ReportFile -Encoding utf8
+    "# Resumen de Certificación V5.3 (14/14 Release Gates)" | Out-File -FilePath $ReportFile -Encoding utf8
+    "" | Out-File -FilePath $ReportFile -Append -Encoding utf8
+    "**Run ID:** $Timestamp" | Out-File -FilePath $ReportFile -Append -Encoding utf8
+    "**Base Commit:** 063814e1ef6ded289d60dd4e9a906068bdd3752b" | Out-File -FilePath $ReportFile -Append -Encoding utf8
+    "**Artifacts Dir:** $ArtifactsDir" | Out-File -FilePath $ReportFile -Append -Encoding utf8
     "" | Out-File -FilePath $ReportFile -Append -Encoding utf8
     "| Gate | Estado |" | Out-File -FilePath $ReportFile -Append -Encoding utf8
     "|------|--------|" | Out-File -FilePath $ReportFile -Append -Encoding utf8
 
-    $Gates = @("PREFLIGHT", "BUILD", "FRONTEND", "DEPENDENCIAS", "ALEMBIC", "SUITE_BACKEND", "CONCURRENCY", "ROLLBACK", "DOCUMENTAL", "API_E2E", "BROWSER_E2E")
+    $Gates = @("PREFLIGHT", "BUILD", "FRONTEND", "DEPENDENCIAS", "ALEMBIC", "SEED", "SEED_E2E", "SUITE_BACKEND", "CONCURRENCY", "ROLLBACK", "DOCUMENTAL", "LEGACY_V5_INFRASTRUCTURE_PIPELINE", "NATIVE_V6_API_E2E", "BROWSER_E2E")
     $AllPass = $true
     foreach ($g in $Gates) {
         $state = if ($Results.Contains($g)) { $Results[$g] } else { "FAIL" }
@@ -162,7 +212,7 @@ try {
     Cleanup
 
     if ($AllPass) {
-        Write-Host "RELEASE CERTIFICATION V5.3 PASS (11/11)"
+        Write-Host "RELEASE CERTIFICATION V5.3 PASS (14/14)"
     } else {
         Write-Host "RELEASE CERTIFICATION V5.3 FAIL"
         exit 1
