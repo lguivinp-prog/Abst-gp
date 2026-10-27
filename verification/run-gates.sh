@@ -211,7 +211,7 @@ RESULTS["SEED_E2E"]="PASS"
 
 run_compose up -d frontend-test
 echo "Ejecutando suite Playwright Chromium completa..."
-run_compose_timed 15m run --rm browser-test sh -c "npx playwright test --output=/tmp/test-results --reporter=line" > "$ARTIFACTS_DIR/browser_e2e.log" 2>&1 || { RESULTS["BROWSER_E2E"]="FAIL"; exit 1; }
+run_compose_timed 15m run --rm browser-test sh -c "npm ci --include=dev --no-audit --no-fund && npm run test -- --output=/tmp/test-results --reporter=line" > "$ARTIFACTS_DIR/browser_e2e.log" 2>&1 || { RESULTS["BROWSER_E2E"]="FAIL"; exit 1; }
 RESULTS["BROWSER_E2E"]="PASS"
 
 # L. REPORTE
