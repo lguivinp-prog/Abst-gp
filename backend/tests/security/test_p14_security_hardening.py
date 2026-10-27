@@ -1057,6 +1057,7 @@ def test_r4_05_alert_delivery_webhook_server_and_telegram_ok_validation(db_sessi
         assert check_remote["ready"] is True
 
         # 4. Despachador autónomo supervisado (bucle en background)
+        settings.APP_ENV = "development"
         start_alert_dispatcher_service(interval_seconds=0.2)
         try:
             # Crear alerta pendiente manualmente
@@ -1071,13 +1072,24 @@ def test_r4_05_alert_delivery_webhook_server_and_telegram_ok_validation(db_sessi
             db_session.commit()
             pending_id = pending_alert.id
 
-            # Esperar a que el worker en background procese la alerta
-            settings.APP_ENV = "development"
-            time.sleep(0.6)
+            # Espera acotada (hasta 5s) consultando periódicamente mediante db_session.expire_all()
+            deadline = time.monotonic() + 5.0
+            checked_alert = None
+            while time.monotonic() < deadline:
+                db_session.expire_all()
+                checked_alert = db_session.query(SecurityAlertOutbox).filter(SecurityAlertOutbox.id == pending_id).first()
+                if checked_alert and checked_alert.status != "PENDING":
+                    break
+                time.sleep(0.05)
 
-            db_session.expire_all()
-            checked_alert = db_session.query(SecurityAlertOutbox).filter(SecurityAlertOutbox.id == pending_id).first()
-            assert checked_alert.status == "SENT"
+            assert checked_alert is not None, "La alerta pendiente no fue encontrada en la base de datos"
+            assert checked_alert.status not in ("LOGGED_LOCAL_ONLY", "FAILED", "DEAD_LETTER"), (
+                f"La alerta falló o fue clasificada incorrectamente: status='{checked_alert.status}', "
+                f"last_error='{checked_alert.last_error}'"
+            )
+            assert checked_alert.status == "SENT", (
+                f"Se esperaba status 'SENT' en la alerta procesada por el despachador autónomo, pero se obtuvo '{checked_alert.status}'"
+            )
         finally:
             stop_alert_dispatcher_service()
 
