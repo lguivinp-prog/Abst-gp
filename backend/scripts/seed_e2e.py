@@ -39,6 +39,8 @@ from sqlalchemy.orm import sessionmaker
 from app.core.config import settings
 from app.models.domain import User, Tenant
 from app.api.auth import get_password_hash
+from app.core.crypto import encrypt_aead
+
 
 def run_e2e_seed():
     engine = create_engine(settings.DATABASE_URL)
@@ -46,7 +48,14 @@ def run_e2e_seed():
     db = SessionLocal()
 
     try:
-        # Create user admin with password adminpassword for E2E tests
+        # Asegurar tenant base
+        tenant = db.query(Tenant).filter_by(id="mega_tenant").first()
+        if not tenant:
+            tenant = Tenant(id="mega_tenant", name="Mega Tenant", can_manage_users=True)
+            db.add(tenant)
+            db.commit()
+
+        # 1. Usuario admin con contrasena adminpassword para E2E general
         admin_user = db.query(User).filter_by(username="admin").first()
         hashed = get_password_hash("adminpassword")
         if not admin_user:
@@ -57,7 +66,8 @@ def run_e2e_seed():
                 is_active=True,
                 tenant_id="mega_tenant",
                 tenant_resolution_status="RESOLVED",
-                must_change_password=False
+                must_change_password=False,
+                session_version=1
             )
             db.add(admin_user)
             db.commit()
@@ -67,8 +77,44 @@ def run_e2e_seed():
             admin_user.failed_login_count = 0
             admin_user.locked_until = None
             admin_user.is_active = True
+            admin_user.session_version = 1
             db.commit()
             print("E2E User 'admin' already exists. Password hash updated and account unlocked.")
+
+        # 2. Usuario p14_mfa_operator con MFA TOTP para pruebas de autenticacion de 2 factores (P14 R2-02, R2-17)
+        mfa_user = db.query(User).filter_by(username="p14_mfa_operator").first()
+        mfa_hashed = get_password_hash("MfaOperatorPass123!")
+        totp_secret = "JBSWY3DPEHPK3PXP"
+        mfa_key = getattr(settings, "MFA_ENCRYPTION_KEY", "deterministic_test_mfa_key_32b_!")
+        enc_secret = encrypt_aead(totp_secret, mfa_key, key_id="v1")
+
+        if not mfa_user:
+            mfa_user = User(
+                username="p14_mfa_operator",
+                password_hash=mfa_hashed,
+                role="OPERATOR",
+                is_active=True,
+                tenant_id="mega_tenant",
+                tenant_resolution_status="RESOLVED",
+                must_change_password=False,
+                mfa_status="ENABLED",
+                mfa_secret=enc_secret,
+                session_version=1
+            )
+            db.add(mfa_user)
+            db.commit()
+            print("E2E User 'p14_mfa_operator' created.")
+        else:
+            mfa_user.password_hash = mfa_hashed
+            mfa_user.role = "OPERATOR"
+            mfa_user.mfa_status = "ENABLED"
+            mfa_user.mfa_secret = enc_secret
+            mfa_user.failed_login_count = 0
+            mfa_user.locked_until = None
+            mfa_user.is_active = True
+            mfa_user.session_version = 1
+            db.commit()
+            print("E2E User 'p14_mfa_operator' updated.")
 
     except Exception as e:
         db.rollback()
@@ -76,6 +122,7 @@ def run_e2e_seed():
         sys.exit(1)
     finally:
         db.close()
+
 
 if __name__ == "__main__":
     run_e2e_seed()

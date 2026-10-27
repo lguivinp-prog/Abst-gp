@@ -42,6 +42,81 @@ def startup_orphan_reconciliation():
             "P13: falló la reconciliación de archivos; intervención operativa requerida"
         )
 
+
+@app.on_event("startup")
+def startup_security_alert_dispatcher():
+    """
+    R4-05, R5-06: Valida preflight del canal de alertas e inicia el despachador autónomo supervisado.
+    En entorno LAN o producción, el canal debe ser un transporte remoto verificado (webhook o telegram).
+    """
+    import logging
+    startup_logger = logging.getLogger("app.security.startup")
+    try:
+        from app.services.security.intrusion_service import validate_alert_channel_readiness, start_alert_dispatcher_service
+        readiness = validate_alert_channel_readiness()
+        if not readiness.get("ready"):
+            app_env = getattr(settings, "APP_ENV", "development").lower()
+            msg = f"Canal de alertas no preparado para produccion/LAN (R5-06): {readiness.get('reason')}"
+            startup_logger.error(msg)
+            if app_env in ("lan", "production", "prod"):
+                raise RuntimeError(f"Preflight de seguridad LAN fallido (R5-06): {readiness.get('reason')}")
+        start_alert_dispatcher_service(interval_seconds=3.0)
+    except Exception as e:
+        startup_logger.error(f"Fallo en preflight o inicio del despachador de alertas: {e}")
+        if getattr(settings, "APP_ENV", "development").lower() in ("lan", "production", "prod"):
+            raise
+
+
+@app.on_event("startup")
+def startup_verify_database_quarantine():
+    """
+    B1-03: Bloqueo operativo transversal si la base de datos se encuentra en cuarentena
+    por una restauracion DR previa inconsistente o fallida (_dr_restoration_quarantine detectada).
+    Impide que la instalacion opere o sea presentada como operativa.
+    """
+    import logging
+    startup_logger = logging.getLogger("app.quarantine.startup")
+    try:
+        from sqlalchemy import text
+        from app.core.database import SessionLocal
+        db = SessionLocal()
+        try:
+            if db.bind and getattr(db.bind.dialect, "name", "") == "postgresql":
+                has_table = db.execute(text("SELECT to_regclass('public._dr_restoration_quarantine')")).scalar()
+                if has_table:
+                    quarantine = db.execute(text(
+                        "SELECT reason FROM _dr_restoration_quarantine ORDER BY id DESC LIMIT 1"
+                    )).first()
+                    if quarantine:
+                        reason = quarantine[0]
+                        msg = (
+                            f"BLOQUEO OPERATIVO TRANSVERSAL POR CUARENTENA DR (B1-03): "
+                            f"La base de datos se encuentra en cuarentena estricta (_dr_restoration_quarantine activa). "
+                            f"Causa: {reason}. Los servicios operativos quedan inhabilitados."
+                        )
+                        startup_logger.critical(msg)
+                        raise RuntimeError(msg)
+        finally:
+            db.close()
+    except RuntimeError:
+        raise
+    except Exception as e:
+        msg = f"BLOQUEO OPERATIVO TRANSVERSAL POR CUARENTENA DR (B1-FAIL-CLOSED): Fallo en preflight de cuarentena: {e}"
+        startup_logger.critical(msg)
+        raise RuntimeError(msg) from e
+
+
+@app.on_event("shutdown")
+def shutdown_security_alert_dispatcher():
+    """
+    R4-05: Detiene el despachador de alertas de seguridad limpiamente.
+    """
+    try:
+        from app.services.security.intrusion_service import stop_alert_dispatcher_service
+        stop_alert_dispatcher_service()
+    except Exception:
+        pass
+
 # Telemetría OpenTelemetry y Prometheus
 app.add_middleware(OpenTelemetryMiddleware)
 

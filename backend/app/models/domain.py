@@ -1,10 +1,16 @@
-from sqlalchemy import Column, Integer, String, Boolean, DateTime, ForeignKey, Text, Float, JSON, CheckConstraint, Index, UniqueConstraint, PrimaryKeyConstraint, text, Enum as SAEnum
+from sqlalchemy import Column, Integer, BigInteger, String, Boolean, DateTime, ForeignKey, Text, Float, JSON, CheckConstraint, Index, UniqueConstraint, PrimaryKeyConstraint, text, Enum as SAEnum
 from sqlalchemy.dialects.postgresql import JSONB, UUID
 from sqlalchemy.orm import relationship
 from sqlalchemy.sql import func
 import uuid
 import enum
 from app.models.base import Base
+
+class MfaStatus(str, enum.Enum):
+    DISABLED = "DISABLED"
+    PENDING_ENROLLMENT = "PENDING_ENROLLMENT"
+    ENABLED = "ENABLED"
+    RECOVERY_REQUIRED = "RECOVERY_REQUIRED"
 
 from sqlalchemy import event
 from sqlalchemy.orm import Session
@@ -122,6 +128,7 @@ class Tenant(Base):
     __tablename__ = "tenants"
     id = Column(String(50), primary_key=True)
     name = Column(String(100), nullable=False)
+    can_manage_users = Column(Boolean, default=False, nullable=False)
     created_at = Column(DateTime(timezone=True), server_default=func.now(), nullable=False)
 
 class User(Base):
@@ -131,7 +138,7 @@ class User(Base):
     tenant_resolution_status = Column(String(50), nullable=False, default="RESOLVED")
     username = Column(String, unique=True, index=True, nullable=False)
     password_hash = Column(String, nullable=False)
-    role = Column(String, nullable=False, default="readonly") # admin, operator, readonly
+    role = Column(String, nullable=False, default="readonly") # superadmin, admin, supervisor, operator, readonly
     is_active = Column(Boolean, default=True, nullable=False)
     must_change_password = Column(Boolean, default=False, nullable=False)
     created_by_user_id = Column(Integer, ForeignKey("users.id"), nullable=True)
@@ -142,12 +149,97 @@ class User(Base):
     quarantined_at = Column(DateTime(timezone=True), nullable=True)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
 
+    # P14 Hardening: MFA & Session Governance
+    mfa_status = Column(String(30), default="DISABLED", nullable=False) # DISABLED, PENDING_ENROLLMENT, ENABLED, RECOVERY_REQUIRED
+    mfa_secret = Column(Text, nullable=True) # AEAD-encrypted TOTP secret
+    mfa_last_totp_step = Column(BigInteger, nullable=True) # Anti-replay tracking for 30s steps
+    mfa_last_verified_at = Column(DateTime(timezone=True), nullable=True)
+    session_version = Column(Integer, default=1, nullable=False)
+
+    recovery_codes = relationship("UserRecoveryCode", back_populates="user", cascade="all, delete-orphan")
+    sessions = relationship("UserSession", back_populates="user", cascade="all, delete-orphan")
+
     __table_args__ = (
         CheckConstraint(
             "tenant_id IS NOT NULL",
             name="chk_users_tenant_resolution"
         ),
+        Index(
+            "ix_users_superadmin_singleton",
+            "role",
+            unique=True,
+            postgresql_where=(Column("role") == "SUPERADMIN")
+        ),
     )
+
+class UserRecoveryCode(Base):
+    __tablename__ = "user_recovery_codes"
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True)
+    code_hash = Column(String(128), nullable=False)
+    created_at = Column(DateTime(timezone=True), server_default=func.now(), nullable=False)
+    used_at = Column(DateTime(timezone=True), nullable=True)
+
+    user = relationship("User", back_populates="recovery_codes")
+
+class UserSession(Base):
+    __tablename__ = "user_sessions"
+    id = Column(String(64), primary_key=True) # JTI / Session ID
+    user_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True)
+    ip_address = Column(String(45), nullable=True)
+    user_agent = Column(String(255), nullable=True)
+    session_version = Column(Integer, default=1, nullable=False)
+    is_revoked = Column(Boolean, default=False, nullable=False)
+    created_at = Column(DateTime(timezone=True), server_default=func.now(), nullable=False)
+    last_activity_at = Column(DateTime(timezone=True), server_default=func.now(), nullable=False)
+    expires_at = Column(DateTime(timezone=True), nullable=False)
+
+    user = relationship("User", back_populates="sessions")
+
+class SecurityIntrusionEvent(Base):
+    __tablename__ = "security_intrusion_events"
+    id = Column(Integer, primary_key=True, index=True)
+    ip_address = Column(String(45), nullable=False, index=True)
+    user_identifier = Column(String(100), nullable=True)
+    tenant_id = Column(String(50), nullable=True)
+    event_type = Column(String(50), nullable=False, index=True)
+    severity = Column(String(20), nullable=False) # CRITICAL, HIGH, MEDIUM, LOW
+    details = Column(JSONB, nullable=True) # Sanitized: NO passwords, tokens, TOTP
+    occurred_at = Column(DateTime(timezone=True), server_default=func.now(), nullable=False)
+
+    outbox_alerts = relationship("SecurityAlertOutbox", back_populates="event", cascade="all, delete-orphan")
+
+class SecurityAlertOutbox(Base):
+    __tablename__ = "security_alert_outbox"
+    id = Column(Integer, primary_key=True, index=True)
+    event_id = Column(Integer, ForeignKey("security_intrusion_events.id", ondelete="CASCADE"), nullable=False)
+    channel = Column(String(50), nullable=False) # console, email, telegram, mock
+    destination = Column(String(255), nullable=True)
+    payload = Column(JSONB, nullable=False)
+    status = Column(String(20), default="PENDING", nullable=False) # PENDING, SENT, FAILED, NOT_CONFIGURED
+    attempts = Column(Integer, default=0, nullable=False)
+    last_error = Column(Text, nullable=True)
+    created_at = Column(DateTime(timezone=True), server_default=func.now(), nullable=False)
+    processed_at = Column(DateTime(timezone=True), nullable=True)
+    last_attempt_at = Column(DateTime(timezone=True), nullable=True)
+
+    event = relationship("SecurityIntrusionEvent", back_populates="outbox_alerts")
+
+class AuditDelegationGrant(Base):
+    __tablename__ = "audit_delegation_grants"
+    id = Column(String(64), primary_key=True) # UUID grant id
+    target_tenant_id = Column(String(50), ForeignKey("tenants.id", ondelete="CASCADE"), nullable=False, index=True)
+    granted_to_user_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True)
+    granted_by_user_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
+    scope = Column(String(50), default="READ_ONLY_AUDIT", nullable=False) # strictly read-only
+    reason = Column(String(255), nullable=False)
+    created_at = Column(DateTime(timezone=True), server_default=func.now(), nullable=False)
+    expires_at = Column(DateTime(timezone=True), nullable=False)
+    is_revoked = Column(Boolean, default=False, nullable=False)
+
+    target_tenant = relationship("Tenant", foreign_keys=[target_tenant_id])
+    granted_to = relationship("User", foreign_keys=[granted_to_user_id])
+    granted_by = relationship("User", foreign_keys=[granted_by_user_id])
 
 class UserTenantQuarantine(Base):
     __tablename__ = "user_tenant_quarantine"

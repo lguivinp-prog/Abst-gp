@@ -18,33 +18,35 @@ class LocalStorageAdapter(DocumentStorage):
         return p
 
     def put(self, tenant_id: str, document_id: str, file_stream: BinaryIO, expected_checksum: Optional[str] = None) -> str:
-        tenant_dir = self.base_dir / str(tenant_id)
-        tenant_dir.mkdir(parents=True, exist_ok=True)
-        
-        file_path = tenant_dir / str(document_id)
-        
-        hasher = hashlib.sha256()
-        
-        # Ensure we are reading from the start if it's a seekable stream
-        if hasattr(file_stream, 'seek') and hasattr(file_stream, 'tell'):
-            try:
-                if file_stream.tell() != 0:
-                    file_stream.seek(0)
-            except Exception:
-                pass
-
-        with open(file_path, "wb") as f:
-            while chunk := file_stream.read(8192):
-                hasher.update(chunk)
-                f.write(chunk)
-                
-        actual_checksum = hasher.hexdigest()
-        
-        if expected_checksum and actual_checksum != expected_checksum:
-            os.remove(file_path)
-            raise ValueError(f"Checksum mismatch. Expected {expected_checksum}, got {actual_checksum}")
+        from app.core.write_control import DocumentWriteControl
+        with DocumentWriteControl.writer_lock(self.base_dir):
+            tenant_dir = self.base_dir / str(tenant_id)
+            tenant_dir.mkdir(parents=True, exist_ok=True)
             
-        return str(file_path)
+            file_path = tenant_dir / str(document_id)
+            
+            hasher = hashlib.sha256()
+            
+            # Ensure we are reading from the start if it's a seekable stream
+            if hasattr(file_stream, 'seek') and hasattr(file_stream, 'tell'):
+                try:
+                    if file_stream.tell() != 0:
+                        file_stream.seek(0)
+                except Exception:
+                    pass
+
+            with open(file_path, "wb") as f:
+                while chunk := file_stream.read(8192):
+                    hasher.update(chunk)
+                    f.write(chunk)
+                    
+            actual_checksum = hasher.hexdigest()
+            
+            if expected_checksum and actual_checksum != expected_checksum:
+                os.remove(file_path)
+                raise ValueError(f"Checksum mismatch. Expected {expected_checksum}, got {actual_checksum}")
+                
+            return str(file_path)
 
     def get(self, uri: str) -> BinaryIO:
         path = self._get_path(uri)
@@ -53,11 +55,13 @@ class LocalStorageAdapter(DocumentStorage):
         return open(path, "rb")
 
     def delete(self, uri: str) -> bool:
-        path = self._get_path(uri)
-        if path.exists():
-            os.remove(path)
-            return True
-        return False
+        from app.core.write_control import DocumentWriteControl
+        with DocumentWriteControl.writer_lock(self.base_dir):
+            path = self._get_path(uri)
+            if path.exists():
+                os.remove(path)
+                return True
+            return False
 
     def exists(self, uri: str) -> bool:
         return self._get_path(uri).exists()

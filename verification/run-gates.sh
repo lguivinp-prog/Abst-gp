@@ -1,20 +1,20 @@
 #!/bin/bash
 set -Eeuo pipefail
 
-export PROJECT_NAME="abst_gp_v52_validation"
+export PROJECT_NAME="${PROJECT_NAME:-abst_p14_validation}"
 export COMPOSE_FILE="verification/docker-compose.test.yml"
 KEEP_ENV="${KEEP_ENV:-0}"
 TIMESTAMP=$(date +"%Y%m%d_%H%M%S")
-ARTIFACTS_DIR="artifacts/verification/v5.2.1/${TIMESTAMP}"
+ARTIFACTS_DIR="artifacts/verification/p14/${TIMESTAMP}"
 
 mkdir -p "$ARTIFACTS_DIR"
 cd "$(dirname "$0")/.."
 
 echo "============================================="
-echo "INICIANDO SPRINT V5.2.1 - CHECKPOINT 3"
+echo "INICIANDO CERTIFICACIÓN CANÓNICA P14 - 14/14 GATES"
 echo "============================================="
 
-if [[ "$PROJECT_NAME" != "abst_gp_v52_validation" ]]; then
+if [[ "$PROJECT_NAME" != "abst_p14_validation" ]]; then
     echo "ERROR: PROJECT_NAME no es el autorizado."
     exit 1
 fi
@@ -37,7 +37,7 @@ function run_compose_timed() {
 
 function cleanup() {
     echo "--- Ejecutando Cleanup ---"
-    if [[ "$PROJECT_NAME" == "abst_gp_v52_validation" ]]; then
+    if [[ "$PROJECT_NAME" == "abst_p14_validation" ]]; then
         if [[ "$KEEP_ENV" == "1" ]]; then
             echo "KEEP_ENV=1: Omitiendo cleanup de contenedores."
         else
@@ -51,6 +51,38 @@ trap cleanup EXIT
 
 # A. PREFLIGHT
 echo "[A] Preflight..."
+BASE_COMMIT="${BASE_COMMIT:-caa135c25392330b483167d5d552c51dc398a905}"
+
+# Comprobar existencia del commit base P13; si no existe (entorno shallow CI), recuperar historial
+if ! git cat-file -e "${BASE_COMMIT}^{commit}" 2>/dev/null; then
+    echo "Commit base P13 (${BASE_COMMIT}) ausente localmente. Recuperando historial desde origin/refactor/v6-squash..."
+    if git remote get-url origin >/dev/null 2>&1; then
+        git fetch --no-tags --depth=50 origin refactor/v6-squash 2>/dev/null || \
+        git fetch --unshallow origin refactor/v6-squash 2>/dev/null || \
+        git fetch origin refactor/v6-squash 2>/dev/null || true
+    fi
+    if ! git cat-file -e "${BASE_COMMIT}^{commit}" 2>/dev/null; then
+        if [ -f "$(git rev-parse --git-dir 2>/dev/null)/shallow" ]; then
+            git fetch --unshallow origin 2>/dev/null || true
+        fi
+    fi
+    if ! git cat-file -e "${BASE_COMMIT}^{commit}" 2>/dev/null; then
+        echo "ERROR CRÍTICO: Commit base P13 (${BASE_COMMIT}) continúa ausente tras intento de recuperación desde origin." >&2
+        exit 1
+    fi
+    echo "Commit base P13 (${BASE_COMMIT}) verificado satisfactoriamente tras recuperación."
+fi
+
+# Calcular Candidate Tree SHA pre-gates de forma estricta
+TMP_PRE_IDX=$(mktemp 2>/dev/null || echo "/tmp/git_pre_idx_$$")
+TMP_PRE_PATCH=$(mktemp 2>/dev/null || echo "/tmp/git_pre_patch_$$.patch")
+git diff "$BASE_COMMIT" --binary --output="$TMP_PRE_PATCH"
+GIT_INDEX_FILE="$TMP_PRE_IDX" git read-tree "$BASE_COMMIT"
+GIT_INDEX_FILE="$TMP_PRE_IDX" git apply --cached --binary --whitespace=nowarn "$TMP_PRE_PATCH"
+TREE_SHA_BEFORE=$(GIT_INDEX_FILE="$TMP_PRE_IDX" git write-tree)
+rm -f "$TMP_PRE_IDX" "$TMP_PRE_PATCH" 2>/dev/null || true
+echo "Candidate Tree SHA (Pre-Gates): ${TREE_SHA_BEFORE}"
+
 docker --version > "$ARTIFACTS_DIR/versions.txt"
 docker compose version >> "$ARTIFACTS_DIR/versions.txt"
 run_compose config > "$ARTIFACTS_DIR/compose-config.yml"
@@ -177,19 +209,62 @@ echo "[K.1] Bootstrap E2E Data para Browser..."
 run_compose run --rm -e ALLOW_E2E_SEED=true backend-test python scripts/seed_e2e.py > "$ARTIFACTS_DIR/seed_e2e.log" 2>&1 || { RESULTS["SEED_E2E"]="FAIL"; exit 1; }
 RESULTS["SEED_E2E"]="PASS"
 
-# Frontend ya debería estar corriendo en background para ser probado
 run_compose up -d frontend-test
-echo "Instalando Playwright dependencias en test container y ejecutando pruebas..."
-run_compose_timed 15m run --rm browser-test sh -c "npm install && npx playwright install --with-deps chromium && npm run test" > "$ARTIFACTS_DIR/browser_e2e.log" 2>&1 || { RESULTS["BROWSER_E2E"]="FAIL"; exit 1; }
+echo "Ejecutando suite Playwright Chromium completa..."
+run_compose_timed 15m run --rm browser-test sh -c "npm ci --include=dev --no-audit --no-fund && npm run test -- --output=/tmp/test-results --reporter=line" > "$ARTIFACTS_DIR/browser_e2e.log" 2>&1 || { RESULTS["BROWSER_E2E"]="FAIL"; exit 1; }
 RESULTS["BROWSER_E2E"]="PASS"
 
 # L. REPORTE
 echo "--- GENERANDO REPORTE MATRIZ ---"
 REPORT_FILE="$ARTIFACTS_DIR/gate-summary.md"
-echo "# Resumen de Certificación V5.3 (14/14 Release Gates)" > "$REPORT_FILE"
+BASE_COMMIT="${BASE_COMMIT:-caa135c25392330b483167d5d552c51dc398a905}"
+# 1. B3: Deteccion de archivos no rastreados (untracked)
+UNTRACKED=$(git ls-files --others --exclude-standard 2>/dev/null || true)
+UNTRACKED_OFFENDERS=""
+for f in $UNTRACKED; do
+    case "$f" in
+        artifacts/*|*.zip|.git/*|test_dummy.db) ;;
+        *) UNTRACKED_OFFENDERS="${UNTRACKED_OFFENDERS} $f" ;;
+    esac
+done
+if [ -n "$UNTRACKED_OFFENDERS" ]; then
+    echo "ERROR B3: Archivos untracked detectados que serian omitidos silenciosamente: $UNTRACKED_OFFENDERS" >&2
+    exit 1
+fi
+
+TMP_INDEX=$(mktemp 2>/dev/null || echo "/tmp/git_idx_$$")
+TMP_PATCH=$(mktemp 2>/dev/null || echo "/tmp/git_patch_$$.patch")
+PREV_INDEX="${GIT_INDEX_FILE:-}"
+git diff "$BASE_COMMIT" --binary --output="$TMP_PATCH" || { echo "ERROR B3: Fallo en git diff" >&2; exit 1; }
+PATCH_SHA256=$(sha256sum "$TMP_PATCH" | cut -d' ' -f1)
+export GIT_INDEX_FILE="$TMP_INDEX"
+git read-tree "$BASE_COMMIT" || { echo "ERROR B3: Fallo en git read-tree" >&2; exit 1; }
+git apply --cached --binary --whitespace=nowarn "$TMP_PATCH" || { echo "ERROR B3: Fallo en git apply" >&2; exit 1; }
+TREE_SHA=$(git write-tree) || { echo "ERROR B3: Fallo en git write-tree" >&2; exit 1; }
+git diff --quiet "$TREE_SHA" || {
+    echo "ERROR B3: Arbol reconstruido no coincide exactamente con el candidato de trabajo" >&2
+    exit 1
+}
+if [ -n "$TREE_SHA_BEFORE" ] && [ "$TREE_SHA" != "$TREE_SHA_BEFORE" ]; then
+    echo "ERROR B4: Candidate Tree SHA difiere antes y despues de gates ($TREE_SHA_BEFORE != $TREE_SHA)" >&2
+    exit 1
+fi
+rm -f "$TMP_INDEX" "$TMP_PATCH" 2>/dev/null || true
+if [ -n "$PREV_INDEX" ]; then
+    export GIT_INDEX_FILE="$PREV_INDEX"
+else
+    unset GIT_INDEX_FILE
+fi
+HEAD_SHA=$(git rev-parse HEAD 2>/dev/null || echo "UNKNOWN")
+BRANCH=$(git rev-parse --abbrev-ref HEAD 2>/dev/null || echo "UNKNOWN")
+echo "# Resumen de Certificación Canónica P14 (14/14 Release Gates)" > "$REPORT_FILE"
 echo "" >> "$REPORT_FILE"
 echo "**Run ID:** ${TIMESTAMP}" >> "$REPORT_FILE"
-echo "**Base Commit:** 063814e1ef6ded289d60dd4e9a906068bdd3752b" >> "$REPORT_FILE"
+echo "**Base Commit:** ${BASE_COMMIT}" >> "$REPORT_FILE"
+echo "**Candidate Tree SHA:** ${TREE_SHA}" >> "$REPORT_FILE"
+echo "**Candidate Patch SHA-256:** ${PATCH_SHA256}" >> "$REPORT_FILE"
+echo "**Worktree HEAD:** ${HEAD_SHA}" >> "$REPORT_FILE"
+echo "**Worktree Branch:** ${BRANCH}" >> "$REPORT_FILE"
 echo "**Artifacts Dir:** ${ARTIFACTS_DIR}" >> "$REPORT_FILE"
 echo "" >> "$REPORT_FILE"
 echo "| Gate | Estado |" >> "$REPORT_FILE"
@@ -204,10 +279,10 @@ done
 # Evaluar si hubo algún fallo
 for gate in "${GATES[@]}"; do
     if [[ "${RESULTS[$gate]:-SKIPPED}" != "PASS" ]]; then
-        echo "CHECKPOINT 3 FAIL"
+        echo "RELEASE CERTIFICATION P14 FAIL"
         exit 1
     fi
 done
 
-echo "CHECKPOINT 3 PASS"
+echo "RELEASE CERTIFICATION P14 PASS (14/14)"
 exit 0

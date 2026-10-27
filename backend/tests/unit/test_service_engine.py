@@ -133,10 +133,10 @@ def test_concurrencia_y_pausa():
     assert results.count('SUCCESS') == 1
     assert 'ComparisonRunNotClaimed' in results
     
-    db1 = SessionLocal()
-    run1 = db1.query(ComparisonRun).get(run_id)
-    # El perdedor no debe haber marcado el run como FAILED
-    assert run1.status == ComparisonRunStatus.COMPLETED
+    with SessionLocal() as db1:
+        run1 = db1.query(ComparisonRun).get(run_id)
+        # El perdedor no debe haber marcado el run como FAILED
+        assert run1.status == ComparisonRunStatus.COMPLETED
 
 # 9. Cero requisitos aprobados
 def test_cero_requisitos(db):

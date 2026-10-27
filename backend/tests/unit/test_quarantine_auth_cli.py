@@ -17,25 +17,25 @@ def mock_db_session():
     return mock_db
 
 def test_auth_rejects_null_tenant(mock_db_session):
-    user = User(username="test", is_active=True, tenant_id=None, tenant_resolution_status="RESOLVED")
+    user = User(username="test", is_active=True, tenant_id=None, tenant_resolution_status="RESOLVED", session_version=1)
     mock_db_session.query().filter().first.return_value = user
-    token = jwt.encode({"sub": "test"}, SECRET_KEY, algorithm=ALGORITHM)
+    token = jwt.encode({"sub": "test", "purpose": "access", "jti": "jti_test", "session_version": 1}, SECRET_KEY, algorithm=ALGORITHM)
     with pytest.raises(UnauthorizedException) as exc:
         get_current_user(token=token, db=mock_db_session)
     assert "User tenant assignment missing" in str(exc.value)
 
 def test_auth_rejects_unresolved_quarantine(mock_db_session):
-    user = User(username="test", is_active=True, tenant_id=1, tenant_resolution_status="QUARANTINED")
+    user = User(username="test", is_active=True, tenant_id=1, tenant_resolution_status="QUARANTINED", session_version=1)
     mock_db_session.query().filter().first.return_value = user
-    token = jwt.encode({"sub": "test"}, SECRET_KEY, algorithm=ALGORITHM)
+    token = jwt.encode({"sub": "test", "purpose": "access", "jti": "jti_test", "session_version": 1}, SECRET_KEY, algorithm=ALGORITHM)
     with pytest.raises(UnauthorizedException) as exc:
         get_current_user(token=token, db=mock_db_session)
     assert "User is quarantined or unresolved" in str(exc.value)
 
 def test_auth_rejects_inactive(mock_db_session):
-    user = User(username="test", is_active=False, tenant_id=1, tenant_resolution_status="RESOLVED")
+    user = User(username="test", is_active=False, tenant_id=1, tenant_resolution_status="RESOLVED", session_version=1)
     mock_db_session.query().filter().first.return_value = user
-    token = jwt.encode({"sub": "test"}, SECRET_KEY, algorithm=ALGORITHM)
+    token = jwt.encode({"sub": "test", "purpose": "access", "jti": "jti_test", "session_version": 1}, SECRET_KEY, algorithm=ALGORITHM)
     with pytest.raises(UnauthorizedException) as exc:
         get_current_user(token=token, db=mock_db_session)
     assert "Inactive user" in str(exc.value)
