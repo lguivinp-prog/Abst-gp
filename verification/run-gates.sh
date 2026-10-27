@@ -52,6 +52,27 @@ trap cleanup EXIT
 # A. PREFLIGHT
 echo "[A] Preflight..."
 BASE_COMMIT="${BASE_COMMIT:-caa135c25392330b483167d5d552c51dc398a905}"
+
+# Comprobar existencia del commit base P13; si no existe (entorno shallow CI), recuperar historial
+if ! git cat-file -e "${BASE_COMMIT}^{commit}" 2>/dev/null; then
+    echo "Commit base P13 (${BASE_COMMIT}) ausente localmente. Recuperando historial desde origin/refactor/v6-squash..."
+    if git remote get-url origin >/dev/null 2>&1; then
+        git fetch --no-tags --depth=50 origin refactor/v6-squash 2>/dev/null || \
+        git fetch --unshallow origin refactor/v6-squash 2>/dev/null || \
+        git fetch origin refactor/v6-squash 2>/dev/null || true
+    fi
+    if ! git cat-file -e "${BASE_COMMIT}^{commit}" 2>/dev/null; then
+        if [ -f "$(git rev-parse --git-dir 2>/dev/null)/shallow" ]; then
+            git fetch --unshallow origin 2>/dev/null || true
+        fi
+    fi
+    if ! git cat-file -e "${BASE_COMMIT}^{commit}" 2>/dev/null; then
+        echo "ERROR CRÍTICO: Commit base P13 (${BASE_COMMIT}) continúa ausente tras intento de recuperación desde origin." >&2
+        exit 1
+    fi
+    echo "Commit base P13 (${BASE_COMMIT}) verificado satisfactoriamente tras recuperación."
+fi
+
 # Calcular Candidate Tree SHA pre-gates de forma estricta
 TMP_PRE_IDX=$(mktemp 2>/dev/null || echo "/tmp/git_pre_idx_$$")
 TMP_PRE_PATCH=$(mktemp 2>/dev/null || echo "/tmp/git_pre_patch_$$.patch")
