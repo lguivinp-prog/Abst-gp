@@ -23,3 +23,5 @@ pytesseract
 requests>=2.32.0
 playwright>=1.44.0
 httpx>=0.27.0
+pyotp>=2.9.0
+cryptography>=42.0.0

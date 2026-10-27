@@ -216,6 +216,8 @@ test.describe('[UI-MOCK: Component Interface Test] Fase P13: Informe Técnico (P
     });
 
     await page.addInitScript((token) => {
+      sessionStorage.setItem('access_token', token);
+      sessionStorage.setItem('user', JSON.stringify({ id: 20, username: 'supervisor_demo', role: 'SUPERVISOR' }));
       localStorage.setItem('access_token', token);
       localStorage.setItem('user', JSON.stringify({ id: 20, username: 'supervisor_demo', role: 'SUPERVISOR' }));
     }, SUPERVISOR_TOKEN);
@@ -319,6 +321,8 @@ test.describe('[UI-MOCK: Component Interface Test] Fase P13: Informe Técnico (P
     });
 
     await page.addInitScript((token) => {
+      sessionStorage.setItem('access_token', token);
+      sessionStorage.setItem('user', JSON.stringify({ id: 10, username: 'autor_operador', role: 'OPERATOR' }));
       localStorage.setItem('access_token', token);
       localStorage.setItem('user', JSON.stringify({ id: 10, username: 'autor_operador', role: 'OPERATOR' }));
     }, OPERATOR_TOKEN);
@@ -438,6 +442,8 @@ test.describe('[UI-MOCK: Component Interface Test] Fase P13: Informe Técnico (P
     });
 
     await page.addInitScript((token) => {
+      sessionStorage.setItem('access_token', token);
+      sessionStorage.setItem('user', JSON.stringify({ id: 20, username: 'supervisor_demo', role: 'SUPERVISOR' }));
       localStorage.setItem('access_token', token);
       localStorage.setItem('user', JSON.stringify({ id: 20, username: 'supervisor_demo', role: 'SUPERVISOR' }));
     }, SUPERVISOR_TOKEN);
@@ -491,12 +497,16 @@ async function assertSafeDatabaseSession(client: Client, connStr: string): Promi
   }
 }
 
-function makeRealTestJwt(username: string, role: string, secret: string = 'synthetic_secret_key_for_testing') {
+function makeRealTestJwt(username: string, role: string, jti: string, secret: string = 'synthetic_secret_key_for_testing') {
   const header = Buffer.from(JSON.stringify({ alg: 'HS256', typ: 'JWT' })).toString('base64url');
   const now = Math.floor(Date.now() / 1000);
   const payload = Buffer.from(JSON.stringify({
     sub: username,
     role: role,
+    jti: jti,
+    session_version: 1,
+    purpose: 'access',
+    tenant_id: 'mega_tenant',
     iat: now,
     exp: now + 86400,
   })).toString('base64url');
@@ -529,8 +539,10 @@ test.describe('[E2E-REAL-BACKEND] Integración Real de Informe Técnico P13 sin 
   const PREEXISTING_USER = `p13_pre_${RUN_TAG}`;
   const OPERATOR_USER = `p13_op_${RUN_TAG}`;
   const SUPERVISOR_USER = `p13_sup_${RUN_TAG}`;
-  const REAL_OP_JWT = makeRealTestJwt(OPERATOR_USER, 'OPERATOR');
-  const REAL_SUP_JWT = makeRealTestJwt(SUPERVISOR_USER, 'SUPERVISOR');
+  const OP_JTI = `test-jti-p13-op-${RUN_TAG}`;
+  const SUP_JTI = `test-jti-p13-sup-${RUN_TAG}`;
+  const REAL_OP_JWT = makeRealTestJwt(OPERATOR_USER, 'OPERATOR', OP_JTI);
+  const REAL_SUP_JWT = makeRealTestJwt(SUPERVISOR_USER, 'SUPERVISOR', SUP_JTI);
 
   const API_BASE = process.env.API_URL || 'http://backend-app:8000';
 
@@ -580,6 +592,18 @@ test.describe('[E2E-REAL-BACKEND] Integración Real de Informe Técnico P13 sin 
       RETURNING id;
     `, [SUPERVISOR_USER]);
     supervisorUserId = supUserRes.rows[0].id;
+
+    await dbClient.query(`
+      INSERT INTO user_sessions (id, user_id, session_version, created_at, expires_at, is_revoked)
+      VALUES ($1, $2, 1, NOW(), NOW() + interval '1 day', false)
+      ON CONFLICT (id) DO NOTHING;
+    `, [OP_JTI, operatorUserId]);
+
+    await dbClient.query(`
+      INSERT INTO user_sessions (id, user_id, session_version, created_at, expires_at, is_revoked)
+      VALUES ($1, $2, 1, NOW(), NOW() + interval '1 day', false)
+      ON CONFLICT (id) DO NOTHING;
+    `, [SUP_JTI, supervisorUserId]);
 
     // 4. Asegurar plantilla canónica oficial P13 de 12 secciones [R3-07]
     const canonicalChecksum = crypto.createHash('sha256').update(CANONICAL_P13_TEMPLATE_CONTENT, 'utf8').digest('hex');
@@ -789,6 +813,12 @@ test.describe('[E2E-REAL-BACKEND] Integración Real de Informe Técnico P13 sin 
         }
       }
 
+      try {
+        await dbClient.query('DELETE FROM user_sessions WHERE id IN ($1, $2);', [OP_JTI, SUP_JTI]);
+      } catch (err: any) {
+        cleanupErrors.push(`userSessions: ${err.message}`);
+      }
+
       if (supervisorUserId) {
         try {
           await dbClient.query('DELETE FROM users WHERE id = $1;', [supervisorUserId]);
@@ -942,6 +972,8 @@ test.describe('[E2E-REAL-BACKEND] Integración Real de Informe Técnico P13 sin 
     // 1. Configurar sesión de Operador en navegador real sin mocks de ruta
     await page.goto('/login');
     await page.evaluate(({ token, userObj }) => {
+      sessionStorage.setItem('access_token', token);
+      sessionStorage.setItem('user', JSON.stringify(userObj));
       localStorage.setItem('access_token', token);
       localStorage.setItem('user', JSON.stringify(userObj));
     }, {
@@ -977,6 +1009,8 @@ test.describe('[E2E-REAL-BACKEND] Integración Real de Informe Técnico P13 sin 
 
     // 8. Cambiar identidad en el navegador a Supervisor independiente
     await page.evaluate(({ token, userObj }) => {
+      sessionStorage.setItem('access_token', token);
+      sessionStorage.setItem('user', JSON.stringify(userObj));
       localStorage.setItem('access_token', token);
       localStorage.setItem('user', JSON.stringify(userObj));
     }, {

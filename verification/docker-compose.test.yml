@@ -64,6 +64,7 @@ services:
       - ENVIRONMENT=test
     volumes:
       - ../backend:/app
+      - ../verification:/app/verification:ro
       - test-uploads:/app/uploads
     command: ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]
     healthcheck:
@@ -98,8 +99,6 @@ services:
       context: ..
       dockerfile: Dockerfile.frontend.test
     command: ["npm", "run", "preview", "--", "--host", "0.0.0.0", "--port", "5173"]
-    volumes:
-      - ../frontend:/app
 
   browser-test:
     image: mcr.microsoft.com/playwright:v1.62.1-jammy

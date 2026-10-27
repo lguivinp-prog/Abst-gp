@@ -51,6 +51,32 @@ async def generic_exception_handler(request: Request, exc: Exception):
     logger.error(f"Unhandled server error: {exc}", exc_info=True)
     request_id = getattr(request.state, "request_id", "unknown")
     
+    msg = str(exc)
+    if "BLOQUEO OPERATIVO POR CUARENTENA DR" in msg or "B1-FAIL-CLOSED" in msg or "cuarentena" in msg.lower():
+        return JSONResponse(
+            status_code=503,
+            content={
+                "error": {
+                    "code": "SERVICE_UNAVAILABLE",
+                    "message": "Servicio no disponible: Base de datos en cuarentena DR o fallo en inspeccion (B1-FAIL-CLOSED).",
+                    "detail": msg,
+                    "request_id": request_id
+                }
+            }
+        )
+    if "Fallo de control de escrituras (B2)" in msg or "congelamiento activo de documentos" in msg.lower():
+        return JSONResponse(
+            status_code=503,
+            content={
+                "error": {
+                    "code": "SERVICE_UNAVAILABLE",
+                    "message": "Fallo de control de escrituras (B2): Respaldo LAN en curso. Congelamiento activo de documentos.",
+                    "detail": msg,
+                    "request_id": request_id
+                }
+            }
+        )
+
     return JSONResponse(
         status_code=500,
         content={

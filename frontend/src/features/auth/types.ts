@@ -5,7 +5,7 @@ export interface DecodedToken {
   iat: number;
 }
 
-export type Role = "ADMIN" | "OPERATOR" | "READONLY" | string;
+export type Role = "SUPERADMIN" | "ADMIN" | "SUPERVISOR" | "OPERATOR" | "READONLY" | string;
 
 export interface User {
   id?: number;

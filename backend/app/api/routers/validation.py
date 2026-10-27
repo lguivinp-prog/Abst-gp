@@ -22,8 +22,23 @@ router = APIRouter()
 MAX_PDF_SIZE = int(os.environ.get("VALIDATION_MAX_PDF_SIZE_MB", 20)) * 1024 * 1024
 QPDF_TIMEOUT = int(os.environ.get("PDF_STRUCTURE_CHECK_TIMEOUT_SECONDS", 10))
 
-def verify_token(x_api_key: str = Header(...)):
-    expected_token = os.environ.get("VALIDATION_API_KEY", "supersecret_validation_token")
+from typing import Optional
+
+def verify_token(x_api_key: Optional[str] = Header(None)):
+    if not x_api_key:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Missing API Key")
+    expected_token = os.environ.get("VALIDATION_API_KEY")
+    app_env = os.environ.get("APP_ENV", "development").lower()
+    if not expected_token:
+        if app_env in ("lan", "production"):
+            logger.critical("FATAL: VALIDATION_API_KEY no configurada en entorno LAN/produccion (P14-R2-12).")
+            raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Configuracion de seguridad incompleta.")
+        expected_token = "dev_validation_key_only_for_local_testing"
+    elif expected_token == "supersecret_validation_token":
+        if app_env in ("lan", "production"):
+            logger.critical("FATAL: VALIDATION_API_KEY insegura/por defecto detectada (P14-R2-12).")
+            raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Configuracion de seguridad invalida.")
+
     if not secrets.compare_digest(x_api_key, expected_token):
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid API Key")
     return x_api_key

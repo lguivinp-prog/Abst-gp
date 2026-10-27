@@ -53,9 +53,13 @@ def test_alembic_admin_unique_constraint(db_session):
     indexes = [row[1] for row in result]
     
     # Check if there is an index with UNIQUE and WHERE role = 'ADMIN'
+    import re
     has_admin_unique_index = any(
-        "UNIQUE" in index_def.upper() and "ADMIN" in index_def.upper() 
+        "UNIQUE" in index_def.upper() 
+        and re.search(r"\bADMIN\b", index_def.upper()) is not None
+        and "SUPERADMIN" not in index_def.upper()
         for index_def in indexes
     )
     
     assert not has_admin_unique_index, "The unique partial index for ADMIN role should be removed (multiple admins allowed)"
+

@@ -24,15 +24,15 @@ router = APIRouter()
 
 def _resolve_tenant_id(current_user: User, requested_tenant_id: Optional[str] = None) -> Optional[str]:
     """
-    Resuelve el tenant_id respetando la seguridad multi-tenant:
-    - Si el usuario administrador está asignado a un tenant específico,
+    Resuelve el tenant_id respetando la seguridad multi-tenant (P14-R2-16):
+    - Si es Superadmin global (role == 'SUPERADMIN'), puede filtrar por el tenant solicitado
+      o consultar globalmente segun el endpoint.
+    - Si el usuario administrador esta asignado a un tenant especifico,
       SOLO puede consultar y operar sobre su propio tenant.
-    - Si es Superadmin global (sin tenant_id), puede filtrar por el tenant solicitado
-      o consultar globalmente según el endpoint.
     """
-    if current_user.tenant_id:
-        return current_user.tenant_id
-    return requested_tenant_id
+    if current_user.role == "SUPERADMIN":
+        return requested_tenant_id
+    return current_user.tenant_id
 
 
 # =========================================================
@@ -44,7 +44,7 @@ def get_workers_status(
     tenant_id: Optional[str] = Query(None, description="Filtrar workers por tenant (solo superadmin)"),
     heartbeat_threshold_sec: int = Query(30, ge=5, le=300, description="Umbral en segundos para clasificar worker como UNRESPONSIVE"),
     db: Session = Depends(get_db),
-    current_user: User = Depends(require_role(["ADMIN"]))
+    current_user: User = Depends(require_role(["ADMIN", "SUPERADMIN"]))
 ):
     """
     Inspecciona en tiempo real la salud y estado de liveness del cluster de workers RQ/OCR.
@@ -68,7 +68,7 @@ def get_latency_metrics(
     hours: int = Query(24, ge=1, le=168, description="Ventana de tiempo en horas (máximo 168h / 7 días)"),
     tenant_id: Optional[str] = Query(None, description="Filtrar por tenant (solo superadmin)"),
     db: Session = Depends(get_db),
-    current_user: User = Depends(require_role(["ADMIN"]))
+    current_user: User = Depends(require_role(["ADMIN", "SUPERADMIN"]))
 ):
     """
     Obtiene las métricas agregadas de SLA y percentiles (p50, p95, p99, avg, min, max)
@@ -92,7 +92,7 @@ def get_error_analytics(
     hours: int = Query(24, ge=1, le=168, description="Ventana de tiempo en horas (máximo 168h / 7 días)"),
     tenant_id: Optional[str] = Query(None, description="Filtrar por tenant (solo superadmin)"),
     db: Session = Depends(get_db),
-    current_user: User = Depends(require_role(["ADMIN"]))
+    current_user: User = Depends(require_role(["ADMIN", "SUPERADMIN"]))
 ):
     """
     Analiza y categoriza los fallos operacionales (success=False) según la taxonomía V5.4
@@ -116,7 +116,7 @@ def get_recovery_status(
     queued_timeout_sec: int = Query(300, ge=30, le=3600, description="Umbral de tiempo máximo en cola QUEUED"),
     tenant_id: Optional[str] = Query(None, description="Filtrar por tenant (solo superadmin)"),
     db: Session = Depends(get_db),
-    current_user: User = Depends(require_role(["ADMIN"]))
+    current_user: User = Depends(require_role(["ADMIN", "SUPERADMIN"]))
 ):
     """
     Retorna el estado de salud de las colas y jobs estancados en PROCESSING o QUEUED
@@ -139,7 +139,7 @@ def get_recovery_status(
 def trigger_recovery_reconciliation(
     tenant_id: Optional[str] = Query(None, description="Tenant específico a reconciliar (solo superadmin)"),
     db: Session = Depends(get_db),
-    current_user: User = Depends(require_role(["ADMIN"]))
+    current_user: User = Depends(require_role(["ADMIN", "SUPERADMIN"]))
 ):
     """
     Dispara manualmente una pasada del ciclo de reconciliación y recuperación

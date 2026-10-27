@@ -123,6 +123,8 @@ test.describe('[UI-MOCK] Fase P12: Trazabilidad Documental y Verificación de Ev
     });
 
     await page.addInitScript((token) => {
+      sessionStorage.setItem('access_token', token);
+      sessionStorage.setItem('user', JSON.stringify({ id: 1, username: 'operador_responsable', role: 'OPERATOR' }));
       localStorage.setItem('access_token', token);
       localStorage.setItem('user', JSON.stringify({ id: 1, username: 'operador_responsable', role: 'OPERATOR' }));
     }, OPERATOR_TOKEN);
@@ -183,12 +185,18 @@ async function verifyAuthorizedTestEnvironment(client: Client, connStr: string):
   }
 }
 
-function makeRealTestJwt(username: string, role: string, secret: string = 'synthetic_secret_key_for_testing') {
+const P12_ADMIN_JTI = 'test-jti-p12-admin';
+
+function makeRealTestJwt(username: string, role: string, jti: string = P12_ADMIN_JTI, secret: string = 'synthetic_secret_key_for_testing') {
   const header = Buffer.from(JSON.stringify({ alg: 'HS256', typ: 'JWT' })).toString('base64url');
   const now = Math.floor(Date.now() / 1000);
   const payload = Buffer.from(JSON.stringify({
     sub: username,
     role: role,
+    jti: jti,
+    session_version: 1,
+    purpose: 'access',
+    tenant_id: 'mega_tenant',
     iat: now,
     exp: now + 86400
   })).toString('base64url');
@@ -214,6 +222,12 @@ test.describe('[E2E-REAL-BACKEND] Integración Real de Trazabilidad sin Simulaci
 
     // Confirmar entorno autorizado antes de cualquier mutación SQL
     await verifyAuthorizedTestEnvironment(dbClient, connStr);
+
+    await dbClient.query(`
+      INSERT INTO user_sessions (id, user_id, session_version, created_at, expires_at, is_revoked)
+      VALUES ($1, (SELECT id FROM users WHERE username = 'admin'), 1, NOW(), NOW() + interval '1 day', false)
+      ON CONFLICT (id) DO NOTHING;
+    `, [P12_ADMIN_JTI]);
 
     // 1. Crear expediente real con régimen P12_STRICT
     const caseRes = await dbClient.query(`
@@ -303,6 +317,7 @@ test.describe('[E2E-REAL-BACKEND] Integración Real de Trazabilidad sin Simulaci
         }
         await dbClient.query('DELETE FROM case_files WHERE id = $1;', [testCaseId]);
       }
+      await dbClient.query('DELETE FROM user_sessions WHERE id = $1;', [P12_ADMIN_JTI]);
     } finally {
       await dbClient.end();
     }
@@ -329,6 +344,7 @@ test.describe('[E2E-REAL-BACKEND] Integración Real de Trazabilidad sin Simulaci
   test('Validación real de evidencia contra backend actualiza estado en base de datos sin simulación', async ({ page }) => {
     // 1. Inyectar token JWT real firmado para autenticación contra backend-app
     await page.addInitScript((token) => {
+      window.sessionStorage.setItem('access_token', token);
       window.localStorage.setItem('access_token', token);
     }, REAL_ADMIN_TOKEN);
 

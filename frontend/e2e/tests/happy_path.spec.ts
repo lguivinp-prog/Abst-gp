@@ -364,7 +364,7 @@ test.describe('Document Intelligence E2E - Happy Path', () => {
       preconditions = await prepareHappyPathPreconditions(currentCaseId, 'mega_tenant');
 
       // 6.2 Vincular y verificar documentalmente las evidencias mediante endpoints P12 autorizados
-      const token = await page.evaluate(() => localStorage.getItem('access_token'));
+      const token = await page.evaluate(() => sessionStorage.getItem('access_token') || localStorage.getItem('access_token'));
       expect(token).toBeTruthy();
 
       const linkedEvidenceIds: number[] = [];

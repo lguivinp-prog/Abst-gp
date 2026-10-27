@@ -137,8 +137,9 @@ test.describe('[UI-MOCK] Fase P11: Matriz Comparativa, Selección Fundamentada y
   // Test 1: Matriz visible con dos proveedores y correspondencia de requisitos
   // ============================================================================
   test('P11.1 & P11.2 & P11.3 & P11.4: Matriz comparativa multiproveedor y separación económica', async ({ page }) => {
-    // Inyectar token en localStorage antes de que cargue la app
+    // Inyectar token en sessionStorage y localStorage antes de que cargue la app
     await page.addInitScript((token) => {
+      window.sessionStorage.setItem('access_token', token);
       window.localStorage.setItem('access_token', token);
     }, OPERATOR_TOKEN);
 
@@ -176,6 +177,7 @@ test.describe('[UI-MOCK] Fase P11: Matriz Comparativa, Selección Fundamentada y
   // ============================================================================
   test('P11.10: Persistencia de vista de evaluación durante loadData y re-evaluación', async ({ page }) => {
     await page.addInitScript((token) => {
+      window.sessionStorage.setItem('access_token', token);
       window.localStorage.setItem('access_token', token);
     }, OPERATOR_TOKEN);
 
@@ -232,6 +234,7 @@ test.describe('[UI-MOCK] Fase P11: Matriz Comparativa, Selección Fundamentada y
     let capturedProposal: any = null;
 
     await page.addInitScript((token) => {
+      window.sessionStorage.setItem('access_token', token);
       window.localStorage.setItem('access_token', token);
     }, OPERATOR_TOKEN);
 
@@ -304,6 +307,7 @@ test.describe('[UI-MOCK] Fase P11: Matriz Comparativa, Selección Fundamentada y
 
     // --- Sub-test 1: OPERATOR accede a Resultado ---
     await page.addInitScript((token) => {
+      window.sessionStorage.setItem('access_token', token);
       window.localStorage.setItem('access_token', token);
     }, OPERATOR_TOKEN);
 
@@ -324,6 +328,7 @@ test.describe('[UI-MOCK] Fase P11: Matriz Comparativa, Selección Fundamentada y
     const supPage = await supContext.newPage();
 
     await supPage.addInitScript((token) => {
+      window.sessionStorage.setItem('access_token', token);
       window.localStorage.setItem('access_token', token);
     }, SUPERVISOR_TOKEN);
 
@@ -367,12 +372,17 @@ test.describe('[UI-MOCK] Fase P11: Matriz Comparativa, Selección Fundamentada y
 // INTEGRADO-E2E: Recorrido Real contra Backend de Pruebas (Bootstrap Aislado)
 // ============================================================================
 test.describe('[INTEGRADO-E2E] Fase P11: Flujo Real de Aprobación contra Backend de Pruebas', () => {
-  function makeRealTestJwt(username: string, role: string, secret: string = 'synthetic_secret_key_for_testing') {
+  const P11_ADMIN_JTI = 'test-jti-p11-admin';
+  function makeRealTestJwt(username: string, role: string, jti: string = P11_ADMIN_JTI, secret: string = 'synthetic_secret_key_for_testing') {
     const header = Buffer.from(JSON.stringify({ alg: 'HS256', typ: 'JWT' })).toString('base64url');
     const now = Math.floor(Date.now() / 1000);
     const payload = Buffer.from(JSON.stringify({
       sub: username,
       role: role,
+      jti: jti,
+      session_version: 1,
+      purpose: 'access',
+      tenant_id: 'mega_tenant',
       iat: now,
       exp: now + 86400
     })).toString('base64url');
@@ -407,6 +417,12 @@ test.describe('[INTEGRADO-E2E] Fase P11: Flujo Real de Aprobación contra Backen
       if (dbCheck.rows[0]?.db !== 'test_db') {
         throw new Error(`ABORT: Database safety check failed. Connected to ${dbCheck.rows[0]?.db}, strictly expected 'test_db'.`);
       }
+
+      await client.query(`
+        INSERT INTO user_sessions (id, user_id, session_version, created_at, expires_at, is_revoked)
+        VALUES ($1, (SELECT id FROM users WHERE username = 'admin'), 1, NOW(), NOW() + interval '1 day', false)
+        ON CONFLICT (id) DO NOTHING;
+      `, [P11_ADMIN_JTI]);
 
       // 3. Crear datos sintéticos con identificadores dinámicos para evitar colisiones
       const uniqueTag = `E2E_${Date.now()}_${Math.floor(Math.random() * 10000)}`;
@@ -456,6 +472,7 @@ test.describe('[INTEGRADO-E2E] Fase P11: Flujo Real de Aprobación contra Backen
 
       // 4. Inyectar token JWT real firmado para autenticación contra backend-app
       await page.addInitScript((token) => {
+        window.sessionStorage.setItem('access_token', token);
         window.localStorage.setItem('access_token', token);
       }, REAL_ADMIN_TOKEN);
 
@@ -516,6 +533,7 @@ test.describe('[INTEGRADO-E2E] Fase P11: Flujo Real de Aprobación contra Backen
         await client.query('DELETE FROM supplier_profiles WHERE supplier_id = $1;', [createdSupplierId]);
         await client.query('DELETE FROM suppliers WHERE id = $1 AND tenant_id = $2;', [createdSupplierId, 'mega_tenant']);
       }
+      await client.query('DELETE FROM user_sessions WHERE id = $1;', [P11_ADMIN_JTI]);
       await client.end();
     }
   });

@@ -189,6 +189,14 @@ def upload_requirement(
     db: Session = Depends(get_db)
 ):
     ensure_case_mutable(db_case)
+    from app.core.config import settings
+    from app.core.write_control import DocumentWriteControl
+    from pathlib import Path
+    if DocumentWriteControl.is_write_frozen(Path(settings.UPLOADS_DIR)):
+        raise HTTPException(
+            status_code=503,
+            detail="Fallo de control de escrituras (B2): Respaldo LAN en curso. Congelamiento activo de documentos."
+        )
 
     if not file.filename.lower().endswith(".pdf"):
         raise HTTPException(

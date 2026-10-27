@@ -1,3 +1,10 @@
+/**
+ * API Client — Interceptor de autenticacion y manejo de 401.
+ *
+ * P14-R2-15: Token de acceso leido EXCLUSIVAMENTE de sessionStorage.
+ * localStorage fue eliminado como fuente de tokens.
+ */
+
 import axios from 'axios';
 
 const apiClient = axios.create({
@@ -12,11 +19,10 @@ apiClient.interceptors.request.use((config) => {
   if (config.url && config.url.includes('/auth/token')) {
     return config;
   }
-  if (typeof localStorage !== 'undefined') {
-    const token = localStorage.getItem('access_token');
-    if (token) {
-      config.headers.Authorization = `Bearer ${token}`;
-    }
+  // P14-R2-15: Solo sessionStorage — localStorage eliminado
+  const token = (typeof sessionStorage !== 'undefined' ? sessionStorage.getItem('access_token') : null);
+  if (token) {
+    config.headers.Authorization = `Bearer ${token}`;
   }
 
   if (config.data instanceof FormData) {
@@ -33,8 +39,9 @@ apiClient.interceptors.response.use(
     if (error.response && error.response.status === 401) {
       const isAuthTokenEndpoint = error.config?.url?.includes('/auth/token');
       // Solo forzamos logout si el 401 NO viene del intento de login en sí
-      if (!isAuthTokenEndpoint && typeof localStorage !== 'undefined' && typeof window !== 'undefined') {
-        localStorage.removeItem('access_token');
+      if (!isAuthTokenEndpoint && typeof window !== 'undefined') {
+        sessionStorage.removeItem('access_token');
+        // P14-R2-15: localStorage eliminado — no se limpia lo que no existe
         window.location.href = '/login';
       }
     }

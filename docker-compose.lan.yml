@@ -1,0 +1,159 @@
+# ABST-GP V6 — P14: Perfil de Despliegue Aislado para Servidor LAN (P14-G07, P14-G13)
+# Expone UNICAMENTE el puerto HTTPS 443 a traves de Reverse Proxy TLS
+# PostgreSQL, Redis y servicios internos no tienen puertos publicados hacia la red
+
+name: abst_lan
+
+services:
+  db:
+    image: postgres:15-alpine
+    container_name: abst_lan_db
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-abst_admin}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Requerido password seguro para base de datos}
+      POSTGRES_DB: ${POSTGRES_DB:-abst_gp_lan}
+    volumes:
+      - abst_lan_pgdata:/var/lib/postgresql/data
+    networks:
+      - abst_lan_backend
+    # Sin puertos publicados al host (P14-G07)
+
+  redis:
+    image: redis:7-alpine
+    container_name: abst_lan_redis
+    restart: unless-stopped
+    command: ["redis-server", "--requirepass", "${REDIS_PASSWORD:?Requerido password seguro para Redis}", "--appendonly", "yes"]
+    volumes:
+      - abst_lan_redisdata:/data
+    networks:
+      - abst_lan_backend
+    # Sin puertos publicados al host (P14-G07)
+
+  api:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: abst_lan_api
+    restart: unless-stopped
+    environment:
+      - APP_ENV=lan
+      - DATABASE_URL=postgresql://${POSTGRES_USER:-abst_admin}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB:-abst_gp_lan}
+      - REDIS_URL=redis://:${REDIS_PASSWORD}@redis:6379/0
+      - SECRET_KEY=${SECRET_KEY:?Requerido SECRET_KEY seguro de produccion}
+      - MFA_ENCRYPTION_KEY=${MFA_ENCRYPTION_KEY:?Requerido clave de 32 bytes para cifrado MFA}
+      - BACKUP_ENCRYPTION_KEY=${BACKUP_ENCRYPTION_KEY:?Requerido clave de 32 bytes para cifrado de respaldo}
+      - BACKUP_SIGNING_KEY=${BACKUP_SIGNING_KEY:?Requerido clave de 32 bytes para firma de respaldo}
+      - UPLOADS_DIR=/data/uploads
+      - TRUSTED_PROXIES=127.0.0.1,::1,172.16.0.0/12,10.0.0.0/8
+      - ALERT_CHANNEL=${ALERT_CHANNEL:-webhook}
+      - ALERT_WEBHOOK_URL=${ALERT_WEBHOOK_URL:-}
+      - ALERT_TELEGRAM_BOT_TOKEN=${ALERT_TELEGRAM_BOT_TOKEN:-}
+      - ALERT_TELEGRAM_CHAT_ID=${ALERT_TELEGRAM_CHAT_ID:-}
+    volumes:
+      - abst_lan_uploads:/data/uploads
+    networks:
+      - abst_lan_backend
+      - abst_lan_frontend
+    depends_on:
+      - db
+      - redis
+
+  worker:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: abst_lan_worker
+    restart: unless-stopped
+    command: ["rq", "worker", "-u", "redis://:${REDIS_PASSWORD}@redis:6379/0", "default"]
+    environment:
+      - APP_ENV=lan
+      - DATABASE_URL=postgresql://${POSTGRES_USER:-abst_admin}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB:-abst_gp_lan}
+      - REDIS_URL=redis://:${REDIS_PASSWORD}@redis:6379/0
+      - SECRET_KEY=${SECRET_KEY}
+      - MFA_ENCRYPTION_KEY=${MFA_ENCRYPTION_KEY}
+      - UPLOADS_DIR=/data/uploads
+      - ALERT_CHANNEL=${ALERT_CHANNEL:-webhook}
+      - ALERT_WEBHOOK_URL=${ALERT_WEBHOOK_URL:-}
+      - ALERT_TELEGRAM_BOT_TOKEN=${ALERT_TELEGRAM_BOT_TOKEN:-}
+      - ALERT_TELEGRAM_CHAT_ID=${ALERT_TELEGRAM_CHAT_ID:-}
+    volumes:
+      - abst_lan_uploads:/data/uploads
+    networks:
+      - abst_lan_backend
+    depends_on:
+      - db
+      - redis
+
+  worker-ocr:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile.ocr
+    container_name: abst_lan_worker_ocr
+    restart: unless-stopped
+    command: ["rq", "worker", "-u", "redis://:${REDIS_PASSWORD}@redis:6379/0", "ocr_tasks"]
+    environment:
+      - APP_ENV=lan
+      - DATABASE_URL=postgresql://${POSTGRES_USER:-abst_admin}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB:-abst_gp_lan}
+      - REDIS_URL=redis://:${REDIS_PASSWORD}@redis:6379/0
+      - SECRET_KEY=${SECRET_KEY}
+      - MFA_ENCRYPTION_KEY=${MFA_ENCRYPTION_KEY}
+      - UPLOADS_DIR=/data/uploads
+    volumes:
+      - abst_lan_uploads:/data/uploads
+    networks:
+      - abst_lan_backend
+    deploy:
+      resources:
+        limits:
+          cpus: '3.0'
+          memory: 4096M
+        reservations:
+          memory: 1024M
+    depends_on:
+      - db
+      - redis
+
+  web:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: abst_lan_web
+    restart: unless-stopped
+    networks:
+      - abst_lan_frontend
+    depends_on:
+      - api
+
+  proxy:
+    image: caddy:2.8-alpine
+    container_name: abst_lan_proxy
+    restart: unless-stopped
+    ports:
+      # UNICO puerto publicado en el host para acceso LAN cableado (P14-G07, P14-R2-13)
+      # Exige configurar expresamente la IP de la interfaz RJ45 (prohibido bind a todas las interfaces)
+      - "${LAN_BIND_IP:?Requerido IP fija de la interfaz cableada RJ45 LAN_BIND_IP}:443:443"
+    environment:
+      - SERVER_NAME=${SERVER_NAME:-localhost}
+    volumes:
+      - ./deployment/caddy/Caddyfile.lan:/etc/caddy/Caddyfile:ro
+      - ./deployment/caddy/certs:/certs:ro
+      - abst_lan_caddy_data:/data
+      - abst_lan_caddy_config:/config
+    networks:
+      - abst_lan_frontend
+    depends_on:
+      - web
+      - api
+
+networks:
+  abst_lan_backend:
+    internal: true
+  abst_lan_frontend:
+
+volumes:
+  abst_lan_pgdata:
+  abst_lan_redisdata:
+  abst_lan_uploads:
+  abst_lan_caddy_data:
+  abst_lan_caddy_config:
