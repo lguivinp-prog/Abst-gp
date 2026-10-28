@@ -32,9 +32,9 @@ import argparse
 import subprocess
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import Dict, Any, List, Optional, Tuple
+from typing import Dict, Any, List, Optional, Tuple, Callable, Iterable
 import re
-from urllib.parse import urlparse, urlunparse
+from urllib.parse import urlparse, urlunparse, urlsplit
 
 from sqlalchemy import create_engine, text
 from sqlalchemy.orm import sessionmaker
@@ -52,23 +52,187 @@ logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(na
 logger = logging.getLogger("abst_gp.dr.backup_lan_pg15")
 
 
-def sanitize_db_url(text: Optional[str]) -> str:
+def sanitize_db_url(text: Optional[str], registered_secrets: Optional[Iterable[str]] = None) -> str:
     """
     Sanea cualquier cadena, DSN o mensaje de error de base de datos para logging
-    y diagnostico forense, enmascarando de forma robusta cualquier credencial presente (P15-H4).
-    Ejemplos:
-      postgresql://usr:secret123@host:5432/db -> postgresql://usr:***@host:5432/db
+    y diagnostico forense, enmascarando de forma robusta cualquier credencial presente (P15-H4, P16 IV).
+    Soporta contraseñas complejas sintéticas, caracteres especiales codificados o planos,
+    parámetros libpq y variables de entorno.
     """
     if not text:
         return "<none>"
     s = str(text)
-    # Enmascarar patrones de URL de BD con credenciales: scheme://user:password@host
-    s = re.sub(r'(://[^:@\s]+):[^@\s]+(@)', r'\1:***\2', s)
-    # Enmascarar argumentos password=...
-    s = re.sub(r'(password=)[^\s;&]+', r'\1***', s, flags=re.IGNORECASE)
-    # Enmascarar PGPASSWORD=...
-    s = re.sub(r'(PGPASSWORD=)[^\s;&]+', r'\1***', s, flags=re.IGNORECASE)
+
+    # Enmascarar secretos explícitos registrados si se proporcionan
+    if registered_secrets:
+        for sec in registered_secrets:
+            if sec and len(str(sec).strip()) >= 3:
+                raw_sec = str(sec).strip()
+                s = s.replace(raw_sec, "***")
+                import urllib.parse
+                s = s.replace(urllib.parse.quote(raw_sec, safe=""), "***")
+                s = s.replace(urllib.parse.quote_plus(raw_sec), "***")
+
+    # Enmascarar patrones de URI de base de datos con credenciales: scheme://user:password@host
+    def repl_uri(match):
+        prefix = match.group(1)
+        authority = match.group(2)
+        rest = match.group(3)
+        if "@" in authority:
+            userinfo, _, hostinfo = authority.rpartition("@")
+            if ":" in userinfo:
+                user, _, _ = userinfo.partition(":")
+                return f"{prefix}{user}:***@{hostinfo}{rest}"
+        return match.group(0)
+
+    s = re.sub(r'([a-zA-Z][a-zA-Z0-9+.-]*://)([^\s/?#]+)(.*)', repl_uri, s)
+    s = re.sub(r'(://[^:/\s@]+):[^@\s]+(@)', r'\1:***\2', s)
+
+    # Enmascarar argumentos password=..., pwd=..., secret=..., PGPASSWORD=...
+    s = re.sub(r'((?:password|pwd|secret|PGPASSWORD)\s*=\s*)([\'"][^\'"]*[\'"]|[^\s;]+)', r'\1***', s, flags=re.IGNORECASE)
     return s
+
+
+def compute_target_db_metadata(
+    url: Optional[str],
+    marker_id: Optional[str] = None
+) -> Tuple[Optional[str], Optional[Dict[str, Any]]]:
+    """
+    Calcula los metadatos de destino de base de datos no sensibles para el journal transaccional (P16).
+    Genera una referencia opaca ('target_db_ref') y una estructura de identidad ('target_db_identity')
+    que contiene host, puerto, nombre de base de datos y URL saneada sin usuario ni contraseña.
+    Nunca incluye contraseñas, DSN completos, credenciales reversibles ni variables secretas.
+    """
+    if not url or not str(url).strip():
+        return None, None
+
+    parsed = urlsplit(str(url).strip())
+    host = parsed.hostname or "localhost"
+    port = int(parsed.port or 5432)
+    database = parsed.path.lstrip("/")
+
+    # URL canónica saneada sin credenciales (sin userinfo)
+    sanitized_url = f"postgresql://{host}:{port}/{database}"
+
+    # Fingerprint determinista del destino
+    raw_ident = f"{host.lower()}:{port}/{database}"
+    if marker_id:
+        raw_ident += f":{str(marker_id).strip()}"
+    fingerprint = hashlib.sha256(raw_ident.encode("utf-8")).hexdigest()
+    target_db_ref = f"dref_{fingerprint[:16]}"
+
+    identity = {
+        "host": host,
+        "port": port,
+        "database": database,
+        "sanitized_url": sanitized_url,
+        "fingerprint": fingerprint
+    }
+    return target_db_ref, identity
+
+
+class TargetDBCredentialResolver:
+    """
+    Interfaz explícita para la resolución segura y transitoria de credenciales
+    de base de datos fuera del journal transaccional (P16 Seccion III).
+    Admite credenciales en memoria, callbacks de resolución, secretos montados
+    en contenedor (/run/secrets/...) y variables de entorno autorizadas.
+    Verifica estrictamente que la credencial resuelta coincida en host, puerto
+    y base de datos con 'target_db_identity' antes de retornarla.
+    """
+    STANDARD_SECRET_FILES = (
+        Path("/run/secrets/dr_target_db_url"),
+        Path("/run/secrets/target_database_url"),
+        Path("/run/secrets/dr_target_db_credential"),
+        Path("/var/run/secrets/dr_target_db_url"),
+    )
+
+    @classmethod
+    def resolve(
+        cls,
+        target_db_identity: Optional[Dict[str, Any]],
+        target_db_ref: Optional[str] = None,
+        in_memory_url: Optional[str] = None,
+        custom_resolver: Optional[Callable[[Dict[str, Any]], Optional[str]]] = None
+    ) -> Optional[str]:
+        candidate_url: Optional[str] = None
+
+        # 1. Credencial suministrada explícitamente en memoria
+        if in_memory_url and str(in_memory_url).strip():
+            candidate_url = str(in_memory_url).strip()
+
+        # Si no hay target_db_identity registrada en el journal, NO se puede verificar procedencia ni destino.
+        # Prohibido asumir DATABASE_URL o secretos de ejecución automáticamente sin identidad registrada (P16 Seccion III).
+        if not target_db_identity:
+            return candidate_url
+
+        # 2. Callback de resolución personalizado
+        elif custom_resolver is not None and callable(custom_resolver):
+            try:
+                res = custom_resolver(target_db_identity or {})
+                if res and str(res).strip():
+                    candidate_url = str(res).strip()
+            except Exception as res_err:
+                logger.error(f"Error en custom_resolver de credenciales DR (P16): {sanitize_db_url(str(res_err))}")
+
+        # 3. Secretos de ejecución montados en el contenedor
+        if not candidate_url:
+            secret_file_env = os.environ.get("DR_TARGET_DB_SECRET_FILE")
+            candidate_paths: List[Path] = []
+            if secret_file_env:
+                candidate_paths.append(Path(secret_file_env))
+            candidate_paths.extend(cls.STANDARD_SECRET_FILES)
+
+            for spath in candidate_paths:
+                try:
+                    if spath.exists() and spath.is_file():
+                        content = spath.read_text(encoding="utf-8").strip()
+                        if content:
+                            candidate_url = content
+                            logger.info(f"Credencial de recuperacion DR resuelta desde secreto montado: {spath}")
+                            break
+                except Exception as sec_read_err:
+                    logger.warning(f"No se pudo leer archivo de secreto {spath}: {sec_read_err}")
+
+        # 4. Variable de entorno dedicada para el destino DR
+        if not candidate_url:
+            dr_env_url = os.environ.get("DR_TARGET_DATABASE_URL")
+            if dr_env_url and dr_env_url.strip():
+                candidate_url = dr_env_url.strip()
+
+        # 5. Fallback a DATABASE_URL con verificación obligatoria de identidad y procedencia
+        if not candidate_url:
+            fallback_db_url = os.environ.get("DATABASE_URL")
+            if fallback_db_url and fallback_db_url.strip():
+                candidate_url = fallback_db_url.strip()
+
+        if not candidate_url:
+            return None
+
+        # Validar destino e identidad contra target_db_identity (fail-closed)
+        if target_db_identity:
+            cand_parsed = urlsplit(candidate_url)
+            cand_host = cand_parsed.hostname or "localhost"
+            cand_port = int(cand_parsed.port or 5432)
+            cand_db = cand_parsed.path.lstrip("/")
+
+            exp_host = str(target_db_identity.get("host") or "localhost")
+            exp_port = int(target_db_identity.get("port") or 5432)
+            exp_db = str(target_db_identity.get("database") or "")
+
+            def norm_h(h: str) -> str:
+                h_low = (h or "").lower().strip()
+                return "127.0.0.1" if h_low in ("localhost", "127.0.0.1") else h_low
+
+            if (norm_h(cand_host) != norm_h(exp_host)) or (cand_port != exp_port) or (cand_db != exp_db):
+                logger.error(
+                    f"Fallo de seguridad P16 (Destino Mismatched): La credencial resuelta "
+                    f"({sanitize_db_url(candidate_url)}) no coincide con la identidad registrada en el journal "
+                    f"({exp_host}:{exp_port}/{exp_db}). Redireccion no autorizada rechazada fail-closed."
+                )
+                return None
+            # Validacion estricta contra destino registrado en target_db_identity completada con exito
+        return candidate_url
 
 
 class SecurityError(Exception):
@@ -1577,7 +1741,9 @@ class CrashResilientDocumentPublisher:
         target_database_url: Optional[str] = None,
         expected_marker_id: Optional[str] = None,
         restore_token: Optional[str] = None,
-        documents_only: bool = False
+        documents_only: bool = False,
+        target_db_ref: Optional[str] = None,
+        target_db_identity: Optional[Dict[str, Any]] = None
     ):
         self.target_dir = target_dir
         self.db_restored = db_restored
@@ -1585,6 +1751,56 @@ class CrashResilientDocumentPublisher:
         self.expected_marker_id = expected_marker_id
         self.restore_token = restore_token
         self.documents_only = documents_only
+        self.target_db_ref = target_db_ref
+        self.target_db_identity = target_db_identity
+        if not self.target_db_identity and self.target_database_url:
+            self.target_db_ref, self.target_db_identity = compute_target_db_metadata(
+                self.target_database_url, self.expected_marker_id
+            )
+
+    @classmethod
+    def reconcile_legacy_journal(
+        cls,
+        parent_dir: Path,
+        target_database_url: Optional[str] = None
+    ) -> bool:
+        """
+        Ruta de reconciliación segura para journals legados que contienen target_database_url (P16 IV).
+        Sin borrar evidencia de una restauración pendiente ni copiar secretos a archivos nuevos:
+        - Extrae metadatos opacos no sensibles (target_db_ref y target_db_identity).
+        - Elimina atómicamente target_database_url del archivo .cutover_journal.json.
+        - Preserva intactos fase, tokens, marcadores, directorios y hashes documentales.
+        """
+        journal_file = parent_dir / ".cutover_journal.json"
+        if not journal_file.exists():
+            return False
+        try:
+            data = json.loads(journal_file.read_text(encoding="utf-8"))
+            if "target_database_url" not in data:
+                return True  # Ya se encuentra en formato secretless
+
+            legacy_url = data.pop("target_database_url", None)
+            effective_url = target_database_url or legacy_url
+
+            if target_database_url and legacy_url:
+                p_leg = urlsplit(legacy_url)
+                p_ext = urlsplit(target_database_url)
+                if (p_leg.hostname != p_ext.hostname) or (p_leg.port != p_ext.port) or (p_leg.path != p_ext.path):
+                    logger.error("Reconciliacion rechazada: la URL suministrada apunta a un destino diferente a la del journal legado.")
+                    return False
+
+            if effective_url:
+                marker_id = data.get("expected_marker_id")
+                ref, identity = compute_target_db_metadata(effective_url, marker_id)
+                data["target_db_ref"] = ref
+                data["target_db_identity"] = identity
+
+            _atomic_write_journal(journal_file, data)
+            logger.info("Journal legado reconciliado exitosamente a formato secretless.")
+            return True
+        except Exception as e:
+            logger.error(f"Error durante la reconciliacion del journal legado: {sanitize_db_url(str(e))}")
+            return False
 
     @classmethod
     def recover(
@@ -1592,7 +1808,8 @@ class CrashResilientDocumentPublisher:
         parent_dir: Path,
         target_database_url: Optional[str] = None,
         expected_marker_id: Optional[str] = None,
-        expected_restore_token: Optional[str] = None
+        expected_restore_token: Optional[str] = None,
+        credential_resolver: Optional[Callable[[Dict[str, Any]], Optional[str]]] = None
     ) -> bool:
         journal_file = parent_dir / ".cutover_journal.json"
         if not journal_file.exists():
@@ -1607,13 +1824,42 @@ class CrashResilientDocumentPublisher:
             db_restored = data.get("db_restored", False)
             documents_only = bool(data.get("documents_only", False))
             catalog_hashes = data.get("catalog_hashes", {})
-            db_url = target_database_url or data.get("target_database_url")
             marker_id = expected_marker_id or data.get("expected_marker_id")
             token = expected_restore_token or data.get("restore_token")
 
+            # P16: Detección y manejo seguro de journals legados con target_database_url persistida
+            has_legacy_url = "target_database_url" in data and bool(data.get("target_database_url"))
+            if has_legacy_url:
+                # Prohibido el consumo silencioso o auto-promocion por la simple existencia de la URL en el journal (P16 IV)
+                has_external_secret = bool(
+                    (target_database_url and str(target_database_url).strip())
+                    or (credential_resolver is not None and callable(credential_resolver))
+                    or os.environ.get("DR_TARGET_DB_SECRET_FILE")
+                    or os.environ.get("DR_TARGET_DATABASE_URL")
+                )
+                if not has_external_secret:
+                    logger.error(
+                        "Consumo inseguro bloqueado (P16 IV): El journal contiene target_database_url persistida "
+                        "pero no se proporcionaron credenciales externas verificadas. Prohibido consumo silencioso "
+                        "o auto-promocion por la simple presencia de la URL en el diario. Requiere reconciliacion segura previa."
+                    )
+                    data["phase"] = "FAILED_INCONSISTENT"
+                    data["error"] = "Journal legado con credenciales persistidas requiere reconciliacion segura previa (P16 IV)"
+                    data["quarantine_confirmed"] = False
+                    try:
+                        _atomic_write_journal(journal_file, data)
+                    except Exception:
+                        pass
+                    return False
+
+            target_db_ref = data.get("target_db_ref")
+            target_db_identity = data.get("target_db_identity")
+            if has_legacy_url and not target_db_identity:
+                target_db_ref, target_db_identity = compute_target_db_metadata(data.get("target_database_url"), marker_id)
+
             logger.warning(
                 f"Detectada interrupcion previa en fase '{phase}' (db_restored={db_restored}, documents_only={documents_only}). "
-                f"Iniciando protocolo de recuperacion post-caida coordinado con PostgreSQL (Item 1, B1, B1-02, P15-R3, P15-R6)."
+                f"Iniciando protocolo de recuperacion post-caida coordinado con PostgreSQL (Item 1, B1, B1-02, P15-R3, P15-R6, P16)."
             )
 
             if phase == "FAILED_INCONSISTENT":
@@ -1623,9 +1869,31 @@ class CrashResilientDocumentPublisher:
                 )
                 return False
 
-            # Contrato explicito para modo exclusivamente documental (P15 Corrección A):
+            # Contrato explicito para modo exclusivamente documental (P15 Corrección A / P16):
             # Solo si documents_only es True Y db_restored es False
             is_purely_documents = documents_only and not db_restored
+
+            # Resolucion externa de credencial (P16 Seccion III)
+            db_url = None
+            if not is_purely_documents:
+                db_url = TargetDBCredentialResolver.resolve(
+                    target_db_identity=target_db_identity,
+                    target_db_ref=target_db_ref,
+                    in_memory_url=target_database_url,
+                    custom_resolver=credential_resolver
+                )
+
+            # Si es un journal legado y se suministro credencial externa valida,
+            # migrarlo de inmediato a formato secretless en disco sin perder evidencias
+            if has_legacy_url and db_url:
+                data.pop("target_database_url", None)
+                data["target_db_ref"] = target_db_ref
+                data["target_db_identity"] = target_db_identity
+                try:
+                    _atomic_write_journal(journal_file, data)
+                    logger.info("Journal legado migrado exitosamente a formato secretless en disco (P16 IV).")
+                except Exception as mig_err:
+                    logger.warning(f"Advertencia durante migracion secretless de journal legado: {mig_err}")
 
             if is_purely_documents:
                 allow_empty = bool(data.get("allow_empty_catalog", False) or data.get("legitimate_empty_catalog", False))
@@ -1707,21 +1975,35 @@ class CrashResilientDocumentPublisher:
             )
 
             if is_post_commit:
-                # 1. DSN de destino disponible estrictamente obligatorio
+                # 1. Credencial de destino disponible estrictamente obligatoria
                 if not db_url or not str(db_url).strip():
-                    logger.error(
-                        f"Fase post-COMMIT '{phase}' con db_restored={db_restored} pero sin target_database_url disponible. "
-                        "Invariante P15 (Correccion A): Prohibido continuar o autorizar promocion/limpieza por ausencia de DSN. "
-                        "Abortando fail-closed y preservando evidencias."
-                    )
-                    data["phase"] = "FAILED_INCONSISTENT"
-                    data["error"] = f"Fase post-COMMIT '{phase}' sin target_database_url disponible para verificar PostgreSQL"
-                    data["quarantine_confirmed"] = False
-                    try:
-                        _atomic_write_journal(journal_file, data)
-                    except Exception:
-                        pass
-                    return False
+                    raw_supplied_url = target_database_url or data.get("target_database_url")
+                    has_supplied_dsn = bool(raw_supplied_url and str(raw_supplied_url).strip())
+                    if has_supplied_dsn:
+                        # Se suministró un DSN pero no fue resoluble o no coincidió con la identidad registrada
+                        logger.error(
+                            f"Fase post-COMMIT '{phase}' con db_restored={db_restored} pero credencial de base de datos "
+                            "no coincide con target_db_identity o no es verificable (P16). "
+                            "Invariante P16: Preservando journal, respaldo y cuarentena sin mutar fase; abortando fail-closed para permitir reintento."
+                        )
+                        return False
+                    else:
+                        # Ausencia total de DSN (P15 / P16): aborta fail-closed y marca FAILED_INCONSISTENT
+                        logger.error(
+                            f"Fase post-COMMIT '{phase}' con db_restored={db_restored} pero sin target_database_url disponible. "
+                            "Invariante P15 (Correccion A): Prohibido continuar o autorizar promocion/limpieza por ausencia de DSN. "
+                            "Abortando fail-closed y preservando evidencias."
+                        )
+                        data["phase"] = "FAILED_INCONSISTENT"
+                        data["error"] = sanitize_db_url(
+                            f"Fase post-COMMIT '{phase}' sin target_database_url disponible para verificar PostgreSQL"
+                        )
+                        data["quarantine_confirmed"] = False
+                        try:
+                            _atomic_write_journal(journal_file, data)
+                        except Exception:
+                            pass
+                        return False
 
                 # 2. Identificadores de restauracion estrictamente obligatorios (expected_marker_id y restore_token)
                 clean_marker = str(marker_id).strip() if marker_id else ""
@@ -1955,9 +2237,9 @@ class CrashResilientDocumentPublisher:
                 clean_marker = str(marker_id).strip() if marker_id else ""
                 clean_token = str(token).strip() if token else ""
                 if not db_url or not clean_marker:
-                    logger.error(f"Fase '{phase}' sin db_url o marcador de identidad ausente. Abortando fail-closed.")
+                    logger.error(f"Fase '{phase}' sin credencial de base de datos resuelta o marcador ausente. Abortando fail-closed (P16).")
                     data["phase"] = "FAILED_INCONSISTENT"
-                    data["error"] = f"Identidad transaccional incompleta en journal ({phase})"
+                    data["error"] = sanitize_db_url(f"Identidad transaccional incompleta o credencial no resuelta en journal ({phase})")
                     data["quarantine_confirmed"] = False
                     try:
                         _atomic_write_journal(journal_file, data)
@@ -1975,7 +2257,13 @@ class CrashResilientDocumentPublisher:
                     data["phase"] = "DB_RESTORED"
                     data["postgres_commit_evidence"] = sanitized_details
                     _atomic_write_journal(journal_file, data)
-                    return cls.recover(parent_dir, target_database_url=db_url, expected_marker_id=clean_marker, expected_restore_token=clean_token)
+                    return cls.recover(
+                        parent_dir,
+                        target_database_url=db_url,
+                        expected_marker_id=clean_marker,
+                        expected_restore_token=clean_token,
+                        credential_resolver=credential_resolver
+                    )
                 elif status == "NOT_COMMITTED_OWNERSHIP_INTACT":
                     logger.info("Marcador de propiedad intacto verificado en BD destino. Rollback seguro pre-commit.")
                     if not target.exists() and backup.exists():
@@ -2079,14 +2367,30 @@ class CrashResilientDocumentPublisher:
                     "o en cuarentena por un corte fallido previo. Publicacion documental abortada de forma fail-closed."
                 )
 
-        # P15-R3 (Bloqueante 3): Identidad efectiva previa o suministrada
+        # P15-R3 / P16: Identidad efectiva previa o suministrada
         prior_token = prior_data.get("restore_token")
         prior_marker = prior_data.get("expected_marker_id")
+        prior_ref = prior_data.get("target_db_ref")
+        prior_identity = prior_data.get("target_db_identity")
         prior_candidate_ready = prior_data.get("candidate_ready", False)
 
         effective_marker_id = self.expected_marker_id or prior_marker
         effective_restore_token = self.restore_token or prior_token
-        effective_db_url = self.target_database_url or prior_data.get("target_database_url")
+        effective_ref = self.target_db_ref or prior_ref
+        effective_identity = self.target_db_identity or prior_identity
+
+        effective_db_url = self.target_database_url
+        if not effective_db_url and not self.documents_only:
+            if "target_database_url" in prior_data:
+                effective_db_url = prior_data.get("target_database_url")
+            elif effective_identity:
+                effective_db_url = TargetDBCredentialResolver.resolve(
+                    target_db_identity=effective_identity,
+                    target_db_ref=effective_ref
+                )
+
+        if effective_db_url and not effective_identity:
+            effective_ref, effective_identity = compute_target_db_metadata(effective_db_url, effective_marker_id)
 
         # F6: Validacion exhaustiva y explicita del contrato de modalidades antes de cualquier mutacion durable o recuperacion
         if self.documents_only:
@@ -2145,6 +2449,11 @@ class CrashResilientDocumentPublisher:
                     raise RuntimeError(
                         f"Conflicto de token de restauracion en journal (P15-R3): prior token '{prior_token}' != expected '{self.restore_token}'"
                     )
+            if prior_ref and effective_ref:
+                if str(prior_ref).strip() != str(effective_ref).strip():
+                    raise RuntimeError(
+                        f"Conflicto de referencia de BD en journal (P16): prior ref '{prior_ref}' != current '{effective_ref}'"
+                    )
 
         if candidate_dir is None:
             if prior_data.get("candidate_dir"):
@@ -2180,7 +2489,8 @@ class CrashResilientDocumentPublisher:
             "backup_dir": str(backup_dir.resolve()),
             "db_restored": self.db_restored,
             "documents_only": self.documents_only,
-            "target_database_url": effective_db_url,
+            "target_db_ref": effective_ref,
+            "target_db_identity": effective_identity,
             "expected_marker_id": effective_marker_id,
             "restore_token": effective_restore_token,
             "candidate_ready": effective_candidate_ready,
@@ -2252,7 +2562,7 @@ class CrashResilientDocumentPublisher:
             journal_file.unlink(missing_ok=True)
 
         except Exception as e:
-            logger.error(f"Fallo durante la preparacion o conmutacion de documentos (B1). Ejecutando reversor: {e}")
+            logger.error(sanitize_db_url(f"Fallo durante la preparacion o conmutacion de documentos (B1). Ejecutando reversor: {e}"))
             if candidate_dir and candidate_dir.exists():
                 shutil.rmtree(candidate_dir, ignore_errors=True)
             if backup_dir and backup_dir.exists() and not self.target_dir.exists():
@@ -2261,38 +2571,40 @@ class CrashResilientDocumentPublisher:
                 try:
                     _enforce_database_quarantine(
                         effective_db_url,
-                        reason=f"INCONSISTENT_RESTORATION (B1-01): Document promotion failed during cutover: {e}",
+                        reason=sanitize_db_url(f"INCONSISTENT_RESTORATION (B1-01): Document promotion failed during cutover: {e}"),
                         journal_state=journal_data.get("phase"),
                         marker_id=effective_marker_id,
                         restore_token=effective_restore_token
                     )
                 except Exception as db_err:
-                    logger.error(f"Error colocando BD en cuarentena tras fallo de promocion: {db_err}")
+                    logger.error(sanitize_db_url(f"Error colocando BD en cuarentena tras fallo de promocion: {db_err}"))
             # B1: Preservar el diario para permitir auditoria y diagnostico forense (no borrar evidencia)
             journal_data["phase"] = "FAILED_INCONSISTENT"
-            journal_data["error"] = str(e)
+            journal_data["error"] = sanitize_db_url(str(e))
             try:
                 _atomic_write_journal(journal_file, journal_data)
             except Exception:
                 pass
-            raise RuntimeError(f"Fallo durante promocion atomica de documentos (B1): {e}") from e
+            raise RuntimeError(sanitize_db_url(f"Fallo durante promocion atomica de documentos (B1): {e}")) from e
 
 
 def recover_pending_cutover(
     parent_dir: Path,
     target_database_url: Optional[str] = None,
     expected_marker_id: Optional[str] = None,
-    expected_restore_token: Optional[str] = None
+    expected_restore_token: Optional[str] = None,
+    credential_resolver: Optional[Callable[[Dict[str, Any]], Optional[str]]] = None
 ) -> bool:
     """
-    Recupera el estado de directorios si ocurrio una caida del proceso durante un cutover previo (Item 1, B1).
-    Coordina con el estado de PostgreSQL si la base de datos ya fue restaurada.
+    Recupera el estado de directorios si ocurrio una caida del proceso durante un cutover previo (Item 1, B1, P16).
+    Coordina con el estado de PostgreSQL si la base de datos ya fue restaurada sin persistir secretos.
     """
     return CrashResilientDocumentPublisher.recover(
         parent_dir=parent_dir,
         target_database_url=target_database_url,
         expected_marker_id=expected_marker_id,
-        expected_restore_token=expected_restore_token
+        expected_restore_token=expected_restore_token,
+        credential_resolver=credential_resolver
     )
 
 
@@ -2579,6 +2891,11 @@ def restore_lan_backup(
                 shutil.rmtree(candidate_dir, ignore_errors=True)
             raise RuntimeError(f"Fallo de durabilidad en pre-staging documental: {sync_err}") from sync_err
 
+        target_db_ref = None
+        target_db_identity = None
+        if not documents_only and target_database_url:
+            target_db_ref, target_db_identity = compute_target_db_metadata(target_database_url, expected_marker_id)
+
         journal_data = {
             "phase": "RESTORATION_INITIATED",
             "target_dir": str(target_uploads_dir.resolve()),
@@ -2586,7 +2903,8 @@ def restore_lan_backup(
             "backup_dir": str(backup_dir.resolve()),
             "db_restored": False,
             "documents_only": documents_only,
-            "target_database_url": target_database_url,
+            "target_db_ref": target_db_ref,
+            "target_db_identity": target_db_identity,
             "expected_marker_id": expected_marker_id,
             "restore_token": restore_token,
             "catalog_hashes": catalog_hashes,
