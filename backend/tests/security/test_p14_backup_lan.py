@@ -1314,8 +1314,20 @@ def test_p14_item1_interrupted_cutover_forward_recovery_when_db_restored():
     Item 1: Falla a mitad de promocion en TARGET_MOVED con db_restored=True.
     Al reiniciar/recuperar, si el candidato es integro, debe ejecutar Forward Recovery
     (promover candidate a target) para mantener coherencia con la base de datos ya restaurada.
+
+    Adecuacion Contractual P15 (F3/F4 / Correccion A):
+    1. Acredita el rechazo fail-closed de diarios legados de P14 que carecen de identidad
+       transaccional valida (expected_marker_id / restore_token ausentes).
+    2. Preserva el objetivo historico demostrando que cuando se suministra identidad completa,
+       cuarentena verificada en PostgreSQL 15 real y documentos integros, se completa el Forward
+       Recovery, se acredita la evidencia durable en _dr_restoration_completed y se levanta la cuarentena.
     """
+    from verification.dr.backup_lan_pg15 import _enforce_database_quarantine
+
     temp_dir = Path(tempfile.mkdtemp(prefix="test_item1_fwd_"))
+    marker_id = f"item1_fwd_{uuid.uuid4().hex[:6]}"
+    restore_token = f"tok_item1_{uuid.uuid4().hex[:6]}"
+    db_url = settings.DATABASE_URL
     try:
         parent_dir = temp_dir
         target_dir = parent_dir / "uploads"
@@ -1333,20 +1345,56 @@ def test_p14_item1_interrupted_cutover_forward_recovery_when_db_restored():
         target_dir.rename(backup_dir)
 
         journal_file = parent_dir / ".cutover_journal.json"
-        journal_data = {
+
+        # A. Prueba negativa: Journal legado P14 sin identificadores DEBE abortar fail-closed
+        journal_data_legacy = {
             "phase": "TARGET_MOVED",
             "target_dir": str(target_dir.resolve()),
             "candidate_dir": str(candidate_dir.resolve()),
             "backup_dir": str(backup_dir.resolve()),
             "db_restored": True,
-            "target_database_url": settings.DATABASE_URL,
+            "target_database_url": db_url,
             "catalog_hashes": {"doc_new.txt": cand_sha},
             "created_at": time.time()
         }
-        journal_file.write_text(json.dumps(journal_data), encoding="utf-8")
+        journal_file.write_text(json.dumps(journal_data_legacy), encoding="utf-8")
 
-        # Ejecutar recuperacion posterior al reinicio
-        res = recover_pending_cutover(parent_dir)
+        res_legacy = recover_pending_cutover(parent_dir)
+        assert res_legacy is False, "Journal legado P14 sin identificadores debe abortar fail-closed"
+        assert journal_file.exists(), "Journal en FAILED_INCONSISTENT debe preservarse intacto"
+        saved_j = json.loads(journal_file.read_text(encoding="utf-8"))
+        assert saved_j.get("phase") == "FAILED_INCONSISTENT"
+
+        # B. Prueba positiva: Restauracion con identidad completa y cuarentena autenticada en PostgreSQL
+        _enforce_database_quarantine(
+            db_url,
+            reason="RESTORATION_IN_PROGRESS: P14 Item 1 forward recovery",
+            journal_state="DB_RESTORED",
+            marker_id=marker_id,
+            restore_token=restore_token
+        )
+
+        journal_data_authenticated = {
+            "phase": "TARGET_MOVED",
+            "target_dir": str(target_dir.resolve()),
+            "candidate_dir": str(candidate_dir.resolve()),
+            "backup_dir": str(backup_dir.resolve()),
+            "db_restored": True,
+            "target_database_url": db_url,
+            "expected_marker_id": marker_id,
+            "restore_token": restore_token,
+            "catalog_hashes": {"doc_new.txt": cand_sha},
+            "created_at": time.time()
+        }
+        journal_file.write_text(json.dumps(journal_data_authenticated), encoding="utf-8")
+
+        # Ejecutar recuperacion posterior al reinicio con identidad
+        res = recover_pending_cutover(
+            parent_dir,
+            target_database_url=db_url,
+            expected_marker_id=marker_id,
+            expected_restore_token=restore_token
+        )
         assert res is True
         assert not journal_file.exists(), "El journal debio ser limpiado tras forward recovery"
         assert target_dir.exists(), "target_dir debe existir tras recuperacion exitosa"
@@ -1354,7 +1402,29 @@ def test_p14_item1_interrupted_cutover_forward_recovery_when_db_restored():
         assert (target_dir / "doc_new.txt").read_bytes() == cand_content
         assert not backup_dir.exists(), "backup_dir debe haber sido eliminado tras compromiso"
         assert not candidate_dir.exists(), "candidate_dir fue promovido a target_dir"
+
+        # Acreditar evidencia durable en PostgreSQL (F3/F4)
+        eng = create_engine(db_url)
+        with eng.connect() as conn:
+            q_after = conn.execute(text("SELECT to_regclass('public._dr_restoration_quarantine');")).scalar()
+            assert q_after is None, "La cuarentena debio ser levantada"
+            c_row = conn.execute(
+                text("SELECT id, marker_id, restore_token FROM public._dr_restoration_completed WHERE marker_id = :mid AND restore_token = :rtk;"),
+                {"mid": marker_id, "rtk": restore_token}
+            ).fetchone()
+            assert c_row is not None, "Debe existir evidencia durable de completitud en PostgreSQL (F3/F4)"
+        eng.dispose()
+
     finally:
+        if db_url:
+            try:
+                clean_eng = create_engine(db_url)
+                with clean_eng.begin() as conn:
+                    conn.execute(text("DROP TABLE IF EXISTS public._dr_restoration_quarantine CASCADE;"))
+                    conn.execute(text("DELETE FROM public._dr_restoration_completed WHERE marker_id = :mid;"), {"mid": marker_id})
+                clean_eng.dispose()
+            except Exception:
+                pass
         shutil.rmtree(temp_dir, ignore_errors=True)
 
 
@@ -1407,8 +1477,21 @@ def test_p14_item1_interrupted_cutover_rollback_and_db_invalidation_when_candida
     Item 1: Falla con db_restored=True pero candidate_dir corrupto (hash mismatch).
     El sistema NO puede promover un candidato corrupto; debe revertir backup a target
     E invalidar el marcador de propiedad de la BD para alertar y prevenir split-brain.
+
+    Adecuacion Contractual P15 (F3/F4 / Correccion A):
+    1. Acredita el rechazo fail-closed de diarios legados sin identificadores.
+    2. Preserva el objetivo historico demostrando contra PostgreSQL 15 real que ante candidato corrupto:
+       - El target se revierte desde backup preservando el canary original.
+       - El candidato corrupto se elimina.
+       - Se activa cuarentena transaccional B1-02 en PostgreSQL asociada a marker y token.
+       - El journal se preserva en FAILED_INCONSISTENT con quarantine_confirmed = True.
     """
+    from verification.dr.backup_lan_pg15 import _enforce_database_quarantine
+
     temp_dir = Path(tempfile.mkdtemp(prefix="test_item1_corrupt_"))
+    marker_id = f"item1_c_{uuid.uuid4().hex[:6]}"
+    restore_token = f"tok_item1_c_{uuid.uuid4().hex[:6]}"
+    db_url = settings.DATABASE_URL
     try:
         parent_dir = temp_dir
         target_dir = parent_dir / "uploads"
@@ -1424,45 +1507,86 @@ def test_p14_item1_interrupted_cutover_rollback_and_db_invalidation_when_candida
         target_dir.rename(backup_dir)
 
         journal_file = parent_dir / ".cutover_journal.json"
-        journal_data = {
+
+        # A. Prueba negativa: Rechazo fail-closed si el diario carece de identificadores
+        journal_data_legacy = {
             "phase": "TARGET_MOVED",
             "target_dir": str(target_dir.resolve()),
             "candidate_dir": str(candidate_dir.resolve()),
             "backup_dir": str(backup_dir.resolve()),
             "db_restored": True,
-            "target_database_url": "postgresql://test_user:test_password@localhost:5432/dr_test_ephemeral_splitbrain",
+            "target_database_url": db_url,
             "catalog_hashes": {"doc_new.txt": "EXPECTED_VALID_HASH_THAT_DOES_NOT_MATCH"},
             "created_at": time.time()
         }
-        journal_file.write_text(json.dumps(journal_data), encoding="utf-8")
+        journal_file.write_text(json.dumps(journal_data_legacy), encoding="utf-8")
 
-        mock_conn = mock.MagicMock()
-        mock_engine = mock.MagicMock()
-        mock_engine.connect.return_value.__enter__.return_value = mock_conn
+        res_legacy = recover_pending_cutover(parent_dir)
+        assert res_legacy is False, "Journal legado sin identidad debe abortar fail-closed"
 
-        with mock.patch("verification.dr.backup_lan_pg15.create_engine", return_value=mock_engine):
-            res = recover_pending_cutover(parent_dir)
-
-        assert res is True
-        assert target_dir.exists()
-        assert (target_dir / "original.txt").read_bytes() == orig_content
-        drop_marker_called = any(
-            "_dr_test_ownership_marker" in (
-                str(call.args[0].text) if (call.args and hasattr(call.args[0], "text")) else str(call)
-            ) and "DROP TABLE" in (
-                str(call.args[0].text) if (call.args and hasattr(call.args[0], "text")) else str(call)
-            )
-            for call in mock_conn.execute.call_args_list
+        # B. Prueba positiva: Contingencia B1-02 con identidad y PostgreSQL 15 real
+        _enforce_database_quarantine(
+            db_url,
+            reason="INITIAL_PENDING",
+            journal_state="DB_RESTORED",
+            marker_id=marker_id,
+            restore_token=restore_token
         )
-        assert drop_marker_called, "Debio ejecutarse DROP TABLE del marcador en BD para prevenir split-brain"
-        quarantine_created = any(
-            "_dr_restoration_quarantine" in (
-                str(call.args[0].text) if (call.args and hasattr(call.args[0], "text")) else str(call)
-            )
-            for call in mock_conn.execute.call_args_list
+
+        journal_data_auth = {
+            "phase": "TARGET_MOVED",
+            "target_dir": str(target_dir.resolve()),
+            "candidate_dir": str(candidate_dir.resolve()),
+            "backup_dir": str(backup_dir.resolve()),
+            "db_restored": True,
+            "target_database_url": db_url,
+            "expected_marker_id": marker_id,
+            "restore_token": restore_token,
+            "catalog_hashes": {"doc_new.txt": "EXPECTED_VALID_HASH_THAT_DOES_NOT_MATCH"},
+            "created_at": time.time()
+        }
+        journal_file.write_text(json.dumps(journal_data_auth), encoding="utf-8")
+
+        res = recover_pending_cutover(
+            parent_dir,
+            target_database_url=db_url,
+            expected_marker_id=marker_id,
+            expected_restore_token=restore_token
         )
-        assert quarantine_created, "Debio crearse la tabla _dr_restoration_quarantine para poner la BD en cuarentena (B1)"
+
+        assert res is True, "Manejador de contingencia debe retornar True al asegurar cuarentena"
+        assert target_dir.exists(), "Target debe haber sido restaurado"
+        assert (target_dir / "original.txt").read_bytes() == orig_content, "Canary original debe restaurarse"
+        assert not (target_dir / "doc_new.txt").exists(), "Candidato corrupto no debe ser promovido"
+        assert not candidate_dir.exists(), "Candidato corrupto debio eliminarse"
+
+        # Verificar que la cuarentena transaccional B1-02 quedo confirmada en PostgreSQL real
+        eng = create_engine(db_url)
+        with eng.connect() as conn:
+            q_row = conn.execute(text(
+                "SELECT reason, marker_id, restore_token FROM _dr_restoration_quarantine "
+                "WHERE reason LIKE '%INCONSISTENT_RESTORATION (B1-02)%' ORDER BY id DESC LIMIT 1"
+            )).first()
+            assert q_row is not None, "Cuarentena transaccional B1-02 debe existir en PostgreSQL"
+            assert q_row[1] == marker_id
+            assert q_row[2] == restore_token
+        eng.dispose()
+
+        # Verificar diario en FAILED_INCONSISTENT
+        assert journal_file.exists(), "Diario debe preservarse para diagnostico forense"
+        saved = json.loads(journal_file.read_text(encoding="utf-8"))
+        assert saved.get("phase") == "FAILED_INCONSISTENT"
+        assert saved.get("quarantine_confirmed") is True
+
     finally:
+        if db_url:
+            try:
+                clean_eng = create_engine(db_url)
+                with clean_eng.begin() as conn:
+                    conn.execute(text("DROP TABLE IF EXISTS public._dr_restoration_quarantine CASCADE;"))
+                clean_eng.dispose()
+            except Exception:
+                pass
         shutil.rmtree(temp_dir, ignore_errors=True)
 
 
@@ -1596,13 +1720,23 @@ def test_p14_b1_01_quarantine_committed_transactionally_in_real_postgres():
 
 def test_p14_b1_02_db_restored_recovery_sets_quarantine_when_candidate_corrupt():
     """
-    B1-02: Reproducción del caso observado por GPT en auditoría.
+    B1-02: Escenario crítico de fallo en DB_RESTORED:
     target_dir tiene documentos antiguos, candidate_dir tiene documentos corruptos/incompletos,
     y el diario indica phase=DB_RESTORED, db_restored=True.
-    recover() NO debe simplemente borrar candidate y devolver recover=True sin cuarentena.
-    DEBE establecer cuarentena transaccional en PostgreSQL y devolver False.
+
+    Adecuacion Contractual P15 (F3/F4 / Correccion A):
+    1. Acredita que diarios legados de P14 sin identificadores abortan fail-closed (return False).
+    2. Preserva el objetivo historico de B1-02: con identidad valida y cuarentena previa en PostgreSQL 15,
+       recover() NO promueve documentos corruptos, revierte al estado previo,
+       establece la cuarentena destructiva/aislante B1-02 asociada a marker y token,
+       preserva el diario en FAILED_INCONSISTENT y retorna True acreditando el exito de la contingencia.
     """
+    from verification.dr.backup_lan_pg15 import _enforce_database_quarantine
+
     temp_dir = Path(tempfile.mkdtemp(prefix="test_b1_02_"))
+    marker_id = f"b1_02_m_{uuid.uuid4().hex[:6]}"
+    restore_token = f"b1_02_tok_{uuid.uuid4().hex[:6]}"
+    db_url = settings.DATABASE_URL
     try:
         parent_dir = temp_dir / "storage"
         target_dir = parent_dir / "target"
@@ -1615,36 +1749,72 @@ def test_p14_b1_02_db_restored_recovery_sets_quarantine_when_candidate_corrupt()
         (candidate_dir / "doc.txt").write_text("corrupted_content", encoding="utf-8")
 
         journal_file = parent_dir / ".cutover_journal.json"
-        journal_data = {
+
+        # A. Prueba negativa: diario legado P14 sin identificadores aborta fail-closed
+        journal_data_legacy = {
             "phase": "DB_RESTORED",
             "target_dir": str(target_dir),
             "candidate_dir": str(candidate_dir),
             "backup_dir": str(parent_dir / "backup"),
             "db_restored": True,
-            "target_database_url": settings.DATABASE_URL,
+            "target_database_url": db_url,
             "catalog_hashes": {"doc.txt": "expected_valid_hash_which_does_not_match"},
             "created_at": time.time()
         }
-        journal_file.write_text(json.dumps(journal_data), encoding="utf-8")
+        journal_file.write_text(json.dumps(journal_data_legacy), encoding="utf-8")
 
-        # Invocar recover()
+        res_legacy = CrashResilientDocumentPublisher.recover(
+            parent_dir=parent_dir,
+            target_database_url=db_url
+        )
+        assert res_legacy is False, "Journal legado sin identidad debe abortar fail-closed"
+        assert journal_file.exists(), "Journal debe preservarse"
+
+        # B. Prueba positiva: Contingencia B1-02 con identidad y PostgreSQL 15 real
+        _enforce_database_quarantine(
+            db_url,
+            reason="INITIAL_COMMIT",
+            journal_state="DB_RESTORED",
+            marker_id=marker_id,
+            restore_token=restore_token
+        )
+
+        journal_data_auth = {
+            "phase": "DB_RESTORED",
+            "target_dir": str(target_dir),
+            "candidate_dir": str(candidate_dir),
+            "backup_dir": str(parent_dir / "backup"),
+            "db_restored": True,
+            "target_database_url": db_url,
+            "expected_marker_id": marker_id,
+            "restore_token": restore_token,
+            "catalog_hashes": {"doc.txt": "expected_valid_hash_which_does_not_match"},
+            "created_at": time.time()
+        }
+        journal_file.write_text(json.dumps(journal_data_auth), encoding="utf-8")
+
+        # Invocar recover() con identidad completa
         res = CrashResilientDocumentPublisher.recover(
             parent_dir=parent_dir,
-            target_database_url=settings.DATABASE_URL
+            target_database_url=db_url,
+            expected_marker_id=marker_id,
+            expected_restore_token=restore_token
         )
 
         assert res is True, "Fallo B1-02: recover() debio procesar la contingencia y activar la cuarentena!"
 
-        # Verificar que la cuarentena fue efectivamente establecida en PostgreSQL real
-        verify_engine = create_engine(settings.DATABASE_URL)
+        # Verificar que la cuarentena fue efectivamente establecida en PostgreSQL real con identidad
+        verify_engine = create_engine(db_url)
         with verify_engine.connect() as conn:
             q_row = conn.execute(text(
-                "SELECT reason FROM _dr_restoration_quarantine "
+                "SELECT reason, marker_id, restore_token FROM _dr_restoration_quarantine "
                 "WHERE reason LIKE '%INCONSISTENT_RESTORATION (B1-02)%' ORDER BY id DESC LIMIT 1"
             )).first()
             assert q_row is not None, "Fallo B1-02: No se establecio la cuarentena en PostgreSQL tras fallo en DB_RESTORED!"
+            assert q_row[1] == marker_id
+            assert q_row[2] == restore_token
             with verify_engine.begin() as clean_conn:
-                clean_conn.execute(text("DELETE FROM _dr_restoration_quarantine WHERE reason LIKE '%INCONSISTENT_RESTORATION (B1-02)%';"))
+                clean_conn.execute(text("DELETE FROM _dr_restoration_quarantine WHERE marker_id = :mid;"), {"mid": marker_id})
         verify_engine.dispose()
     finally:
         shutil.rmtree(temp_dir, ignore_errors=True)
@@ -2072,9 +2242,13 @@ def test_p14_b1_pool_checkout_fails_closed_on_quarantine_and_inspection_error():
         assert "BLOQUEO OPERATIVO POR CUARENTENA DR (B1-03)" in str(exc_sess.value)
 
     finally:
-        from verification.dr.backup_lan_pg15 import _lift_database_quarantine
         from app.core.config import settings
-        _lift_database_quarantine(settings.DATABASE_URL)
+        from sqlalchemy.pool import NullPool
+        clean_engine = create_engine(settings.DATABASE_URL, poolclass=NullPool)
+        with clean_engine.begin() as clean_conn:
+            clean_conn.execute(text("DROP TABLE IF EXISTS public._dr_restoration_quarantine CASCADE;"))
+            clean_conn.execute(text("DROP TABLE IF EXISTS public._dr_restoration_completed CASCADE;"))
+        clean_engine.dispose()
 
     # 2. Falla cerrada ante error en cursor durante checkout
     mock_dbapi_conn = mock.MagicMock()
@@ -2099,11 +2273,60 @@ def test_p14_b1_crash_between_pg_restore_and_publish_recovers_and_lifts_quaranti
        - PostgreSQL esta en cuarentena transaccional irrefutable.
        - Los servicios operativos rechazan conexiones.
     3. Al ejecutar recover(), se realiza recuperacion hacia adelante (forward recovery),
-       se verifica la integridad de los documentos y SOLO ENTONCES se levanta la cuarentena en PostgreSQL.
+       se verifica la integridad de los documentos y SOLO ENTONCES se levanta la cuarentena en PostgreSQL
+       mediante finalizacion atomica autenticada (F3/F4).
     4. En caso de archivos corruptos tras la caida, recover() mantiene la cuarentena y no borra el journal.
+
+    Adecuacion Contractual P15 (F3/F4 / Correccion A):
+    - Causa de incompatibilidad historica: En P14, el journal y la cuarentena no vinculaban marker_id
+      ni restore_token criptograficos. En P15, la identidad transaccional es obligatoria post-commit.
+    - Se prueba: (a) rechazo fail-closed de journals legados sin identidad; (b) forward recovery
+      positivo con identidad transaccional verificada en PostgreSQL 15 real; y (c) aislamiento
+      por corrupcion con preservacion de cuarentena y evidencia forense.
     """
+    from verification.dr.backup_lan_pg15 import _enforce_database_quarantine, _lift_database_quarantine
+
     temp_dir = Path(tempfile.mkdtemp(prefix="test_b1_zero_window_"))
+    db_url = settings.DATABASE_URL
+    marker_id = f"b1_crash_m_{uuid.uuid4().hex[:6]}"
+    restore_token = f"b1_crash_tok_{uuid.uuid4().hex[:6]}"
+
     try:
+        # ---------------------------------------------------------------------
+        # PARTE 1: Prueba negativa de rechazo fail-closed ante journal legado
+        # ---------------------------------------------------------------------
+        legacy_dir = temp_dir / "legacy_case"
+        legacy_dir.mkdir(parents=True, exist_ok=True)
+        leg_target = legacy_dir / "target"
+        leg_target.mkdir(parents=True, exist_ok=True)
+        (leg_target / "old.txt").write_text("old", encoding="utf-8")
+        leg_cand = legacy_dir / "cand"
+        leg_cand.mkdir(parents=True, exist_ok=True)
+        (leg_cand / "new.txt").write_text("new", encoding="utf-8")
+        leg_sha = hashlib.sha256(b"new").hexdigest()
+
+        legacy_journal = legacy_dir / ".cutover_journal.json"
+        legacy_journal.write_text(json.dumps({
+            "phase": "DB_RESTORED",
+            "target_dir": str(leg_target.resolve()),
+            "candidate_dir": str(leg_cand.resolve()),
+            "backup_dir": str((legacy_dir / "backup").resolve()),
+            "db_restored": True,
+            "target_database_url": db_url,
+            "catalog_hashes": {"new.txt": leg_sha},
+            "created_at": time.time()
+        }), encoding="utf-8")
+
+        res_leg = CrashResilientDocumentPublisher.recover(
+            parent_dir=legacy_dir,
+            target_database_url=db_url
+        )
+        assert res_leg is False, "Journal legado sin identidad debe abortar fail-closed"
+        assert legacy_journal.exists(), "Evidencia forense debe preservarse"
+
+        # ---------------------------------------------------------------------
+        # PARTE 2: Recuperacion positiva hacia adelante con identidad transaccional
+        # ---------------------------------------------------------------------
         target_dir = temp_dir / "target_uploads"
         target_dir.mkdir(parents=True, exist_ok=True)
         (target_dir / "old_doc.txt").write_text("old_data", encoding="utf-8")
@@ -2115,13 +2338,17 @@ def test_p14_b1_crash_between_pg_restore_and_publish_recovers_and_lifts_quaranti
         new_sha = hashlib.sha256(b"new_data_content").hexdigest()
 
         journal_file = temp_dir / ".cutover_journal.json"
-        db_url = settings.DATABASE_URL
 
-        # Establecer cuarentena en PostgreSQL (simulando que el commit de pg_restore ya ocurrio)
-        from verification.dr.backup_lan_pg15 import _enforce_database_quarantine, _lift_database_quarantine
-        _enforce_database_quarantine(db_url, reason="RESTORATION_IN_PROGRESS: Pending cutover", journal_state="DB_RESTORED")
+        # Establecer cuarentena autenticada en PostgreSQL real
+        _enforce_database_quarantine(
+            db_url,
+            reason="RESTORATION_IN_PROGRESS: Pending cutover",
+            journal_state="DB_RESTORED",
+            marker_id=marker_id,
+            restore_token=restore_token
+        )
 
-        # Escribir journal previo
+        # Escribir journal con identidad transaccional
         journal_data = {
             "phase": "DB_RESTORED",
             "target_dir": str(target_dir.resolve()),
@@ -2129,21 +2356,25 @@ def test_p14_b1_crash_between_pg_restore_and_publish_recovers_and_lifts_quaranti
             "backup_dir": str((temp_dir / ".target_backup_test").resolve()),
             "db_restored": True,
             "target_database_url": db_url,
+            "expected_marker_id": marker_id,
+            "restore_token": restore_token,
             "catalog_hashes": {"new_doc.txt": new_sha},
             "created_at": time.time()
         }
         journal_file.write_text(json.dumps(journal_data, indent=2), encoding="utf-8")
 
-        # Acreditar que mientras esta en este estado post-caida, la BD esta inaccesible para los servicios
+        # Acreditar que mientras esta en cuarentena, la BD esta inaccesible para los servicios
         from app.core.database import get_db
         with pytest.raises(RuntimeError) as exc_acc:
             next(get_db())
         assert "BLOQUEO OPERATIVO POR CUARENTENA DR" in str(exc_acc.value)
 
-        # Ejecutar recover() post-reinicio
+        # Ejecutar recover() post-reinicio con credenciales de identidad
         recovered = CrashResilientDocumentPublisher.recover(
             parent_dir=temp_dir,
-            target_database_url=db_url
+            target_database_url=db_url,
+            expected_marker_id=marker_id,
+            expected_restore_token=restore_token
         )
         assert recovered is True, "recover() debio completar la recuperacion hacia adelante"
 
@@ -2151,21 +2382,40 @@ def test_p14_b1_crash_between_pg_restore_and_publish_recovers_and_lifts_quaranti
         assert (target_dir / "new_doc.txt").exists()
         assert (target_dir / "new_doc.txt").read_text(encoding="utf-8") == "new_data_content"
 
-        # Acreditar que la cuarentena fue LEVANTADA exitosamente tras la promocion
+        # Acreditar que la cuarentena fue LEVANTADA exitosamente y se registro completitud en PostgreSQL
         eng = create_engine(db_url)
         with eng.connect() as conn:
             q_exists = conn.execute(text("SELECT to_regclass('public._dr_restoration_quarantine');")).scalar()
             assert q_exists is None, "La tabla _dr_restoration_quarantine debio ser removida tras recuperacion completa"
+
+            c_row = conn.execute(text(
+                "SELECT marker_id, restore_token FROM public._dr_restoration_completed "
+                "WHERE marker_id = :mid;"
+            ), {"mid": marker_id}).first()
+            assert c_row is not None, "Debe existir registro durable de completitud en PostgreSQL"
+            assert c_row[0] == marker_id
+            assert c_row[1] == restore_token
         eng.dispose()
 
-        # B. Probar escenario de archivo corrupto tras caida: la cuarentena NO debe levantarse y el journal NO debe borrarse
+        # ---------------------------------------------------------------------
+        # PARTE 3: Escenario de corrupcion tras caida -> preservar cuarentena y journal
+        # ---------------------------------------------------------------------
+        corrupt_marker = f"b1_corr_m_{uuid.uuid4().hex[:6]}"
+        corrupt_token = f"b1_corr_tok_{uuid.uuid4().hex[:6]}"
+
         corrupt_target = temp_dir / "target_corrupt"
         corrupt_target.mkdir(parents=True, exist_ok=True)
         corrupt_cand = temp_dir / ".target_candidate_corrupt"
         corrupt_cand.mkdir(parents=True, exist_ok=True)
         (corrupt_cand / "corrupt.txt").write_text("corrupted_content", encoding="utf-8")
 
-        _enforce_database_quarantine(db_url, reason="RESTORATION_IN_PROGRESS: Pending cutover", journal_state="DB_RESTORED")
+        _enforce_database_quarantine(
+            db_url,
+            reason="RESTORATION_IN_PROGRESS: Pending cutover",
+            journal_state="DB_RESTORED",
+            marker_id=corrupt_marker,
+            restore_token=corrupt_token
+        )
         corrupt_journal = {
             "phase": "DB_RESTORED",
             "target_dir": str(corrupt_target.resolve()),
@@ -2173,13 +2423,20 @@ def test_p14_b1_crash_between_pg_restore_and_publish_recovers_and_lifts_quaranti
             "backup_dir": str((temp_dir / ".target_backup_corrupt").resolve()),
             "db_restored": True,
             "target_database_url": db_url,
+            "expected_marker_id": corrupt_marker,
+            "restore_token": corrupt_token,
             "catalog_hashes": {"corrupt.txt": "EXPECTED_HASH_THAT_DOES_NOT_MATCH"},
             "created_at": time.time()
         }
         journal_file.write_text(json.dumps(corrupt_journal, indent=2), encoding="utf-8")
 
-        # recover debe detectar la corrupcion, preservar la cuarentena y preservar el journal
-        CrashResilientDocumentPublisher.recover(parent_dir=temp_dir, target_database_url=db_url)
+        # recover debe procesar la contingencia, preservar cuarentena y diario
+        CrashResilientDocumentPublisher.recover(
+            parent_dir=temp_dir,
+            target_database_url=db_url,
+            expected_marker_id=corrupt_marker,
+            expected_restore_token=corrupt_token
+        )
 
         # Verificar que el journal NO fue eliminado (evidencia preservada)
         assert journal_file.exists(), "El journal NO debe eliminarse si hay fallo o corrupcion"
@@ -2191,10 +2448,24 @@ def test_p14_b1_crash_between_pg_restore_and_publish_recovers_and_lifts_quaranti
         with eng2.connect() as conn:
             q_exists2 = conn.execute(text("SELECT to_regclass('public._dr_restoration_quarantine');")).scalar()
             assert q_exists2 is not None, "La BD debe permanecer en cuarentena ante corrupcion"
+            q_row = conn.execute(text(
+                "SELECT marker_id, restore_token FROM public._dr_restoration_quarantine "
+                "WHERE marker_id = :mid;"
+            ), {"mid": corrupt_marker}).first()
+            assert q_row is not None
+            assert q_row[0] == corrupt_marker
         eng2.dispose()
 
     finally:
-        _lift_database_quarantine(settings.DATABASE_URL)
+        if db_url:
+            try:
+                cleanup_eng = create_engine(db_url)
+                with cleanup_eng.begin() as conn:
+                    conn.execute(text("DROP TABLE IF EXISTS public._dr_restoration_quarantine CASCADE;"))
+                    conn.execute(text("DROP TABLE IF EXISTS public._dr_restoration_completed CASCADE;"))
+                cleanup_eng.dispose()
+            except Exception:
+                pass
         if temp_dir.exists():
             shutil.rmtree(temp_dir, ignore_errors=True)
 
