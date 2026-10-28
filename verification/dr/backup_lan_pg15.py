@@ -20,6 +20,7 @@ Implementa:
 
 import os
 import sys
+import errno
 import json
 import time
 import uuid
@@ -32,7 +33,8 @@ import subprocess
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Dict, Any, List, Optional, Tuple
-from urllib.parse import urlparse
+import re
+from urllib.parse import urlparse, urlunparse
 
 from sqlalchemy import create_engine, text
 from sqlalchemy.orm import sessionmaker
@@ -48,6 +50,25 @@ from app.core.crypto import (
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(name)s: %(message)s")
 logger = logging.getLogger("abst_gp.dr.backup_lan_pg15")
+
+
+def sanitize_db_url(text: Optional[str]) -> str:
+    """
+    Sanea cualquier cadena, DSN o mensaje de error de base de datos para logging
+    y diagnostico forense, enmascarando de forma robusta cualquier credencial presente (P15-H4).
+    Ejemplos:
+      postgresql://usr:secret123@host:5432/db -> postgresql://usr:***@host:5432/db
+    """
+    if not text:
+        return "<none>"
+    s = str(text)
+    # Enmascarar patrones de URL de BD con credenciales: scheme://user:password@host
+    s = re.sub(r'(://[^:@\s]+):[^@\s]+(@)', r'\1:***\2', s)
+    # Enmascarar argumentos password=...
+    s = re.sub(r'(password=)[^\s;&]+', r'\1***', s, flags=re.IGNORECASE)
+    # Enmascarar PGPASSWORD=...
+    s = re.sub(r'(PGPASSWORD=)[^\s;&]+', r'\1***', s, flags=re.IGNORECASE)
+    return s
 
 
 class SecurityError(Exception):
@@ -192,7 +213,8 @@ def validate_restore_target_safety(
         err_msg = str(e).lower()
         if "does not exist" in err_msg:
             raise ValueError(f"Fallo de seguridad critico (R4-01, R5-01): La base de datos destino '{tgt_db}' no existe en el servidor.")
-        raise RuntimeError(f"Fallo al autenticar la base de datos destino '{tgt_db}': {e}")
+        sanitized_e = sanitize_db_url(str(e))
+        raise RuntimeError(f"Fallo al autenticar la base de datos destino '{tgt_db}': {sanitized_e}")
 
 
 def verify_postgresql_15_server(session) -> Tuple[int, str]:
@@ -642,7 +664,8 @@ def execute_pg_restore(
     sql_file: Path,
     expected_marker_id: str,
     source_database_url: str,
-    container_name: Optional[str] = None
+    container_name: Optional[str] = None,
+    restore_token: Optional[str] = None
 ) -> bool:
     """
     Restaura el archivo SQL en la base de datos destino aislada mediante psql con -X -v ON_ERROR_STOP=1 --single-transaction (R3-03, R4-01, R5-01, R5-08).
@@ -692,18 +715,22 @@ def execute_pg_restore(
     if not (150000 <= v_num < 160000):
         raise RuntimeError(f"Fallo critico en execute_pg_restore (Item 3): Se requiere PostgreSQL 15, detectado {v_num}.")
 
+    safe_marker = expected_marker_id.replace("'", "''")
+    safe_token = (restore_token or uuid.uuid4().hex[:12]).replace("'", "''")
     quarantine_snippet = (
-        b"\n-- B1: Cuarentena preventiva durante restauracion (se levantara solo tras corte documental verificado)\n"
-        b"DROP TABLE IF EXISTS public._dr_test_ownership_marker CASCADE;\n"
-        b"CREATE TABLE IF NOT EXISTS public._dr_restoration_quarantine (\n"
-        b"  id SERIAL PRIMARY KEY,\n"
-        b"  quarantined_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,\n"
-        b"  reason TEXT NOT NULL,\n"
-        b"  journal_state TEXT\n"
-        b");\n"
-        b"INSERT INTO public._dr_restoration_quarantine (reason, journal_state) "
-        b"VALUES ('RESTORATION_IN_PROGRESS (B1): Base restaurada pendiente de corte documental', 'DB_RESTORED');\n"
-    )
+        "\n-- B1: Cuarentena preventiva durante restauracion (se levantara solo tras corte documental verificado)\n"
+        "DROP TABLE IF EXISTS public._dr_test_ownership_marker CASCADE;\n"
+        "CREATE TABLE IF NOT EXISTS public._dr_restoration_quarantine (\n"
+        "  id SERIAL PRIMARY KEY,\n"
+        "  quarantined_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,\n"
+        "  reason TEXT NOT NULL,\n"
+        "  journal_state TEXT NOT NULL,\n"
+        "  marker_id VARCHAR(64),\n"
+        "  restore_token VARCHAR(64)\n"
+        ");\n"
+        f"INSERT INTO public._dr_restoration_quarantine (reason, journal_state, marker_id, restore_token) "
+        f"VALUES ('RESTORATION_IN_PROGRESS (B1): Base restaurada pendiente de corte documental', 'DB_RESTORED', '{safe_marker}', '{safe_token}');\n"
+    ).encode("utf-8")
 
     effective_sql_file = sql_file.parent / f".prep_restore_{uuid.uuid4().hex[:6]}.sql"
     with open(effective_sql_file, "wb") as f_out:
@@ -1058,24 +1085,24 @@ def _atomic_write_journal(journal_file: Path, data: Dict[str, Any]) -> None:
             f.flush()
             os.fsync(f.fileno())
         os.replace(tmp_path, journal_file)
-        try:
-            dir_fd = os.open(str(parent_dir), os.O_RDONLY)
-            try:
-                os.fsync(dir_fd)
-            finally:
-                os.close(dir_fd)
-        except Exception:
-            pass
+        _sync_directory(parent_dir)
     finally:
         if tmp_path.exists():
             tmp_path.unlink(missing_ok=True)
 
 
-def _enforce_database_quarantine(db_url: str, reason: str, journal_state: Optional[str] = None) -> None:
+def _enforce_database_quarantine(
+    db_url: str,
+    reason: str,
+    journal_state: Optional[str] = None,
+    marker_id: Optional[str] = None,
+    restore_token: Optional[str] = None
+) -> None:
     """
-    B1-01: Garantiza la confirmacion transaccional irrefutable de la cuarentena PostgreSQL.
+    B1-01 / P15-H1: Garantiza la confirmacion transaccional irrefutable de la cuarentena PostgreSQL.
     Utiliza commit verificado ('conn.commit()') en SQLAlchemy 2.x para asegurar que DROP TABLE,
     CREATE TABLE e INSERT se confirmen de forma durable con COMMIT real en PostgreSQL 15 (B1-01).
+    Registra metadatos estructurados (marker_id, restore_token) para acreditacion inequívoca (P15-H1).
     """
     if not db_url:
         return
@@ -1088,64 +1115,484 @@ def _enforce_database_quarantine(db_url: str, reason: str, journal_state: Option
                 "  id SERIAL PRIMARY KEY,"
                 "  quarantined_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,"
                 "  reason TEXT NOT NULL,"
-                "  journal_state TEXT"
+                "  journal_state TEXT NOT NULL,"
+                "  marker_id VARCHAR(64),"
+                "  restore_token VARCHAR(64)"
                 ");"
             ))
+            conn.execute(text("ALTER TABLE public._dr_restoration_quarantine ADD COLUMN IF NOT EXISTS marker_id VARCHAR(64);"))
+            conn.execute(text("ALTER TABLE public._dr_restoration_quarantine ADD COLUMN IF NOT EXISTS restore_token VARCHAR(64);"))
             conn.execute(
                 text(
-                    "INSERT INTO public._dr_restoration_quarantine (reason, journal_state) "
-                    "VALUES (:r, :js);"
+                    "INSERT INTO public._dr_restoration_quarantine (reason, journal_state, marker_id, restore_token) "
+                    "VALUES (:r, :js, :mid, :rtok);"
                 ),
-                {"r": reason, "js": str(journal_state or "UNKNOWN")}
+                {
+                    "r": reason,
+                    "js": str(journal_state or "UNKNOWN"),
+                    "mid": marker_id,
+                    "rtok": restore_token
+                }
             )
             if hasattr(conn, "commit"):
                 conn.commit()
-        logger.warning(f"Coordinacion DR (B1): Cuarentena transaccional confirmada con exito en BD. Marcador invalidado. Causa: {reason}")
+        sanitized_url = sanitize_db_url(db_url)
+        logger.warning(f"Coordinacion DR (B1): Cuarentena transaccional confirmada con exito en BD ({sanitized_url}). Marcador invalidado. Causa: {reason}")
     finally:
         inv_engine.dispose()
 
 
-def _lift_database_quarantine(db_url: Optional[str]) -> None:
+def _lift_database_quarantine(
+    db_url: Optional[str],
+    expected_marker_id: Optional[str] = None,
+    restore_token: Optional[str] = None
+) -> None:
     """
-    B1: Levanta la cuarentena en PostgreSQL de forma transaccional verificada
-    SOLO cuando la promocion y verificacion documental ha concluido exitosamente.
+    B1/P15 F3: Finalizacion PostgreSQL autenticada y atomica.
+    Levanta la cuarentena en PostgreSQL de forma transaccional verificada
+    exigiendo validacion estricta de pertenencia y registrando evidencia durable
+    de completitud vinculada al marcador y token de la restauracion.
     """
-    if not db_url:
-        return
+    if not db_url or not str(db_url).strip():
+        raise ValueError("target_database_url es obligatorio para levantamiento autenticado de cuarentena (F3)")
+
+    clean_marker = str(expected_marker_id).strip() if expected_marker_id is not None else ""
+    clean_token = str(restore_token).strip() if restore_token is not None else ""
+
+    if not clean_marker or not clean_token:
+        raise ValueError("expected_marker_id y restore_token deben ser cadenas no vacias para acreditar la pertenencia de la cuarentena (F3)")
+
+    sanitized_url = sanitize_db_url(db_url)
     engine = create_engine(db_url, connect_args={"connect_timeout": 5})
     try:
-        with engine.connect() as conn:
-            conn.execute(text("DROP TABLE IF EXISTS public._dr_restoration_quarantine CASCADE;"))
-            if hasattr(conn, "commit"):
-                conn.commit()
-        logger.info("Coordinacion DR (B1): Cuarentena en base de datos levantada exitosamente tras promocion documental verificada.")
+        with engine.begin() as conn:
+            # 0. Serializacion transaccional estricta contra carreras entre escritores concurrentes (F3 / Seccion III)
+            conn.execute(text("SELECT pg_advisory_xact_lock(hashtext('dr_quarantine_lift_lock'));"))
+
+            # 1. Comprobar si existe la tabla de cuarentena
+            q_exists = conn.execute(text("SELECT to_regclass('public._dr_restoration_quarantine');")).scalar()
+            if q_exists is None:
+                # Idempotencia: comprobar si ya fue completada previamente con este marcador y token
+                c_exists = conn.execute(text("SELECT to_regclass('public._dr_restoration_completed');")).scalar()
+                if c_exists is not None:
+                    row_c = conn.execute(
+                        text("SELECT id FROM public._dr_restoration_completed WHERE marker_id = :mid AND restore_token = :rtk LIMIT 1;"),
+                        {"mid": clean_marker, "rtk": clean_token}
+                    ).fetchone()
+                    if row_c is not None:
+                        logger.info(f"Cuarentena ya habia sido levantada y completitud acreditada previamente en PostgreSQL ({sanitized_url}) para marker='{clean_marker}' (idempotente).")
+                        return
+                raise RuntimeError(f"Fallo F3: No existe public._dr_restoration_quarantine ni evidencia previa de completitud en {sanitized_url}")
+
+            # 2. Inspeccionar la fila de cuarentena con bloqueo transaccional por fila (FOR UPDATE)
+            cols_query = text(
+                "SELECT column_name FROM information_schema.columns "
+                "WHERE table_schema = 'public' AND table_name = '_dr_restoration_quarantine';"
+            )
+            cols = {row[0] for row in conn.execute(cols_query).fetchall()}
+
+            select_sql = "SELECT reason, journal_state"
+            if "marker_id" in cols:
+                select_sql += ", marker_id"
+            else:
+                select_sql += ", NULL as marker_id"
+            if "restore_token" in cols:
+                select_sql += ", restore_token"
+            else:
+                select_sql += ", NULL as restore_token"
+            select_sql += " FROM public._dr_restoration_quarantine ORDER BY id DESC LIMIT 1 FOR UPDATE;"
+
+            row_q = conn.execute(text(select_sql)).fetchone()
+            if row_q is None:
+                raise RuntimeError("Fallo F3: public._dr_restoration_quarantine existe pero esta vacia (0 filas). No acredita pertenencia.")
+
+            actual_reason = row_q[0] or ""
+            actual_journal_state = row_q[1] or "UNKNOWN"
+            actual_marker = row_q[2]
+            actual_token = row_q[3]
+
+            clean_actual_marker = str(actual_marker).strip() if actual_marker is not None else ""
+            clean_actual_token = str(actual_token).strip() if actual_token is not None else ""
+
+            if actual_journal_state != "DB_RESTORED":
+                raise RuntimeError(f"Fallo F3: Cuarentena en estado invalido '{actual_journal_state}' (se requiere 'DB_RESTORED').")
+
+            if not clean_actual_marker or clean_actual_marker != clean_marker:
+                raise RuntimeError(f"Fallo F3: Marcador de cuarentena no coincide ({clean_actual_marker} != {clean_marker}). Rechazando mutacion de cuarentena ajena.")
+
+            if not clean_actual_token or clean_actual_token != clean_token:
+                raise RuntimeError(f"Fallo F3: Token de restauracion no coincide ({clean_actual_token} != {clean_token}). Rechazando mutacion de cuarentena ajena.")
+
+            # 3. Crear / actualizar tabla durable de completitud vinculada al marcador y token
+            conn.execute(text("""
+                CREATE TABLE IF NOT EXISTS public._dr_restoration_completed (
+                    id SERIAL PRIMARY KEY,
+                    marker_id VARCHAR(128) NOT NULL,
+                    restore_token VARCHAR(128) NOT NULL,
+                    completed_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
+                    reason TEXT
+                );
+                ALTER TABLE public._dr_restoration_completed ADD COLUMN IF NOT EXISTS completed_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP;
+                ALTER TABLE public._dr_restoration_completed ADD COLUMN IF NOT EXISTS reason TEXT;
+            """))
+            conn.execute(
+                text("""
+                    INSERT INTO public._dr_restoration_completed (marker_id, restore_token, completed_at, reason)
+                    VALUES (:mid, :rtk, CURRENT_TIMESTAMP, :rsn);
+                """),
+                {
+                    "mid": clean_marker,
+                    "rtk": clean_token,
+                    "rsn": f"LIFTED_BY_PUBLISHER (F3): verified marker {clean_marker}, token {clean_token}"
+                }
+            )
+
+            # 4. Eliminar la cuarentena atómicamente dentro de la misma transacción
+            conn.execute(text("DROP TABLE public._dr_restoration_quarantine CASCADE;"))
+
+        logger.info(f"Coordinacion DR (F3): Cuarentena en base de datos ({sanitized_url}) levantada y completitud acreditada atomicamente (marker='{clean_marker}').")
     finally:
         engine.dispose()
+
+def _sync_directory(dir_path: Path) -> None:
+    """
+    Sincroniza metadatos de directorio en disco mediante os.fsync en plataformas que lo soportan (POSIX/Linux).
+    P15-R4 / P15-R5 (Hallazgo R4-H1): La durabilidad de directorios es fail-closed estricta.
+    - Si la plataforma es Windows, Win32 carece de mecanismo estandar acreditado de fsync sobre descriptores
+      de directorio; se arroja OSError(ENOTSUP) para impedir continuar la restauracion sin durabilidad certificada.
+    - En POSIX/Linux, si os.open u os.fsync arroja OSError (incluyendo ENOTSUP, EOPNOTSUPP o EIO),
+      el error DEBE propagarse fail-closed para impedir que se declare completado el pre-staging
+      o se invoque la restauracion destructiva de PostgreSQL.
+    """
+    if not dir_path.exists():
+        return
+
+    # En Windows, Win32 open() sobre directorios no esta soportado por la API C runtime
+    if sys.platform == "win32":
+        err_code = getattr(errno, "ENOTSUP", 95)
+        logger.error(
+            f"fsync en descriptores de directorio no soportado en Windows ({dir_path}). "
+            "Invariante P15-R5 (R4-H1): La durabilidad estricta de pre-staging requiere Linux/POSIX con soporte de fsync de directorio."
+        )
+        raise OSError(
+            err_code,
+            f"Plataforma Windows ({sys.platform}) no ofrece sincronizacion durable de descriptores de directorio acreditada ({dir_path})."
+        )
+
+    flags = os.O_RDONLY
+    if hasattr(os, "O_DIRECTORY"):
+        flags |= os.O_DIRECTORY
+
+    try:
+        dir_fd = os.open(str(dir_path), flags)
+    except Exception as e:
+        logger.error(f"Fallo critico al abrir descriptor de directorio {dir_path}: {e}")
+        raise
+
+    try:
+        os.fsync(dir_fd)
+    except Exception as e:
+        logger.error(f"Fallo critico en fsync de directorio {dir_path}: {e}")
+        raise
+    finally:
+        os.close(dir_fd)
+
+
+def _verify_documentary_catalog_integrity(
+    target_dir: Path,
+    catalog_hashes: Optional[Dict[str, str]],
+    allow_empty: bool = False
+) -> Tuple[bool, str]:
+    """
+    P15-R5 (Hallazgo R4-H3): Verifica de forma estricta la existencia, confinamiento e integridad criptografica
+    del catalogo documental contra target_dir antes de levantar cuarentenas o destruir respaldos.
+    """
+    if not target_dir.exists() or not target_dir.is_dir():
+        return (False, f"Directorio destino no existe o no es directorio: {target_dir}")
+
+    if not catalog_hashes:
+        if not allow_empty:
+            return (False, "Catalogo documental vacio o ausente sin autorizacion explicita (allow_empty_catalog=False)")
+        return (True, "Catalogo documental vacio legitimamente autorizado")
+
+    target_resolved = target_dir.resolve()
+    for rel_path_str, expected_sha in catalog_hashes.items():
+        rel_p = Path(rel_path_str)
+        if rel_p.is_absolute() or ".." in rel_p.parts:
+            return (False, f"Path traversal detectado en catalogo documental: {rel_path_str}")
+
+        dest = (target_dir / rel_p).resolve()
+        try:
+            if os.path.commonpath([str(target_resolved), str(dest)]) != str(target_resolved):
+                return (False, f"Ruta fuera de destino permitido: {rel_path_str}")
+        except ValueError:
+            return (False, f"Ruta en unidad o prefijo incompatible: {rel_path_str}")
+
+        cur = dest
+        while cur != target_resolved and cur.parent != cur:
+            if cur.is_symlink():
+                return (False, f"Enlace simbolico detectado en ruta documental: {cur}")
+            cur = cur.parent
+
+        if not dest.exists() or not dest.is_file():
+            return (False, f"Archivo documental requerido no existe en destino: {rel_path_str}")
+
+        try:
+            actual_sha = compute_file_sha256(dest)
+        except Exception as e:
+            return (False, f"Error al calcular hash de {rel_path_str}: {e}")
+
+        if actual_sha != expected_sha:
+            return (False, f"Hash discrepante para {rel_path_str}: actual {actual_sha} != esperado {expected_sha}")
+
+    return (True, "Integridad documental acreditada")
+
+
+def _durable_write_and_sync_file(dst_file: Path, content: bytes) -> None:
+    """
+    P15-R3 (Bloqueante 2): Escribe un archivo de forma durable garantizando la persistencia fisica
+    en almacenamiento no volatil mediante flush() y os.fsync(fileno()) previo a declarar completitud.
+    Utiliza persistencia durable de datos y sincroniza los metadatos del directorio contenedor.
+    """
+    dst_file.parent.mkdir(parents=True, exist_ok=True)
+    dst_file.write_bytes(content)
+    try:
+        with open(dst_file, "rb") as fp:
+            os.fsync(fp.fileno())
+    except (OSError, PermissionError) as e:
+        logger.error(f"Fallo critico al sincronizar archivo {dst_file}: {e}")
+        raise
+    _sync_directory(dst_file.parent)
+
+
+def _sync_directory_tree(dir_path: Path) -> None:
+    """
+    P15-R3 (Bloqueante 2): Sincroniza recursivamente todos los archivos y subdirectorios de dir_path
+    para asegurar la durabilidad fisica estructural previa al COMMIT de PostgreSQL.
+    """
+    if not dir_path.exists():
+        return
+    for root, dirs, files in os.walk(dir_path):
+        root_path = Path(root)
+        for f in files:
+            file_path = root_path / f
+            try:
+                with open(file_path, "rb") as fp:
+                    os.fsync(fp.fileno())
+            except (OSError, PermissionError) as e:
+                logger.error(f"Fallo critico al sincronizar archivo {file_path}: {e}")
+                raise
+        _sync_directory(root_path)
+    _sync_directory(dir_path.parent)
+
+
+def _inspect_postgres_restore_commitment(
+    db_url: Optional[str],
+    expected_marker_id: Optional[str] = None,
+    expected_restore_token: Optional[str] = None
+) -> Tuple[str, Dict[str, Any]]:
+    """
+    P15-R3 (Bloqueante 1): Inspecciona de forma durable y transaccional el estado real de PostgreSQL
+    para resolver de forma categorica y fail-closed la ventana critica post-COMMIT
+    previo a la persistencia del journal (R3-03, R4-01, R5-01, B1, P15-H1, P15-H2, P15-H4).
+
+    CONTRATO ESTRICTO DE IDENTIDAD TRANSACCIONAL (P15-R3 Bloqueante 1):
+    - expected_marker_id y expected_restore_token deben ser no vacios.
+    - actual_marker y actual_token persistidos en PostgreSQL deben ser no vacios y coincidir exactamente.
+    - Se elimina cualquier fallback al texto de 'reason'; solo metadatos estructurados son validos.
+    - Ante cualquier ausencia, discrepancia o ambiguedad, retorna FOREIGN_QUARANTINE o UNKNOWN_OR_INCONSISTENT
+      manteniendo comportamiento fail-closed sin promover documentos ni levantar cuarentena.
+    """
+    if not db_url or not str(db_url).strip():
+        return ("UNKNOWN_NO_DB_URL", {"error": "target_database_url ausente"})
+
+    clean_expected_marker = str(expected_marker_id).strip() if expected_marker_id is not None else ""
+    clean_expected_token = str(expected_restore_token).strip() if expected_restore_token is not None else ""
+
+    sanitized_url = sanitize_db_url(db_url)
+    engine = None
+    try:
+        engine = create_engine(db_url, connect_args={"connect_timeout": 5})
+        with engine.connect() as conn:
+            # 1. Comprobar si existe la tabla de cuarentena (_dr_restoration_quarantine)
+            q_exists = conn.execute(text("SELECT to_regclass('public._dr_restoration_quarantine');")).scalar()
+            if q_exists is not None:
+                # P15-R3 Bloqueante 1: Si no se suministraron expected_marker_id o expected_restore_token validos,
+                # no es posible autenticar ningun COMMIT. Retornar fail-closed.
+                if not clean_expected_marker or not clean_expected_token:
+                    return ("UNKNOWN_OR_INCONSISTENT", {
+                        "error": "Identidad transaccional esperada incompleta o ausente (expected_marker_id y expected_restore_token son obligatorios y no vacios)"
+                    })
+
+                # Comprobar si existen las columnas estructuradas marker_id y restore_token
+                cols_query = text(
+                    "SELECT column_name FROM information_schema.columns "
+                    "WHERE table_schema = 'public' AND table_name = '_dr_restoration_quarantine';"
+                )
+                cols = {row[0] for row in conn.execute(cols_query).fetchall()}
+
+                select_sql = "SELECT reason, journal_state"
+                if "marker_id" in cols:
+                    select_sql += ", marker_id"
+                else:
+                    select_sql += ", NULL as marker_id"
+                if "restore_token" in cols:
+                    select_sql += ", restore_token"
+                else:
+                    select_sql += ", NULL as restore_token"
+                select_sql += " FROM public._dr_restoration_quarantine ORDER BY id DESC LIMIT 1;"
+
+                row_q = conn.execute(text(select_sql)).fetchone()
+                if row_q is None:
+                    # P15-H1: Tabla de cuarentena vacia, no acredita COMMIT
+                    return ("EMPTY_QUARANTINE", {
+                        "error": "Tabla _dr_restoration_quarantine existe pero esta vacia (0 filas)"
+                    })
+
+                reason = row_q[0] or ""
+                journal_st = row_q[1] or "UNKNOWN"
+                actual_marker = row_q[2]
+                actual_token = row_q[3]
+
+                clean_actual_marker = str(actual_marker).strip() if actual_marker is not None else ""
+                clean_actual_token = str(actual_token).strip() if actual_token is not None else ""
+
+                # P15-H1: Comprobar que el journal_state sea compatible con un COMMIT legítimo ('DB_RESTORED')
+                if journal_st != "DB_RESTORED":
+                    return ("ERROR_QUARANTINE", {
+                        "reason": reason,
+                        "journal_state": journal_st,
+                        "error": f"Cuarentena en estado no-commit ({journal_st})"
+                    })
+
+                # P15-R3 Bloqueante 1: Validar vinculacion inequívoca con expected_marker_id
+                # Prohibido fallback en reason. Exigir existencia y coincidencia estricta.
+                if not clean_actual_marker or clean_actual_marker != clean_expected_marker:
+                    return ("FOREIGN_QUARANTINE", {
+                        "actual_marker": actual_marker,
+                        "expected_marker": clean_expected_marker,
+                        "reason": reason,
+                        "error": "Marcador de cuarentena ausente, vacio o no coincide con la ejecucion actual"
+                    })
+
+                # P15-R3 Bloqueante 1: Validar restore_token de forma OBLIGATORIA y estricta
+                # Prohibido omitir si actual_token es NULL o vacio. Ambos deben ser no vacios y coincidir exactamente.
+                if not clean_actual_token or clean_actual_token != clean_expected_token:
+                    return ("FOREIGN_QUARANTINE", {
+                        "actual_token": actual_token,
+                        "expected_token": clean_expected_token,
+                        "error": "Token de restauracion ausente, vacio o no coincide con la ejecucion actual"
+                    })
+
+                # P15-H1: Comprobar que _dr_test_ownership_marker haya sido eliminado (COMMIT atomico)
+                m_exists = conn.execute(text("SELECT to_regclass('public._dr_test_ownership_marker');")).scalar()
+                if m_exists is not None:
+                    return ("UNKNOWN_OR_INCONSISTENT", {
+                        "error": "Inconsistencia: _dr_test_ownership_marker aun existe junto a la cuarentena"
+                    })
+
+                return ("COMMITTED_IN_QUARANTINE", {
+                    "reason": reason,
+                    "journal_state": journal_st,
+                    "marker_id": clean_actual_marker,
+                    "restore_token": clean_actual_token
+                })
+
+            # 2. Comprobar si existe evidencia durable de completitud (_dr_restoration_completed) (F3/F4)
+            c_exists = conn.execute(text("SELECT to_regclass('public._dr_restoration_completed');")).scalar()
+            if c_exists is not None:
+                if not clean_expected_marker or not clean_expected_token:
+                    return ("UNKNOWN_OR_INCONSISTENT", {
+                        "error": "Evidencia de completitud existe pero los identificadores esperados estan incompletos"
+                    })
+
+                row_c = conn.execute(
+                    text("""
+                        SELECT marker_id, restore_token, completed_at, reason
+                        FROM public._dr_restoration_completed
+                        WHERE marker_id = :mid AND restore_token = :rtk
+                        ORDER BY id DESC LIMIT 1;
+                    """),
+                    {"mid": clean_expected_marker, "rtk": clean_expected_token}
+                ).fetchone()
+
+                if row_c is not None:
+                    return ("RESTORATION_COMPLETED_CONFIRMED", {
+                        "marker_id": clean_expected_marker,
+                        "restore_token": clean_expected_token,
+                        "completed_at": str(row_c[2]),
+                        "reason": str(row_c[3] or "")
+                    })
+                else:
+                    last_c = conn.execute(text(
+                        "SELECT marker_id, restore_token FROM public._dr_restoration_completed ORDER BY id DESC LIMIT 1;"
+                    )).fetchone()
+                    return ("FOREIGN_COMPLETION", {
+                        "actual_marker": last_c[0] if last_c else None,
+                        "actual_token": last_c[1] if last_c else None,
+                        "expected_marker": clean_expected_marker,
+                        "expected_token": clean_expected_token,
+                        "error": "Evidencia de completitud en PostgreSQL no coincide con la identidad de la restauracion esperada (F4)"
+                    })
+
+            # 3. Comprobar si existe el marcador de propiedad original (_dr_test_ownership_marker)
+            m_exists = conn.execute(text("SELECT to_regclass('public._dr_test_ownership_marker');")).scalar()
+            if m_exists is not None:
+                actual_marker = conn.execute(
+                    text("SELECT marker_id FROM public._dr_test_ownership_marker LIMIT 1;")
+                ).scalar()
+                clean_act_marker = str(actual_marker).strip() if actual_marker is not None else ""
+                if not clean_expected_marker or clean_act_marker != clean_expected_marker:
+                    return ("MISMATCHED_MARKER", {
+                        "actual_marker": actual_marker,
+                        "expected_marker": clean_expected_marker
+                    })
+                return ("NOT_COMMITTED_OWNERSHIP_INTACT", {
+                    "marker_id": actual_marker
+                })
+
+            # 4. Si no existe ni cuarentena, ni completitud, ni marcador de propiedad: estado ambiguo
+            return ("UNKNOWN_OR_INCONSISTENT", {
+                "error": "Ni _dr_restoration_quarantine, ni _dr_restoration_completed, ni _dr_test_ownership_marker existen en la base destino"
+            })
+    except Exception as e:
+        sanitized_err = sanitize_db_url(str(e))
+        logger.error(f"Fallo al inspeccionar estado transaccional en PostgreSQL ({sanitized_url}): {sanitized_err}")
+        return ("CONNECTION_ERROR", {"error": sanitized_err})
+    finally:
+        if engine:
+            engine.dispose()
+
 
 
 class CrashResilientDocumentPublisher:
     """
     Mecanismo de publicacion y recuperacion documental resistente a interrupciones
-    coordinado con la restauracion de PostgreSQL (Item 1, R5-02, B1, B1-01, B1-02).
+    coordinado con la restauracion de PostgreSQL (Item 1, R5-02, B1, B1-01, B1-02, P15).
     """
     def __init__(
         self,
         target_dir: Path,
         db_restored: bool = False,
         target_database_url: Optional[str] = None,
-        expected_marker_id: Optional[str] = None
+        expected_marker_id: Optional[str] = None,
+        restore_token: Optional[str] = None,
+        documents_only: bool = False
     ):
         self.target_dir = target_dir
         self.db_restored = db_restored
         self.target_database_url = target_database_url
         self.expected_marker_id = expected_marker_id
+        self.restore_token = restore_token
+        self.documents_only = documents_only
 
     @classmethod
     def recover(
         cls,
         parent_dir: Path,
         target_database_url: Optional[str] = None,
-        expected_marker_id: Optional[str] = None
+        expected_marker_id: Optional[str] = None,
+        expected_restore_token: Optional[str] = None
     ) -> bool:
         journal_file = parent_dir / ".cutover_journal.json"
         if not journal_file.exists():
@@ -1153,69 +1600,317 @@ class CrashResilientDocumentPublisher:
 
         try:
             data = json.loads(journal_file.read_text(encoding="utf-8"))
-            target = Path(data.get("target_dir", ""))
-            backup = Path(data.get("backup_dir", ""))
-            candidate = Path(data.get("candidate_dir", ""))
+            target = Path(data.get("target_dir", "")).resolve()
+            backup = Path(data.get("backup_dir", "")).resolve()
+            candidate = Path(data.get("candidate_dir", "")).resolve()
             phase = data.get("phase", "")
             db_restored = data.get("db_restored", False)
+            documents_only = bool(data.get("documents_only", False))
             catalog_hashes = data.get("catalog_hashes", {})
             db_url = target_database_url or data.get("target_database_url")
+            marker_id = expected_marker_id or data.get("expected_marker_id")
+            token = expected_restore_token or data.get("restore_token")
 
             logger.warning(
-                f"Detectada interrupcion previa en fase '{phase}' (db_restored={db_restored}). "
-                f"Iniciando protocolo de recuperacion post-caida coordinado con PostgreSQL (Item 1, B1, B1-02)."
+                f"Detectada interrupcion previa en fase '{phase}' (db_restored={db_restored}, documents_only={documents_only}). "
+                f"Iniciando protocolo de recuperacion post-caida coordinado con PostgreSQL (Item 1, B1, B1-02, P15-R3, P15-R6)."
             )
 
-            if phase == "COMMITTED":
-                if backup.exists():
-                    shutil.rmtree(backup, ignore_errors=True)
-                if db_url:
-                    _lift_database_quarantine(db_url)
-                journal_file.unlink(missing_ok=True)
-                return True
+            if phase == "FAILED_INCONSISTENT":
+                logger.error(
+                    "Diario de corte en estado FAILED_INCONSISTENT. "
+                    "El repositorio documental permanece en cuarentena o inconsistente. Retornando fail-closed sin modificar."
+                )
+                return False
 
-            # Si PostgreSQL ya fue restaurado (db_restored=True o phase en DB_RESTORED / RESTORING_DATABASE):
-            if db_restored or phase in ("DB_RESTORED", "RESTORING_DATABASE"):
-                # Verificar exhaustivamente si candidate_dir es valido contra catalog_hashes
-                candidate_valid = False
-                if candidate.exists() and catalog_hashes:
-                    try:
-                        all_ok = True
-                        for rel_path, expected_sha in catalog_hashes.items():
-                            cand_file = candidate / rel_path
-                            if not cand_file.exists() or compute_file_sha256(cand_file) != expected_sha:
-                                all_ok = False
-                                break
-                        if all_ok:
-                            candidate_valid = True
-                    except Exception:
-                        candidate_valid = False
+            # Contrato explicito para modo exclusivamente documental (P15 Corrección A):
+            # Solo si documents_only es True Y db_restored es False
+            is_purely_documents = documents_only and not db_restored
 
-                if candidate_valid:
-                    # Recuperacion hacia adelante (Forward recovery):
-                    # Promover candidate_dir a target_dir para sincronizar con la BD ya restaurada
-                    if target.exists():
-                        data["phase"] = "MOVING_TARGET"
-                        _atomic_write_journal(journal_file, data)
-                        if backup.exists():
-                            shutil.rmtree(backup, ignore_errors=True)
-                        target.rename(backup)
-                    data["phase"] = "TARGET_MOVED"
-                    _atomic_write_journal(journal_file, data)
-                    candidate.rename(target)
-                    data["phase"] = "COMMITTED"
-                    _atomic_write_journal(journal_file, data)
+            if is_purely_documents:
+                allow_empty = bool(data.get("allow_empty_catalog", False) or data.get("legitimate_empty_catalog", False))
+                if phase in ("COMMITTED", "QUARANTINE_LIFTED"):
+                    doc_ok, doc_err = _verify_documentary_catalog_integrity(target, catalog_hashes, allow_empty=allow_empty)
+                    if not doc_ok:
+                        data["phase"] = "FAILED_INCONSISTENT"
+                        data["error"] = f"Integridad documental fallida en modo exclusivo de documentos ({phase}): {doc_err}"
+                        try:
+                            _atomic_write_journal(journal_file, data)
+                        except Exception:
+                            pass
+                        return False
                     if backup.exists():
                         shutil.rmtree(backup, ignore_errors=True)
-                    if db_url:
-                        _lift_database_quarantine(db_url)
                     journal_file.unlink(missing_ok=True)
-                    logger.info("Recuperacion hacia adelante post-reinicio exitosa: candidate promovido a target coherente con PostgreSQL y cuarentena levantada.")
+                    logger.info(f"Recuperacion exclusivamente documental exitosa en fase '{phase}'.")
+                    return True
+
+                if phase in ("CANDIDATE_READY", "MOVING_TARGET", "TARGET_MOVED", "DB_RESTORED", "RESTORING_DATABASE"):
+                    cand_valid = False
+                    if candidate.exists():
+                        cand_valid, _ = _verify_documentary_catalog_integrity(candidate, catalog_hashes, allow_empty=allow_empty)
+                    elif target.exists():
+                        cand_valid, _ = _verify_documentary_catalog_integrity(target, catalog_hashes, allow_empty=allow_empty)
+
+                    if cand_valid:
+                        if candidate.exists():
+                            if target.exists():
+                                if backup.exists():
+                                    shutil.rmtree(backup, ignore_errors=True)
+                                target.rename(backup)
+                                _sync_directory(parent_dir)
+                            candidate.rename(target)
+                            _sync_directory(parent_dir)
+                        if backup.exists():
+                            shutil.rmtree(backup, ignore_errors=True)
+                        journal_file.unlink(missing_ok=True)
+                        logger.info("Recuperacion documental hacia adelante completada exitosamente.")
+                        return True
+                    else:
+                        if not target.exists() and backup.exists():
+                            backup.rename(target)
+                        if candidate.exists():
+                            shutil.rmtree(candidate, ignore_errors=True)
+                        data["phase"] = "FAILED_INCONSISTENT"
+                        data["error"] = "Candidato documental ausente o invalido en modo exclusivamente documental"
+                        try:
+                            _atomic_write_journal(journal_file, data)
+                        except Exception:
+                            pass
+                        return False
+
+                if phase == "PREPARING":
+                    if candidate.exists():
+                        shutil.rmtree(candidate, ignore_errors=True)
+                    journal_file.unlink(missing_ok=True)
+                    return True
+
+            # Si la base de datos NO fue restaurada (db_restored=False) y la fase es MOVING_TARGET, TARGET_MOVED o PREPARING:
+            # no existio compromiso alguno en PostgreSQL; realizar rollback documental seguro (backup -> target)
+            if not db_restored and phase in ("MOVING_TARGET", "TARGET_MOVED", "PREPARING"):
+                if not target.exists() and backup.exists():
+                    backup.rename(target)
+                    _sync_directory(parent_dir)
+                if candidate.exists():
+                    shutil.rmtree(candidate, ignore_errors=True)
+                if backup.exists():
+                    shutil.rmtree(backup, ignore_errors=True)
+                journal_file.unlink(missing_ok=True)
+                logger.info(f"Rollback documental seguro completado (phase='{phase}', db_restored={db_restored}).")
+                return True
+
+            # --- RESTAURACION INTEGRAL (POSTGRESQL + DOCUMENTOS) ---
+            # Si NO es is_purely_documents, TODO journal con db_restored=True o fase post-COMMIT
+            # exige DSN disponible, identificadores validos y estado acreditado en PostgreSQL.
+            is_post_commit = db_restored or phase in (
+                "DB_RESTORED", "RESTORING_DATABASE", "COMMITTED", "QUARANTINE_LIFTED"
+            )
+
+            if is_post_commit:
+                # 1. DSN de destino disponible estrictamente obligatorio
+                if not db_url or not str(db_url).strip():
+                    logger.error(
+                        f"Fase post-COMMIT '{phase}' con db_restored={db_restored} pero sin target_database_url disponible. "
+                        "Invariante P15 (Correccion A): Prohibido continuar o autorizar promocion/limpieza por ausencia de DSN. "
+                        "Abortando fail-closed y preservando evidencias."
+                    )
+                    data["phase"] = "FAILED_INCONSISTENT"
+                    data["error"] = f"Fase post-COMMIT '{phase}' sin target_database_url disponible para verificar PostgreSQL"
+                    data["quarantine_confirmed"] = False
+                    try:
+                        _atomic_write_journal(journal_file, data)
+                    except Exception:
+                        pass
+                    return False
+
+                # 2. Identificadores de restauracion estrictamente obligatorios (expected_marker_id y restore_token)
+                clean_marker = str(marker_id).strip() if marker_id else ""
+                clean_token = str(token).strip() if token else ""
+
+                if not clean_marker or not clean_token:
+                    logger.error(
+                        f"Fase post-COMMIT '{phase}' con identificadores de restauracion ausentes o incompletos "
+                        f"(marker_id='{marker_id}', restore_token='{token}'). "
+                        "Invariante P15 (Correccion A): Journals legados P14 o sin identidad transaccional completa "
+                        "deben abortar fail-closed y requerir reconciliacion controlada; nunca continuar por ausencia de datos."
+                    )
+                    data["phase"] = "FAILED_INCONSISTENT"
+                    data["error"] = (
+                        f"Identidad transaccional incompleta o ausente en journal post-COMMIT ({phase}): "
+                        f"marker_id='{marker_id}', restore_token='{token}'"
+                    )
+                    data["quarantine_confirmed"] = False
+                    try:
+                        _atomic_write_journal(journal_file, data)
+                    except Exception:
+                        pass
+                    return False
+
+                # 3. Estado transaccional acreditado en PostgreSQL
+                status, details = _inspect_postgres_restore_commitment(db_url, clean_marker, clean_token)
+                sanitized_details = {k: sanitize_db_url(str(v)) for k, v in details.items()}
+                logger.info(
+                    f"Auditoria durable de PostgreSQL en fase post-COMMIT '{phase}' (P15-R6): "
+                    f"status={status}, details={sanitized_details}"
+                )
+
+                if status == "CONNECTION_ERROR":
+                    logger.error(
+                        f"PostgreSQL inaccesible durante recuperacion en fase post-COMMIT '{phase}' ({sanitized_details}). "
+                        "Invariante P15 (F1/Correccion A): Preservando evidencias forenses, journal y respaldo; abortando fail-closed."
+                    )
+                    return False
+
+                if status in ("FOREIGN_QUARANTINE", "FOREIGN_COMPLETION", "MISMATCHED_MARKER"):
+                    logger.error(
+                        f"Base de datos ajena, marcador discrepante o token no coincidente en fase post-COMMIT '{phase}' ({status}): {sanitized_details}. "
+                        "Invariante P15: Base destino NO tocada, cuarentena ajena NO levantada. "
+                        "Preservando diario en FAILED_INCONSISTENT y abortando fail-closed."
+                    )
+                    data["phase"] = "FAILED_INCONSISTENT"
+                    data["error"] = f"Base de datos ajena o marcador/token discrepante ({status}): {sanitized_details}"
+                    data["quarantine_confirmed"] = False
+                    data["foreign_database_untouched"] = True
+                    try:
+                        _atomic_write_journal(journal_file, data)
+                    except Exception:
+                        pass
+                    return False
+
+                # Fases COMMITTED y QUARANTINE_LIFTED:
+                if phase in ("COMMITTED", "QUARANTINE_LIFTED"):
+                    allow_empty = bool(data.get("allow_empty_catalog", False) or data.get("legitimate_empty_catalog", False))
+                    doc_ok, doc_err = _verify_documentary_catalog_integrity(target, catalog_hashes, allow_empty=allow_empty)
+                    if not doc_ok:
+                        logger.error(
+                            f"Fallo de integridad documental en fase '{phase}' ({doc_err}). "
+                            "Invariante P15: Preservando cuarentena, respaldo y diario; abortando fail-closed."
+                        )
+                        data["phase"] = "FAILED_INCONSISTENT"
+                        data["error"] = f"Integridad documental fallida en '{phase}': {doc_err}"
+                        try:
+                            _atomic_write_journal(journal_file, data)
+                        except Exception:
+                            pass
+                        return False
+
+                    if status == "COMMITTED_IN_QUARANTINE":
+                        # Interrupción posterior a la publicación documental y anterior al levantamiento de cuarentena (Caso 5)
+                        logger.info("Cuarentena propia verificada en PostgreSQL. Procediendo a levantarla de forma atomica y autenticada (F3).")
+                        try:
+                            _lift_database_quarantine(db_url, clean_marker, clean_token)
+                        except Exception as lift_err:
+                            logger.error(f"Fallo al levantar cuarentena autenticada en PostgreSQL: {lift_err}")
+                            data["phase"] = "FAILED_INCONSISTENT"
+                            data["error"] = f"Fallo al levantar cuarentena autenticada en PostgreSQL: {lift_err}"
+                            try:
+                                _atomic_write_journal(journal_file, data)
+                            except Exception:
+                                pass
+                            return False
+
+                        data["phase"] = "QUARANTINE_LIFTED"
+                        try:
+                            _atomic_write_journal(journal_file, data)
+                        except Exception:
+                            pass
+                    elif status == "RESTORATION_COMPLETED_CONFIRMED":
+                        # Interrupción posterior al COMMIT de levantamiento de cuarentena en PostgreSQL (F4):
+                        # Conciliación positiva acreditada por evidencia durable en PostgreSQL
+                        logger.info("Levantamiento de cuarentena y completitud transaccional acreditados positivamente por evidencia durable en PostgreSQL (F4).")
+                        if phase != "QUARANTINE_LIFTED":
+                            data["phase"] = "QUARANTINE_LIFTED"
+                            try:
+                                _atomic_write_journal(journal_file, data)
+                            except Exception:
+                                pass
+                    else:
+                        logger.error(
+                            f"Estado no concluyente o inconsistente en PostgreSQL en fase '{phase}' ({status}): {sanitized_details}. "
+                            "Invariante P15 (F4): Prohibido presumir exito por ausencia de tablas; preservando respaldo y diario; abortando fail-closed."
+                        )
+                        data["phase"] = "FAILED_INCONSISTENT"
+                        data["error"] = f"Incertidumbre transaccional o ausencia de prueba durable de completitud en PostgreSQL ({status}): {sanitized_details}"
+                        try:
+                            _atomic_write_journal(journal_file, data)
+                        except Exception:
+                            pass
+                        return False
+
+                    # Limpieza final de evidencias
+                    if backup.exists():
+                        shutil.rmtree(backup, ignore_errors=True)
+                    journal_file.unlink(missing_ok=True)
+                    logger.info(f"Recuperacion en fase '{phase}' completada con exito y evidencias limpiadas.")
+                    return True
+
+                # Fases anteriores post-COMMIT (DB_RESTORED, RESTORING_DATABASE, MOVING_TARGET, TARGET_MOVED):
+                # Para forward recovery, la base DEBE estar positiva y acreditadamente en COMMITTED_IN_QUARANTINE.
+                if status != "COMMITTED_IN_QUARANTINE":
+                    logger.error(
+                        f"Estado en PostgreSQL en fase post-COMMIT '{phase}' ({status}) no autoriza forward recovery: {sanitized_details}. "
+                        "Se exige COMMITTED_IN_QUARANTINE positivo con marker y token coincidentes. Abortando fail-closed."
+                    )
+                    data["phase"] = "FAILED_INCONSISTENT"
+                    data["error"] = f"Cuarentena ausente o inconsistencia en PostgreSQL ({status}): {sanitized_details.get('error', sanitized_details)}"
+                    data["quarantine_confirmed"] = False
+                    try:
+                        _atomic_write_journal(journal_file, data)
+                    except Exception:
+                        pass
+                    return False
+
+                # Verificar candidato documental
+                allow_empty = bool(data.get("allow_empty_catalog", False) or data.get("legitimate_empty_catalog", False))
+                candidate_valid = False
+                cand_err = ""
+                if candidate.exists():
+                    candidate_valid, cand_err = _verify_documentary_catalog_integrity(candidate, catalog_hashes, allow_empty=allow_empty)
+                elif phase in ("TARGET_MOVED", "MOVING_TARGET") and target.exists():
+                    candidate_valid, cand_err = _verify_documentary_catalog_integrity(target, catalog_hashes, allow_empty=allow_empty)
+                else:
+                    cand_err = f"Directorio candidato '{candidate}' ausente y target no disponible en fase '{phase}'"
+
+                if candidate_valid:
+                    if candidate.exists():
+                        if target.exists():
+                            data["phase"] = "MOVING_TARGET"
+                            _atomic_write_journal(journal_file, data)
+                            if backup.exists():
+                                shutil.rmtree(backup, ignore_errors=True)
+                            target.rename(backup)
+                            _sync_directory(parent_dir)
+                        data["phase"] = "TARGET_MOVED"
+                        _atomic_write_journal(journal_file, data)
+                        candidate.rename(target)
+                        _sync_directory(parent_dir)
+
+                    data["phase"] = "COMMITTED"
+                    _atomic_write_journal(journal_file, data)
+
+                    # Levantar cuarentena y registrar completitud en PostgreSQL de forma autenticada (F3)
+                    try:
+                        _lift_database_quarantine(db_url, clean_marker, clean_token)
+                    except Exception as lift_err:
+                        logger.error(f"Fallo al levantar cuarentena autenticada en PostgreSQL: {lift_err}")
+                        data["phase"] = "FAILED_INCONSISTENT"
+                        data["error"] = f"Fallo al levantar cuarentena autenticada en PostgreSQL: {lift_err}"
+                        try:
+                            _atomic_write_journal(journal_file, data)
+                        except Exception:
+                            pass
+                        return False
+
+                    data["phase"] = "QUARANTINE_LIFTED"
+                    _atomic_write_journal(journal_file, data)
+
+                    if backup.exists():
+                        shutil.rmtree(backup, ignore_errors=True)
+                    journal_file.unlink(missing_ok=True)
+                    logger.info("Recuperacion hacia adelante post-reinicio exitosa: candidate promovido, cuarentena levantada y evidencias limpiadas.")
                     return True
                 else:
-                    # B1-02: Candidate ausente, corrupto o incompleto tras caida.
-                    # PostgreSQL tiene la version nueva, pero los documentos NO pueden completarse.
-                    # DEBE PONERSE LA BASE DE DATOS EN CUARENTENA TRANSACCIONAL OBLIGATORIA (B1-01, B1-02)
+                    # B1-02: Candidate corrupto o ausente tras crash en DB_RESTORED
                     if not target.exists() and backup.exists():
                         backup.rename(target)
                     if candidate.exists():
@@ -1225,25 +1920,24 @@ class CrashResilientDocumentPublisher:
                         try:
                             _enforce_database_quarantine(
                                 db_url,
-                                reason=f"INCONSISTENT_RESTORATION (B1-02): Post-crash recovery in phase '{phase}' with db_restored=True. Candidate invalid/corrupted.",
-                                journal_state=phase
+                                reason=f"INCONSISTENT_RESTORATION (B1-02): Post-crash recovery in phase '{phase}' with db_restored=True. Candidate invalid/corrupted ({cand_err}).",
+                                journal_state=phase,
+                                marker_id=marker_id,
+                                restore_token=token
                             )
-                            # B1-B: Verificar confirmacion efectiva de la cuarentena en PostgreSQL
                             eng_q = create_engine(db_url, connect_args={"connect_timeout": 5})
                             with eng_q.connect() as conn_q:
                                 q_exists = conn_q.execute(text("SELECT to_regclass('public._dr_restoration_quarantine');")).scalar()
                                 if q_exists is not None:
                                     quarantine_ok = True
-                                else:
-                                    logger.error("Fallo B1-B: No se pudo verificar la confirmacion efectiva de la tabla de cuarentena en PostgreSQL.")
                             eng_q.dispose()
                         except Exception as db_err:
                             logger.error(f"Fallo critico al activar o verificar cuarentena transaccional en BD tras fallo: {db_err}")
                             quarantine_ok = False
 
-                    # B1: Preservar el diario para permitir auditoria y diagnostico forense (no borrar evidencia)
                     data["phase"] = "FAILED_INCONSISTENT"
                     data["quarantine_confirmed"] = quarantine_ok
+                    data["error"] = f"Candidate documental invalido en '{phase}': {cand_err}"
                     try:
                         _atomic_write_journal(journal_file, data)
                     except Exception:
@@ -1255,29 +1949,119 @@ class CrashResilientDocumentPublisher:
 
                     logger.error("Recuperacion procesada: BD asegurada en cuarentena transaccional estricta por restauracion documental inconsistente (B1-02). Diario preservado en FAILED_INCONSISTENT.")
                     return True
-            else:
-                # db_restored es False: no hubo restore de BD o fallo antes de tocar BD.
-                # Revertir limpiamente a target original sin tocar BD.
+
+            # Fase pre-COMMIT: RESTORATION_INITIATED con db_restored=False
+            if not db_restored and phase == "RESTORATION_INITIATED":
+                clean_marker = str(marker_id).strip() if marker_id else ""
+                clean_token = str(token).strip() if token else ""
+                if not db_url or not clean_marker:
+                    logger.error(f"Fase '{phase}' sin db_url o marcador de identidad ausente. Abortando fail-closed.")
+                    data["phase"] = "FAILED_INCONSISTENT"
+                    data["error"] = f"Identidad transaccional incompleta en journal ({phase})"
+                    data["quarantine_confirmed"] = False
+                    try:
+                        _atomic_write_journal(journal_file, data)
+                    except Exception:
+                        pass
+                    return False
+
+                status, details = _inspect_postgres_restore_commitment(db_url, clean_marker, clean_token)
+                sanitized_details = {k: sanitize_db_url(str(v)) for k, v in details.items()}
+                logger.info(f"Auditoria durable de PostgreSQL en ventana critica '{phase}': status={status}, details={sanitized_details}")
+
+                if status == "COMMITTED_IN_QUARANTINE":
+                    logger.warning("COMMIT verificado en BD a pesar de phase=RESTORATION_INITIATED. Promoviendo a DB_RESTORED.")
+                    data["db_restored"] = True
+                    data["phase"] = "DB_RESTORED"
+                    data["postgres_commit_evidence"] = sanitized_details
+                    _atomic_write_journal(journal_file, data)
+                    return cls.recover(parent_dir, target_database_url=db_url, expected_marker_id=clean_marker, expected_restore_token=clean_token)
+                elif status == "NOT_COMMITTED_OWNERSHIP_INTACT":
+                    logger.info("Marcador de propiedad intacto verificado en BD destino. Rollback seguro pre-commit.")
+                    if not target.exists() and backup.exists():
+                        backup.rename(target)
+                    if candidate.exists():
+                        shutil.rmtree(candidate, ignore_errors=True)
+                    if backup.exists():
+                        shutil.rmtree(backup, ignore_errors=True)
+                    journal_file.unlink(missing_ok=True)
+                    return True
+                elif status in ("FOREIGN_QUARANTINE", "MISMATCHED_MARKER"):
+                    logger.error(
+                        f"Base de datos o cuarentena ajena detectada en fase '{phase}' ({status}): {sanitized_details}. "
+                        "Invariante P15: Base destino NO tocada, cuarentena ajena NO levantada. "
+                        "Preservando diario en FAILED_INCONSISTENT y abortando fail-closed."
+                    )
+                    data["phase"] = "FAILED_INCONSISTENT"
+                    data["error"] = f"Base de datos ajena ({status}): {sanitized_details}"
+                    data["foreign_database_untouched"] = True
+                    data["quarantine_confirmed"] = False
+                    try:
+                        _atomic_write_journal(journal_file, data)
+                    except Exception:
+                        pass
+                    return False
+                elif status == "CONNECTION_ERROR":
+                    logger.error(
+                        f"PostgreSQL inaccesible durante inspeccion en fase '{phase}' ({sanitized_details}). "
+                        "Preservando evidencias y abortando fail-closed."
+                    )
+                    data["phase"] = "FAILED_INCONSISTENT"
+                    data["error"] = f"Incertidumbre transaccional en PostgreSQL (CONNECTION_ERROR): {sanitized_details.get('error', sanitized_details)}"
+                    data["quarantine_confirmed"] = False
+                    try:
+                        _atomic_write_journal(journal_file, data)
+                    except Exception:
+                        pass
+                    return False
+                else:
+                    data["phase"] = "FAILED_INCONSISTENT"
+                    data["error"] = f"Incertidumbre transaccional en PostgreSQL ({status}): {sanitized_details}"
+                    try:
+                        _atomic_write_journal(journal_file, data)
+                    except Exception:
+                        pass
+                    return False
+
+            # Fase PREPARING sin compromiso de BD:
+            if phase == "PREPARING":
                 if not target.exists() and backup.exists():
                     backup.rename(target)
                 if candidate.exists():
                     shutil.rmtree(candidate, ignore_errors=True)
+                if backup.exists():
+                    shutil.rmtree(backup, ignore_errors=True)
                 journal_file.unlink(missing_ok=True)
                 return True
 
-        except Exception as e:
-            logger.error(f"Error ejecutando recuperacion de cutover pendiente (Item 1, B1): {e}")
+            logger.error(f"Fase de diario desconocida o no manejada: '{phase}'. Abortando fail-closed.")
+            data["phase"] = "FAILED_INCONSISTENT"
+            data["error"] = f"Fase de diario desconocida: '{phase}'"
+            try:
+                _atomic_write_journal(journal_file, data)
+            except Exception:
+                pass
             return False
 
-    def publish(self, staging_dir: Path, catalog: List[Dict[str, Any]]) -> None:
+        except Exception as e:
+            logger.error(f"Error ejecutando recuperacion de cutover pendiente (Item 1, B1, P15): {e}")
+            return False
+
+    def publish(
+        self,
+        staging_dir: Path,
+        catalog: List[Dict[str, Any]],
+        candidate_dir: Optional[Path] = None,
+        backup_dir: Optional[Path] = None
+    ) -> None:
         parent_dir = self.target_dir.parent.resolve()
         parent_dir.mkdir(parents=True, exist_ok=True)
 
         journal_file = parent_dir / ".cutover_journal.json"
+        prior_data = {}
 
-        # 1. B1-A: Impedir que publish() continue cuando existe un journal previo cuya recuperacion fallo
+        # 1. B1-A: Impedir que publish() continue cuando existe un journal previo corrupto o en fallo inconsistente
         if journal_file.exists():
-            # Distinguir expresamente inexistencia de corrupcion o recuperacion fallida
             try:
                 journal_raw = journal_file.read_text(encoding="utf-8")
                 prior_data = json.loads(journal_raw)
@@ -1295,12 +2079,54 @@ class CrashResilientDocumentPublisher:
                     "o en cuarentena por un corte fallido previo. Publicacion documental abortada de forma fail-closed."
                 )
 
+        # P15-R3 (Bloqueante 3): Identidad efectiva previa o suministrada
+        prior_token = prior_data.get("restore_token")
+        prior_marker = prior_data.get("expected_marker_id")
+        prior_candidate_ready = prior_data.get("candidate_ready", False)
+
+        effective_marker_id = self.expected_marker_id or prior_marker
+        effective_restore_token = self.restore_token or prior_token
+        effective_db_url = self.target_database_url or prior_data.get("target_database_url")
+
+        # F6: Validacion exhaustiva y explicita del contrato de modalidades antes de cualquier mutacion durable o recuperacion
+        if self.documents_only:
+            if self.db_restored:
+                raise ValueError(
+                    "Fallo de contrato (F6): Modalidad documental pura (documents_only=True) prohibe db_restored=True. "
+                    "No se permiten operaciones PostgreSQL en modo exclusivamente documental."
+                )
+            if not catalog or not isinstance(catalog, list):
+                raise ValueError("Fallo de contrato (F6): Modalidad documental requiere un catalogo valido no vacio.")
+        else:
+            # Modalidad integral: documents_only=False
+            if not self.db_restored:
+                raise ValueError(
+                    "Fallo de contrato (F6): Modalidad integral (documents_only=False) requiere db_restored=True. "
+                    "Esta prohibido aceptar implicitamente modalidad documental por omision de DSN o estado."
+                )
+            clean_db_url = str(effective_db_url).strip() if effective_db_url is not None else ""
+            if not clean_db_url:
+                raise ValueError(
+                    "Fallo de contrato (F6): Modalidad integral (documents_only=False) exige target_database_url obligatorio. "
+                    "Esta prohibido aceptar restauracion integral sin DSN PostgreSQL."
+                )
+            clean_marker = str(effective_marker_id).strip() if effective_marker_id is not None else ""
+            clean_token = str(effective_restore_token).strip() if effective_restore_token is not None else ""
+            if not clean_marker or not clean_token:
+                raise ValueError(
+                    "Fallo de contrato (F6): Modalidad integral exige expected_marker_id y restore_token obligatorios "
+                    "y no vacios para acreditar la pertenencia de la restauracion."
+                )
+            if not catalog or not isinstance(catalog, list):
+                raise ValueError("Fallo de contrato (F6): Modalidad integral requiere un catalogo valido no vacio.")
+
+        if journal_file.exists():
             # Si es la conmutacion documental de una restauracion legitima en curso:
             if prior_phase in ("RESTORATION_INITIATED", "DB_RESTORED") and self.db_restored:
                 logger.info("Continuando promocion documental para restauracion activa de base de datos.")
             else:
                 logger.warning(f"Detectada transicion documental previa en fase '{prior_phase}'. Ejecutando recover() fail-closed...")
-                recovered = self.recover(parent_dir, self.target_database_url, self.expected_marker_id)
+                recovered = self.recover(parent_dir, self.target_database_url, self.expected_marker_id, self.restore_token)
                 if not recovered or journal_file.exists():
                     raise RuntimeError(
                         "Fallo critico de recuperacion (B1): Existe un diario de corte anterior (.cutover_journal.json) "
@@ -1308,47 +2134,88 @@ class CrashResilientDocumentPublisher:
                         "Publicacion documental abortada de forma fail-closed para preservar la integridad y el diario de evidencia."
                     )
 
-        run_id = uuid.uuid4().hex[:8]
-        candidate_dir = parent_dir / f".target_candidate_{run_id}"
-        backup_dir = parent_dir / f".target_backup_{run_id}"
-        journal_file = parent_dir / ".cutover_journal.json"
+            # Validar no contradiccion con el journal previo
+            if prior_marker and self.expected_marker_id:
+                if str(prior_marker).strip() != str(self.expected_marker_id).strip():
+                    raise RuntimeError(
+                        f"Conflicto de identidad en journal (P15-R3): prior marker '{prior_marker}' != expected '{self.expected_marker_id}'"
+                    )
+            if prior_token and self.restore_token:
+                if str(prior_token).strip() != str(self.restore_token).strip():
+                    raise RuntimeError(
+                        f"Conflicto de token de restauracion en journal (P15-R3): prior token '{prior_token}' != expected '{self.restore_token}'"
+                    )
+
+        if candidate_dir is None:
+            if prior_data.get("candidate_dir"):
+                candidate_dir = Path(prior_data["candidate_dir"])
+            else:
+                run_id = uuid.uuid4().hex[:8]
+                candidate_dir = parent_dir / f".target_candidate_{run_id}"
+        if backup_dir is None:
+            if prior_data.get("backup_dir"):
+                backup_dir = Path(prior_data["backup_dir"])
+            else:
+                run_id = uuid.uuid4().hex[:8]
+                backup_dir = parent_dir / f".target_backup_{run_id}"
 
         candidate_dir.mkdir(parents=True, exist_ok=True)
 
         catalog_hashes = {entry["relative_path"]: entry["sha256"] for entry in catalog}
 
+        # P15-H3 (Garantía A): Comprobar si candidate_dir ya fue pre-estagiado y validado en restore_lan_backup
+        already_populated = True
+        for entry in catalog:
+            cfile = candidate_dir / Path(entry["relative_path"])
+            if not cfile.exists():
+                already_populated = False
+                break
+
+        effective_candidate_ready = already_populated or prior_candidate_ready
+
         journal_data = {
-            "phase": "PREPARING",
+            "phase": "DB_RESTORED" if (self.db_restored and already_populated) else "PREPARING",
             "target_dir": str(self.target_dir.resolve()),
             "candidate_dir": str(candidate_dir.resolve()),
             "backup_dir": str(backup_dir.resolve()),
             "db_restored": self.db_restored,
-            "target_database_url": self.target_database_url,
-            "expected_marker_id": self.expected_marker_id,
+            "documents_only": self.documents_only,
+            "target_database_url": effective_db_url,
+            "expected_marker_id": effective_marker_id,
+            "restore_token": effective_restore_token,
+            "candidate_ready": effective_candidate_ready,
             "catalog_hashes": catalog_hashes,
-            "created_at": time.time()
+            "created_at": prior_data.get("created_at") or time.time()
         }
         _atomic_write_journal(journal_file, journal_data)
 
         try:
-            # 2. Copiar y verificar exhaustivamente en candidate_dir aislado
-            for entry in catalog:
-                rel_path = Path(entry["relative_path"])
-                src_file = staging_dir / rel_path
-                dst_file = candidate_dir / rel_path
-                dst_file.parent.mkdir(parents=True, exist_ok=True)
-                content = src_file.read_bytes()
-                dst_file.write_bytes(content)
-                final_sha = hashlib.sha256(content).hexdigest()
-                if final_sha != entry["sha256"]:
-                    raise ValueError(f"Fallo de integridad en candidato {dst_file}: {final_sha} != {entry['sha256']}")
+            # 2. Copiar y verificar exhaustivamente en candidate_dir aislado (si no está ya poblado)
+            if not already_populated:
+                for entry in catalog:
+                    rel_path = Path(entry["relative_path"])
+                    src_file = staging_dir / rel_path
+                    dst_file = candidate_dir / rel_path
+                    content = src_file.read_bytes()
+                    _durable_write_and_sync_file(dst_file, content)
+                    final_sha = hashlib.sha256(content).hexdigest()
+                    if final_sha != entry["sha256"]:
+                        raise ValueError(f"Fallo de integridad en candidato {dst_file}: {final_sha} != {entry['sha256']}")
+                _sync_directory_tree(candidate_dir)
 
-            journal_data["phase"] = "CANDIDATE_READY"
-            _atomic_write_journal(journal_file, journal_data)
-
-            if self.db_restored:
-                journal_data["phase"] = "DB_RESTORED"
+                journal_data["phase"] = "CANDIDATE_READY"
+                journal_data["candidate_ready"] = True
                 _atomic_write_journal(journal_file, journal_data)
+
+                if self.db_restored:
+                    journal_data["phase"] = "DB_RESTORED"
+                    _atomic_write_journal(journal_file, journal_data)
+            else:
+                for entry in catalog:
+                    rel_path = Path(entry["relative_path"])
+                    dst_file = candidate_dir / rel_path
+                    if not dst_file.exists() or compute_file_sha256(dst_file) != entry["sha256"]:
+                        raise ValueError(f"Fallo de integridad en candidato pre-estagiado {dst_file}")
 
             # 3. Conmutacion a nivel de filesystem con persistencia previa de intencion (B1-02)
             target_existed = self.target_dir.exists()
@@ -1356,30 +2223,48 @@ class CrashResilientDocumentPublisher:
                 journal_data["phase"] = "MOVING_TARGET"
                 _atomic_write_journal(journal_file, journal_data)
                 self.target_dir.rename(backup_dir)
+                _sync_directory(parent_dir)
                 journal_data["phase"] = "TARGET_MOVED"
                 _atomic_write_journal(journal_file, journal_data)
 
             candidate_dir.rename(self.target_dir)
+            _sync_directory(parent_dir)
             journal_data["phase"] = "COMMITTED"
             _atomic_write_journal(journal_file, journal_data)
 
-            # 4. Limpieza post-compromiso exitoso
+            # 4. P15-R6 / F6: Orden transaccional seguro y acreditacion PostgreSQL
+            # En restauracion integral (documents_only=False), levantar cuarentena y
+            # acreditar completitud obligatoriamente ANTES de limpiar respaldos y diario.
+            if not self.documents_only:
+                _lift_database_quarantine(effective_db_url, effective_marker_id, effective_restore_token)
+                journal_data["phase"] = "QUARANTINE_LIFTED"
+                _atomic_write_journal(journal_file, journal_data)
+
+            # 5. Limpieza final de evidencias post-compromiso integral exitoso
+            # F6: Esta prohibido completar la publicacion integral, borrar el respaldo o eliminar el journal sin acreditar QUARANTINE_LIFTED
+            if not self.documents_only and journal_data.get("phase") != "QUARANTINE_LIFTED":
+                raise RuntimeError(
+                    "Fallo critico F6: Intento de limpiar respaldos o diario sin acreditacion durable de QUARANTINE_LIFTED en PostgreSQL."
+                )
+
             if target_existed and backup_dir.exists():
                 shutil.rmtree(backup_dir, ignore_errors=True)
             journal_file.unlink(missing_ok=True)
 
         except Exception as e:
             logger.error(f"Fallo durante la preparacion o conmutacion de documentos (B1). Ejecutando reversor: {e}")
-            if candidate_dir.exists():
+            if candidate_dir and candidate_dir.exists():
                 shutil.rmtree(candidate_dir, ignore_errors=True)
-            if backup_dir.exists() and not self.target_dir.exists():
+            if backup_dir and backup_dir.exists() and not self.target_dir.exists():
                 backup_dir.rename(self.target_dir)
-            if self.db_restored and self.target_database_url:
+            if self.db_restored and effective_db_url:
                 try:
                     _enforce_database_quarantine(
-                        self.target_database_url,
+                        effective_db_url,
                         reason=f"INCONSISTENT_RESTORATION (B1-01): Document promotion failed during cutover: {e}",
-                        journal_state=journal_data.get("phase")
+                        journal_state=journal_data.get("phase"),
+                        marker_id=effective_marker_id,
+                        restore_token=effective_restore_token
                     )
                 except Exception as db_err:
                     logger.error(f"Error colocando BD en cuarentena tras fallo de promocion: {db_err}")
@@ -1396,7 +2281,8 @@ class CrashResilientDocumentPublisher:
 def recover_pending_cutover(
     parent_dir: Path,
     target_database_url: Optional[str] = None,
-    expected_marker_id: Optional[str] = None
+    expected_marker_id: Optional[str] = None,
+    expected_restore_token: Optional[str] = None
 ) -> bool:
     """
     Recupera el estado de directorios si ocurrio una caida del proceso durante un cutover previo (Item 1, B1).
@@ -1405,7 +2291,8 @@ def recover_pending_cutover(
     return CrashResilientDocumentPublisher.recover(
         parent_dir=parent_dir,
         target_database_url=target_database_url,
-        expected_marker_id=expected_marker_id
+        expected_marker_id=expected_marker_id,
+        expected_restore_token=expected_restore_token
     )
 
 
@@ -1415,19 +2302,33 @@ def atomic_promote_documents(
     catalog: List[Dict[str, Any]],
     db_restored: bool = False,
     target_database_url: Optional[str] = None,
-    expected_marker_id: Optional[str] = None
+    expected_marker_id: Optional[str] = None,
+    candidate_dir: Optional[Path] = None,
+    backup_dir: Optional[Path] = None,
+    restore_token: Optional[str] = None,
+    documents_only: Optional[bool] = None
 ) -> None:
     """
     Promociona de forma transaccional, atomica y recuperable ante muerte del proceso el directorio
     de documentos de staging hacia target_dir utilizando CrashResilientDocumentPublisher (Item 1, R5-02, B1).
+    Permite suministrar candidate_dir pre-estagiado durablemente para cierre de ventana critica (P15-H3).
     """
+    resolved_documents_only = documents_only if documents_only is not None else (not db_restored and not target_database_url)
     publisher = CrashResilientDocumentPublisher(
         target_dir=target_dir,
         db_restored=db_restored,
         target_database_url=target_database_url,
-        expected_marker_id=expected_marker_id
+        expected_marker_id=expected_marker_id,
+        restore_token=restore_token,
+        documents_only=resolved_documents_only
     )
-    publisher.publish(staging_dir=staging_dir, catalog=catalog)
+    publisher.publish(
+        staging_dir=staging_dir,
+        catalog=catalog,
+        candidate_dir=candidate_dir,
+        backup_dir=backup_dir
+    )
+
 
 
 def restore_lan_backup(
@@ -1649,14 +2550,34 @@ def restore_lan_backup(
             if staged_hash != entry["sha256"]:
                 raise ValueError(f"Fallo en comprobacion de integridad staging para {rel_path}: {staged_hash} != {entry['sha256']}")
 
-        # B1: Zero-Window Journal & Pre-Quarantine:
-        # Registrar durablemente el intento y poner el destino en estado de restauracion antes de modificar la BD.
+        # B1 / P15-H3 (Garantía A): Pre-estaging durable de candidate_dir y Zero-Window Journal:
+        # Preparar y verificar durablemente los documentos candidatos ANTES de modificar la base de datos PostgreSQL.
         parent_dir = target_uploads_dir.resolve().parent
         journal_file = parent_dir / ".cutover_journal.json"
         run_id = uuid.uuid4().hex[:8]
         candidate_dir = parent_dir / f".target_candidate_{run_id}"
         backup_dir = parent_dir / f".target_backup_{run_id}"
         catalog_hashes = {entry["relative_path"]: entry["sha256"] for entry in catalog}
+        restore_token = uuid.uuid4().hex[:12]
+
+        # Poblar y validar candidate_dir exhaustivamente con durabilidad antes de tocar PostgreSQL (Garantía A / P15-R3 Bloqueante 2)
+        candidate_dir.mkdir(parents=True, exist_ok=True)
+        try:
+            for entry in catalog:
+                rel_path = Path(entry["relative_path"])
+                src_file = staging_uploads_dir / rel_path
+                dst_file = candidate_dir / rel_path
+                content = src_file.read_bytes()
+                _durable_write_and_sync_file(dst_file, content)
+                final_sha = hashlib.sha256(content).hexdigest()
+                if final_sha != entry["sha256"]:
+                    raise ValueError(f"Fallo de integridad en candidato {dst_file}: {final_sha} != {entry['sha256']}")
+            _sync_directory_tree(candidate_dir)
+        except Exception as sync_err:
+            logger.error(f"Fallo critico de durabilidad o sincronizacion en pre-staging (P15-R3 Bloqueante 2): {sync_err}")
+            if candidate_dir.exists():
+                shutil.rmtree(candidate_dir, ignore_errors=True)
+            raise RuntimeError(f"Fallo de durabilidad en pre-staging documental: {sync_err}") from sync_err
 
         journal_data = {
             "phase": "RESTORATION_INITIATED",
@@ -1664,9 +2585,12 @@ def restore_lan_backup(
             "candidate_dir": str(candidate_dir.resolve()),
             "backup_dir": str(backup_dir.resolve()),
             "db_restored": False,
+            "documents_only": documents_only,
             "target_database_url": target_database_url,
             "expected_marker_id": expected_marker_id,
+            "restore_token": restore_token,
             "catalog_hashes": catalog_hashes,
+            "candidate_ready": True,
             "created_at": time.time()
         }
         _atomic_write_journal(journal_file, journal_data)
@@ -1683,7 +2607,8 @@ def restore_lan_backup(
                 sql_file=sql_dump_file,
                 expected_marker_id=expected_marker_id,
                 source_database_url=effective_source_url,
-                container_name=container_name
+                container_name=container_name,
+                restore_token=restore_token
             )
             if not db_restored:
                 raise RuntimeError("Fallo critico en execute_pg_restore: la base de datos no fue restaurada.")
@@ -1693,21 +2618,21 @@ def restore_lan_backup(
             journal_data["db_restored"] = True
             _atomic_write_journal(journal_file, journal_data)
 
-        # 8. Promocion documental crash-safe coordinada con PostgreSQL (Item 1, R5-02)
+        # 8. Promocion documental crash-safe coordinada con PostgreSQL (Item 1, R5-02, P15-R3 Bloqueante 3, P15-R6)
         atomic_promote_documents(
             staging_dir=staging_uploads_dir,
             target_dir=target_uploads_dir,
             catalog=catalog,
             db_restored=db_restored,
             target_database_url=target_database_url,
-            expected_marker_id=expected_marker_id
+            expected_marker_id=expected_marker_id,
+            candidate_dir=candidate_dir,
+            backup_dir=backup_dir,
+            restore_token=restore_token,
+            documents_only=documents_only
         )
 
-        # 9. B1: Levantar la cuarentena de PostgreSQL de forma transaccional verificada
-        # SOLO una vez verificada y promovida la version documental esperada
-        if db_restored and target_database_url:
-            _lift_database_quarantine(target_database_url)
-
+        # Finalizacion completada: publish() es el unico dueno transaccional del levantamiento de cuarentena (F3)
         rto_seconds = round(time.time() - t_start, 2)
         status_code = "DOCUMENTS_ONLY_SUCCESS" if documents_only else "RESTORED_SUCCESS"
 
