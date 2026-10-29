@@ -1,6 +1,7 @@
 from fastapi.testclient import TestClient
 from sqlalchemy.orm import Session
 from app.models.domain import CaseFile, AuditLog
+from app.models.v6.output_template import OutputTemplate
 from app.models.v6.case_workflow import CaseWorkflow
 from app.models.v6.supplier_selection import SupplierSelectionFinal, SupplierSelectionAttempt
 from app.models.v6.supplier_offer import SupplierOffer
@@ -8,6 +9,19 @@ from app.models.v6.supplier import Supplier
 from app.models.v6.generated_output import GeneratedOutput
 
 def test_prepare_output_api(admin_client: TestClient, db_session: Session, setup_mega_tenant):
+    # Ensure active template exists
+    tmpl = db_session.query(OutputTemplate).filter_by(type="CONDICIONES", status="ACTIVE").first()
+    if not tmpl:
+        tmpl = OutputTemplate(
+            type="CONDICIONES",
+            version="1.0",
+            entity_name="Abast-gp",
+            content="Template Content",
+            status="ACTIVE"
+        )
+        db_session.add(tmpl)
+        db_session.commit()
+
     # Setup mock data for passing the gate
     case = CaseFile(title="Output Test", contract_type="BIENES", tenant_id="mega_tenant")
     db_session.add(case)

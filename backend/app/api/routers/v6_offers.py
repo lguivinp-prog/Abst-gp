@@ -5,7 +5,7 @@ from app.api.auth import get_current_active_user, verify_case_access
 from app.models.domain import User, CaseFile
 from app.services.v6.supplier_offer_service import SupplierOfferService
 from app.services.v6.lifecycle_guard import ensure_case_mutable
-from pydantic import BaseModel
+from pydantic import BaseModel, computed_field
 from typing import Optional
 
 router = APIRouter()
@@ -66,6 +66,29 @@ class SupplierOfferResponse(BaseModel):
     supplier: Optional[SupplierBasic] = None
     items: List[SupplierOfferItemResponse] = []
     total_amount: Optional[Decimal] = None
+
+    @computed_field
+    @property
+    def declared_total(self) -> Optional[float]:
+        return float(self.price) if self.price is not None else None
+
+    @computed_field
+    @property
+    def calculated_total(self) -> Optional[float]:
+        return float(self.total_amount) if self.total_amount is not None else None
+
+    @computed_field
+    @property
+    def discrepancy_amount(self) -> Optional[float]:
+        if self.price is not None and self.total_amount is not None:
+            return round(abs(float(self.price) - float(self.total_amount)), 2)
+        return None
+
+    @computed_field
+    @property
+    def has_arithmetic_discrepancy(self) -> bool:
+        diff = self.discrepancy_amount
+        return diff is not None and diff > 0.05
 
     class Config:
         from_attributes = True

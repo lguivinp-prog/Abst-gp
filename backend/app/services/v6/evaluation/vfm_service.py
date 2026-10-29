@@ -225,6 +225,11 @@ class ValueForMoneyService:
             else:
                 vfm_ratio = price if price > 0 else 0.0
 
+            hdr_p = float(offer.price) if offer.price is not None else None
+            calc_p = float(offer.total_amount) if offer.total_amount is not None else None
+            has_disc = bool(hdr_p is not None and calc_p is not None and abs(hdr_p - calc_p) > 0.05)
+            disc_amt = round(abs(hdr_p - calc_p), 2) if has_disc else 0.0
+
             results.append({
                 "supplier_offer_id": offer.id,
                 "supplier_id": offer.supplier_id,
@@ -232,6 +237,10 @@ class ValueForMoneyService:
                 "is_evaluated": True,
                 "total_score": total_score,
                 "price": price,
+                "declared_price": hdr_p,
+                "calculated_price": calc_p,
+                "has_discrepancy": has_disc,
+                "discrepancy_amount": disc_amt,
                 "vfm_ratio": vfm_ratio
             })
 

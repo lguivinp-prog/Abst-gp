@@ -420,26 +420,100 @@ def create_procurement_item(
     case_id: int,
     item_data: ProcurementItemCreate,
     case: CaseFile = Depends(verify_case_access),
+    current_user: User = Depends(get_current_active_user),
     db: Session = Depends(get_db)
 ):
-    ensure_case_mutable(case)
     from app.models.v6.case_procurement_item import CaseProcurementItem
+    from sqlalchemy.exc import IntegrityError
+    import logging
+    logger = logging.getLogger(__name__)
+
+    locked_case = (
+        db.query(CaseFile)
+        .filter(CaseFile.id == case_id)
+        .populate_existing()
+        .with_for_update()
+        .first()
+    )
+    if not locked_case:
+        raise HTTPException(status_code=404, detail="Case not found")
+    ensure_case_mutable(locked_case)
+
+    item_num_raw = (item_data.item_number or "").strip()
+    if item_num_raw:
+        # Check if item number already exists in this case
+        existing = (
+            db.query(CaseProcurementItem)
+            .filter(
+                CaseProcurementItem.case_id == case_id,
+                CaseProcurementItem.item_number == item_num_raw
+            )
+            .first()
+        )
+        if existing:
+            raise HTTPException(
+                status_code=409,
+                detail=f"Ya existe un ítem con el correlativo '{item_num_raw}' en este expediente."
+            )
+        assigned_number = item_num_raw
+    else:
+        # Determine next correlative integer safely
+        existing_rows = (
+            db.query(CaseProcurementItem.item_number)
+            .filter(CaseProcurementItem.case_id == case_id)
+            .all()
+        )
+        existing_numbers = set()
+        numeric_values = []
+        for (num_str,) in existing_rows:
+            if num_str:
+                clean_str = num_str.strip()
+                existing_numbers.add(clean_str)
+                if clean_str.isdigit():
+                    numeric_values.append(int(clean_str))
+
+        next_val = max(numeric_values, default=0) + 1
+        while str(next_val) in existing_numbers:
+            next_val += 1
+        assigned_number = str(next_val)
+
     item = CaseProcurementItem(
         case_id=case_id,
-        item_number=item_data.item_number,
-        description=item_data.description,
+        item_number=assigned_number,
+        description=item_data.description.strip(),
         quantity=item_data.quantity,
-        unit=item_data.unit,
-        status=item_data.status,
+        unit=item_data.unit.strip() if item_data.unit else "UNIDAD",
+        status=item_data.status or "VALIDATED",
         is_manual_edit=True
     )
     db.add(item)
-    
-    if case.status == "WAITING_QUOTATION":
-        case.status = "PROCESSING_REQUIREMENT"
-        
-    db.commit()
-    db.refresh(item)
+    db.flush()
+
+    if locked_case.status == "WAITING_QUOTATION":
+        locked_case.status = "PROCESSING_REQUIREMENT"
+
+    audit = AuditLog(
+        user_id=current_user.id,
+        tenant_id=current_user.tenant_id,
+        action="CREATE_PROCUREMENT_ITEM",
+        entity_type="CaseProcurementItem",
+        entity_id=str(item.id),
+        details=f"Ítem {item.item_number} registrado: {item.description} ({item.quantity} {item.unit})",
+        status="SUCCESS"
+    )
+    db.add(audit)
+
+    try:
+        db.commit()
+        db.refresh(item)
+    except IntegrityError as e:
+        db.rollback()
+        logger.warning(f"Integrity error creating procurement item: {e}")
+        raise HTTPException(
+            status_code=409,
+            detail=f"Conflicto de unicidad en el correlativo del ítem ({assigned_number}). Intente nuevamente."
+        )
+
     return item
 
 @router.put("/cases/{case_id}/procurement-items/{item_id}", response_model=ProcurementItemResponse)
@@ -448,10 +522,25 @@ def update_procurement_item(
     item_id: int,
     item_data: ProcurementItemCreate,
     case: CaseFile = Depends(verify_case_access),
+    current_user: User = Depends(get_current_active_user),
     db: Session = Depends(get_db)
 ):
-    ensure_case_mutable(case)
     from app.models.v6.case_procurement_item import CaseProcurementItem
+    from sqlalchemy.exc import IntegrityError
+    import logging
+    logger = logging.getLogger(__name__)
+
+    locked_case = (
+        db.query(CaseFile)
+        .filter(CaseFile.id == case_id)
+        .populate_existing()
+        .with_for_update()
+        .first()
+    )
+    if not locked_case:
+        raise HTTPException(status_code=404, detail="Case not found")
+    ensure_case_mutable(locked_case)
+
     item = db.query(CaseProcurementItem).filter(
         CaseProcurementItem.case_id == case_id,
         CaseProcurementItem.id == item_id
@@ -459,19 +548,54 @@ def update_procurement_item(
     if not item:
         raise HTTPException(status_code=404, detail="Item not found")
 
-    item.item_number = item_data.item_number
-    item.description = item_data.description
+    if item_data.item_number is not None:
+        new_num = item_data.item_number.strip()
+        if new_num and new_num != item.item_number:
+            existing = db.query(CaseProcurementItem).filter(
+                CaseProcurementItem.case_id == case_id,
+                CaseProcurementItem.item_number == new_num,
+                CaseProcurementItem.id != item_id
+            ).first()
+            if existing:
+                raise HTTPException(
+                    status_code=409,
+                    detail=f"Ya existe un ítem con el correlativo '{new_num}' en este expediente."
+                )
+            item.item_number = new_num
+        elif new_num:
+            item.item_number = new_num
+
+    item.description = item_data.description.strip()
     item.quantity = item_data.quantity
-    item.unit = item_data.unit
+    item.unit = item_data.unit.strip() if item_data.unit else item.unit
     item.is_manual_edit = True
     if item_data.status:
         item.status = item_data.status
 
-    if case.status == "WAITING_QUOTATION":
-        case.status = "PROCESSING_REQUIREMENT"
+    if locked_case.status == "WAITING_QUOTATION":
+        locked_case.status = "PROCESSING_REQUIREMENT"
 
-    db.commit()
-    db.refresh(item)
+    audit = AuditLog(
+        user_id=current_user.id,
+        tenant_id=current_user.tenant_id,
+        action="UPDATE_PROCUREMENT_ITEM",
+        entity_type="CaseProcurementItem",
+        entity_id=str(item.id),
+        details=f"Ítem {item.item_number} actualizado: {item.description} ({item.quantity} {item.unit})",
+        status="SUCCESS"
+    )
+    db.add(audit)
+
+    try:
+        db.commit()
+        db.refresh(item)
+    except IntegrityError as e:
+        db.rollback()
+        logger.warning(f"Integrity error updating procurement item: {e}")
+        raise HTTPException(
+            status_code=409,
+            detail=f"Conflicto de unicidad en el correlativo del ítem ({item.item_number})."
+        )
     return item
 
 @router.delete("/cases/{case_id}/procurement-items/{item_id}")
@@ -479,10 +603,22 @@ def delete_procurement_item(
     case_id: int,
     item_id: int,
     case: CaseFile = Depends(verify_case_access),
+    current_user: User = Depends(get_current_active_user),
     db: Session = Depends(get_db)
 ):
-    ensure_case_mutable(case)
     from app.models.v6.case_procurement_item import CaseProcurementItem
+
+    locked_case = (
+        db.query(CaseFile)
+        .filter(CaseFile.id == case_id)
+        .populate_existing()
+        .with_for_update()
+        .first()
+    )
+    if not locked_case:
+        raise HTTPException(status_code=404, detail="Case not found")
+    ensure_case_mutable(locked_case)
+
     item = db.query(CaseProcurementItem).filter(
         CaseProcurementItem.case_id == case_id,
         CaseProcurementItem.id == item_id
@@ -490,10 +626,22 @@ def delete_procurement_item(
     if not item:
         raise HTTPException(status_code=404, detail="Item not found")
 
+    item_desc = f"{item.item_number}: {item.description}"
     db.delete(item)
     
-    if case.status == "WAITING_QUOTATION":
-        case.status = "PROCESSING_REQUIREMENT"
-        
+    if locked_case.status == "WAITING_QUOTATION":
+        locked_case.status = "PROCESSING_REQUIREMENT"
+
+    audit = AuditLog(
+        user_id=current_user.id,
+        tenant_id=current_user.tenant_id,
+        action="DELETE_PROCUREMENT_ITEM",
+        entity_type="CaseProcurementItem",
+        entity_id=str(item_id),
+        details=f"Ítem eliminado: {item_desc}",
+        status="SUCCESS"
+    )
+    db.add(audit)
+
     db.commit()
     return {"message": "Deleted"}

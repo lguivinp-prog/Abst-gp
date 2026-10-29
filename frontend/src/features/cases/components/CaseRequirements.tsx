@@ -230,15 +230,25 @@ export const CaseRequirements: React.FC<CaseRequirementsProps> = ({ caseId, case
     }
     setIsAddingItem(true);
     try {
-      await requirementsService.createProcurementItem(caseId, addItemForm);
+      const payload: any = {
+        description: addItemForm.description.trim(),
+        quantity: addItemForm.quantity,
+        unit: addItemForm.unit?.trim() || 'UNIDAD',
+        status: 'VALIDATED'
+      };
+      const trimmedNumber = addItemForm.item_number?.trim();
+      if (trimmedNumber) {
+        payload.item_number = trimmedNumber;
+      }
+      await requirementsService.createProcurementItem(caseId, payload);
       await loadProcurementItems();
       setShowAddItemForm(false);
       setAddItemForm({ item_number: '', description: '', quantity: 1, unit: 'UNIDAD' });
-    } catch (err) {
+    } catch (err: any) {
       if (err instanceof AppError) {
         setItemFormError(err.message);
       } else {
-        setItemFormError('Error al crear ítem.');
+        setItemFormError(err.message || 'Error al crear ítem.');
       }
     } finally {
       setIsAddingItem(false);
@@ -249,14 +259,24 @@ export const CaseRequirements: React.FC<CaseRequirementsProps> = ({ caseId, case
     if (isTerminal) return;
     setItemFormError(null);
     try {
-      await requirementsService.updateProcurementItem(caseId, itemId, editItemForm);
+      const payload: any = {
+        description: editItemForm.description.trim(),
+        quantity: editItemForm.quantity,
+        unit: editItemForm.unit?.trim() || 'UNIDAD',
+        status: (editItemForm as any).status || 'VALIDATED'
+      };
+      const trimmedNumber = editItemForm.item_number?.trim();
+      if (trimmedNumber) {
+        payload.item_number = trimmedNumber;
+      }
+      await requirementsService.updateProcurementItem(caseId, itemId, payload);
       await loadProcurementItems();
       setEditingItemId(null);
-    } catch (err) {
+    } catch (err: any) {
       if (err instanceof AppError) {
         setItemFormError(err.message);
       } else {
-        setItemFormError('Error al actualizar ítem.');
+        setItemFormError(err.message || 'Error al actualizar ítem.');
       }
     }
   };
@@ -324,7 +344,18 @@ export const CaseRequirements: React.FC<CaseRequirementsProps> = ({ caseId, case
             )}
             <div className="case-requirements__form">
               <div className="case-requirements__form-grid">
-                <div className="case-requirements__field">
+                <div className="case-requirements__field" style={{ maxWidth: '180px' }}>
+                  <label className="case-requirements__label">N° Ítem (Opcional)</label>
+                  <input
+                    type="text"
+                    className="case-requirements__input"
+                    placeholder="Auto (ej. 1, 2...)"
+                    value={addItemForm.item_number}
+                    onChange={e => setAddItemForm({...addItemForm, item_number: e.target.value})}
+                    disabled={isAddingItem || isTerminal}
+                  />
+                </div>
+                <div className="case-requirements__field" style={{ flex: 2 }}>
                   <label className="case-requirements__label">Descripción</label>
                   <input
                     type="text"
@@ -334,7 +365,7 @@ export const CaseRequirements: React.FC<CaseRequirementsProps> = ({ caseId, case
                     disabled={isAddingItem || isTerminal}
                   />
                 </div>
-                <div className="case-requirements__field">
+                <div className="case-requirements__field" style={{ maxWidth: '140px' }}>
                   <label className="case-requirements__label">Cantidad</label>
                   <input
                     type="number"
@@ -344,7 +375,7 @@ export const CaseRequirements: React.FC<CaseRequirementsProps> = ({ caseId, case
                     disabled={isAddingItem || isTerminal}
                   />
                 </div>
-                <div className="case-requirements__field">
+                <div className="case-requirements__field" style={{ maxWidth: '160px' }}>
                   <label className="case-requirements__label">Unidad</label>
                   <input
                     type="text"
@@ -377,7 +408,16 @@ export const CaseRequirements: React.FC<CaseRequirementsProps> = ({ caseId, case
               {editingItemId === item.id ? (
                 <div className="case-requirements__form">
                   <div className="case-requirements__form-grid">
-                    <div className="case-requirements__field">
+                    <div className="case-requirements__field" style={{ maxWidth: '160px' }}>
+                      <label className="case-requirements__label">N° Ítem</label>
+                      <input
+                        type="text"
+                        className="case-requirements__input"
+                        value={editItemForm.item_number}
+                        onChange={e => setEditItemForm({...editItemForm, item_number: e.target.value})}
+                      />
+                    </div>
+                    <div className="case-requirements__field" style={{ flex: 2 }}>
                       <label className="case-requirements__label">Descripción</label>
                       <input
                         type="text"
@@ -386,7 +426,7 @@ export const CaseRequirements: React.FC<CaseRequirementsProps> = ({ caseId, case
                         onChange={e => setEditItemForm({...editItemForm, description: e.target.value})}
                       />
                     </div>
-                    <div className="case-requirements__field">
+                    <div className="case-requirements__field" style={{ maxWidth: '140px' }}>
                       <label className="case-requirements__label">Cantidad</label>
                       <input
                         type="number"
@@ -395,7 +435,7 @@ export const CaseRequirements: React.FC<CaseRequirementsProps> = ({ caseId, case
                         onChange={e => setEditItemForm({...editItemForm, quantity: parseFloat(e.target.value) || 0})}
                       />
                     </div>
-                    <div className="case-requirements__field">
+                    <div className="case-requirements__field" style={{ maxWidth: '160px' }}>
                       <label className="case-requirements__label">Unidad</label>
                       <input
                         type="text"
@@ -423,6 +463,9 @@ export const CaseRequirements: React.FC<CaseRequirementsProps> = ({ caseId, case
                     {item.status === 'VALIDATED' && (
                       <Badge variant="success">VALIDATED</Badge>
                     )}
+                    <span className="font-semibold text-gray-700 mr-2 bg-gray-100 px-2 py-0.5 rounded text-xs">
+                      Ítem #{item.item_number || item.id}
+                    </span>
                     <p className="case-requirements__description">
                       <strong>{item.quantity !== null ? item.quantity : '?'} {item.unit || 'POR DEFINIR'}</strong> - {item.description}
                     </p>
