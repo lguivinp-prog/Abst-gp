@@ -155,7 +155,7 @@ class SelectionService:
             if diff > 0.05:
                 # Discrepancia aritmética identificada entre total declarado y suma de precios unitarios
                 clean_just = (justification or "").strip()
-                if not clean_just:
+                if not clean_just or len(clean_just) < 20 or len(clean_just.split()) < 3:
                     raise ValueError(
                         f"Inconsistent offer total amount: Header total ({declared_hdr}) does not match sum of item subtotals ({calculated_total}). "
                         f"Inconsistencia aritmética de S/ {diff:,.2f} detectada; se requiere una revisión administrativa explícita del responsable autorizado conforme a las reglas del procedimiento."
