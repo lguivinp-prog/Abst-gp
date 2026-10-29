@@ -67,7 +67,13 @@ def get_case_history(
     if offer_ids:
         or_clauses.append(and_(AuditLog.entity_type == "SupplierOffer", AuditLog.entity_id.in_(offer_ids)))
     if supplier_ids:
-        or_clauses.append(and_(AuditLog.entity_type == "Supplier", AuditLog.entity_id.in_(supplier_ids)))
+        or_clauses.append(
+            and_(
+                AuditLog.entity_type == "Supplier",
+                AuditLog.entity_id.in_(supplier_ids),
+                AuditLog.details.like(f"Expediente {case_id}:%")
+            )
+        )
     if eval_ids:
         or_clauses.append(and_(AuditLog.entity_type == "OfferEvaluation", AuditLog.entity_id.in_(eval_ids)))
     item_conditions = [AuditLog.details.like(f"Expediente {case_id}:%")]

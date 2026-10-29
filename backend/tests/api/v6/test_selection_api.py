@@ -104,12 +104,76 @@ def test_selection_arithmetic_discrepancy_requires_motivation(admin_client: Test
         entity_id=str(offer.id)
     ).first()
     assert audit_rec is not None
-    assert "Total declarado en PDF/carátula=S/ 2,500.00" in audit_rec.details
-    assert "Total recalculado por ítems=S/ 2,360.00" in audit_rec.details
-    assert "Diferencia=S/ 140.00" in audit_rec.details
+    assert f"Expediente {case.id}: Revisión administrativa de conciliación económica" in audit_rec.details
+    assert f"Oferta #{offer.id}" in audit_rec.details
+    assert "Importe declarado: S/ 2,500.00" in audit_rec.details
+    assert "Importe calculado: S/ 2,360.00" in audit_rec.details
+    assert "Diferencia detectada: S/ 140.00" in audit_rec.details
+    assert "Responsable autorizado:" in audit_rec.details
+    assert f"Motivación íntegra: {motivation_text}" in audit_rec.details
 
     # 3. Approve selection
     approve_res = admin_client.post(f"/api/v6/cases/{case.id}/approve")
     assert approve_res.status_code == 200
     assert approve_res.json()["status"] == "APPROVED"
+
+
+def test_selection_arithmetic_discrepancy_accepts_substantive_motivation_without_keywords(admin_client: TestClient, db_session: Session, setup_mega_tenant):
+    from app.models.v6.case_procurement_item import CaseProcurementItem
+    from app.models.v6.supplier_offer_item import SupplierOfferItem
+    from app.models.v6.supplier_profile import SupplierProfile
+    from decimal import Decimal
+
+    case = CaseFile(title="Service Procurement", contract_type="SERVICIOS", status="WAITING_QUOTATION", tenant_id="mega_tenant")
+    db_session.add(case)
+    supplier = Supplier(ruc="20444333222", business_name="Servicios Generales SRL", tenant_id="mega_tenant")
+    db_session.add(supplier)
+    db_session.flush()
+
+    profile = SupplierProfile(supplier_id=supplier.id, validation_status="VERIFIED")
+    db_session.add(profile)
+
+    item1 = CaseProcurementItem(case_id=case.id, item_number="1", description="Mantenimiento preventivo", quantity=1, unit="SERVICIO")
+    db_session.add(item1)
+    db_session.flush()
+
+    # Discrepancy: declared total 5000.0 vs unit price 4800.0
+    offer = SupplierOffer(
+        case_id=case.id,
+        supplier_id=supplier.id,
+        price=5000.0,
+        total_amount=Decimal("4800.00"),
+        status="APPROVED",
+        currency="PEN",
+        source_document="Cotizacion_Firmada_001.pdf"
+    )
+    db_session.add(offer)
+    db_session.flush()
+
+    off_item1 = SupplierOfferItem(supplier_offer_id=offer.id, procurement_item_id=item1.id, description="Mantenimiento preventivo", quantity=1, unit="SERVICIO", unit_price=Decimal("4800.00"))
+    db_session.add(off_item1)
+    db_session.commit()
+
+    # Motivation contains NONE of the old keywords ("aritmetic", "unitario", "prevalec", "concilia", "discrepanc", "error", "rectifica", "diferencia", "caratula")
+    pure_administrative_motivation = "Validación funcional y técnica completada por el área usuaria conforme a bases administrativas; se autoriza la adjudicación por el monto evaluado."
+    res = admin_client.post(f"/api/v6/cases/{case.id}/selection", json={
+        "supplier_offer_id": offer.id,
+        "justification_comment": pure_administrative_motivation
+    })
+    assert res.status_code == 200
+    assert res.json()["status"] == "UNDER_REVIEW"
+
+    # Verify audit log details contain source document, exact amounts, user, and verbatim motivation
+    audit = db_session.query(AuditLog).filter_by(
+        action="RECONCILE_ARITHMETIC_DISCREPANCY",
+        entity_id=str(offer.id)
+    ).first()
+    assert audit is not None
+    assert f"Expediente {case.id}: Revisión administrativa de conciliación económica" in audit.details
+    assert "Documento fuente: Cotizacion_Firmada_001.pdf" in audit.details
+    assert "Importe declarado: S/ 5,000.00" in audit.details
+    assert "Importe calculado: S/ 4,800.00" in audit.details
+    assert "Diferencia detectada: S/ 200.00" in audit.details
+    assert f"Motivación íntegra: {pure_administrative_motivation}" in audit.details
+
 

@@ -122,3 +122,101 @@ def test_history_includes_deleted_procurement_item_by_case_prefix(client: TestCl
     assert f"Expediente {test_case_file.id}:" in deleted_events[0]["details"]
 
 
+def test_history_excludes_shared_supplier_generic_events(client: TestClient, db_session: Session, test_case_file):
+    # 1. Create a shared supplier in mega_tenant
+    sup = Supplier(ruc="20111222333", business_name="Distribuidora Compartida SAC", tenant_id="mega_tenant")
+    db_session.add(sup)
+    db_session.flush()
+
+    # 2. Add an offer for test_case_file from this supplier
+    offer_case1 = SupplierOffer(case_id=test_case_file.id, supplier_id=sup.id, price=1000.0, status="PENDING")
+    db_session.add(offer_case1)
+
+    # 3. Create a second case in the same tenant, also receiving an offer from this supplier
+    other_case = CaseFile(
+        title="Second Case",
+        contract_type="BIENES",
+        status="WAITING_QUOTATION",
+        tenant_id="mega_tenant",
+        assigned_to_user_id=test_case_file.assigned_to_user_id
+    )
+    db_session.add(other_case)
+    db_session.flush()
+    offer_case2 = SupplierOffer(case_id=other_case.id, supplier_id=sup.id, price=1200.0, status="PENDING")
+    db_session.add(offer_case2)
+    db_session.flush()
+
+    # 4. Create audit logs:
+    # (a) Generic shared supplier catalog event (no case prefix)
+    log_sup_create = AuditLog(
+        user_id=1,
+        tenant_id="mega_tenant",
+        action="CREATE_SUPPLIER",
+        entity_type="Supplier",
+        entity_id=str(sup.id),
+        details=f"Created supplier {sup.ruc}",
+        status="SUCCESS"
+    )
+    # (b) Generic shared supplier profile update (no case prefix)
+    log_sup_update = AuditLog(
+        user_id=1,
+        tenant_id="mega_tenant",
+        action="UPDATE_SUPPLIER_PROFILE",
+        entity_type="Supplier",
+        entity_id=str(sup.id),
+        details="Actualización de datos bancarios de proveedor",
+        status="SUCCESS"
+    )
+    # (c) Supplier event unequivocally attributed to test_case_file
+    log_sup_case1 = AuditLog(
+        user_id=1,
+        tenant_id="mega_tenant",
+        action="SUPPLIER_INVITED_CASE",
+        entity_type="Supplier",
+        entity_id=str(sup.id),
+        details=f"Expediente {test_case_file.id}: Invitación enviada al proveedor",
+        status="SUCCESS"
+    )
+    # (d) Supplier event unequivocally attributed to other_case
+    log_sup_case2 = AuditLog(
+        user_id=1,
+        tenant_id="mega_tenant",
+        action="SUPPLIER_OBSERVED_CASE",
+        entity_type="Supplier",
+        entity_id=str(sup.id),
+        details=f"Expediente {other_case.id}: Observación formal al proveedor",
+        status="SUCCESS"
+    )
+    db_session.add_all([log_sup_create, log_sup_update, log_sup_case1, log_sup_case2])
+    db_session.commit()
+
+    # 5. Query history of test_case_file
+    res_case1 = client.get(
+        f"/api/v6/cases/{test_case_file.id}/history",
+        headers={"Authorization": "Bearer test_token"}
+    )
+    assert res_case1.status_code == 200
+    actions_case1 = [d["action"] for d in res_case1.json()]
+
+    # Case 1 must contain ONLY its unequivocally attributed event
+    assert "SUPPLIER_INVITED_CASE" in actions_case1
+    assert "CREATE_SUPPLIER" not in actions_case1
+    assert "UPDATE_SUPPLIER_PROFILE" not in actions_case1
+    assert "SUPPLIER_OBSERVED_CASE" not in actions_case1
+
+    # 6. Query history of other_case
+    res_case2 = client.get(
+        f"/api/v6/cases/{other_case.id}/history",
+        headers={"Authorization": "Bearer test_token"}
+    )
+    assert res_case2.status_code == 200
+    actions_case2 = [d["action"] for d in res_case2.json()]
+
+    # Other case must contain ONLY its unequivocally attributed event
+    assert "SUPPLIER_OBSERVED_CASE" in actions_case2
+    assert "CREATE_SUPPLIER" not in actions_case2
+    assert "UPDATE_SUPPLIER_PROFILE" not in actions_case2
+    assert "SUPPLIER_INVITED_CASE" not in actions_case2
+
+
+

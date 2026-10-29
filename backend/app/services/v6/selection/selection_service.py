@@ -3,7 +3,7 @@ from app.models.v6.supplier_profile import SupplierProfile
 from app.models.v6.supplier_offer import SupplierOffer
 from app.models.v6.supplier_selection import SupplierSelectionAttempt, SupplierSelectionFinal
 from app.models.v6.case_workflow import CaseWorkflow
-from app.models.domain import AuditLog, CaseFile
+from app.models.domain import AuditLog, CaseFile, User, UploadedDocument
 
 class SelectionService:
     @staticmethod
@@ -148,25 +148,36 @@ class SelectionService:
         elif procurement_items:
             raise ValueError("Incomplete offer: Offer has no total price defined")
 
-        # Consistencia entre subtotales y total económico declarado (Trazabilidad y Conciliación Aritmética)
+        # Consistencia entre subtotales y total económico declarado (Trazabilidad y Revisión Administrativa Explícita)
         declared_hdr = float(offer.price) if offer.price is not None else None
         if procurement_items and declared_hdr is not None and calculated_total > 0:
             diff = abs(declared_hdr - calculated_total)
             if diff > 0.05:
                 # Discrepancia aritmética identificada entre total declarado y suma de precios unitarios
                 clean_just = (justification or "").strip()
-                reconciliation_keywords = [
-                    "aritmetic", "aritmétic", "unitario", "prevalec", "concilia", "discrepanc", "error", "rectifica", "diferencia", "carátula", "caratula"
-                ]
-                has_reconciliation_motivation = any(kw in clean_just.lower() for kw in reconciliation_keywords)
-
-                if not clean_just or not has_reconciliation_motivation:
+                if not clean_just or len(clean_just) < 20 or len(clean_just.split()) < 3:
                     raise ValueError(
                         f"Inconsistent offer total amount: Header total ({declared_hdr}) does not match sum of item subtotals ({calculated_total}). "
-                        f"Inconsistencia aritmética de S/ {diff:,.2f} detectada; se requiere motivación expresa de conciliación conforme a las reglas del procedimiento."
+                        f"Inconsistencia aritmética de S/ {diff:,.2f} detectada; se requiere una revisión administrativa explícita del responsable autorizado conforme a las reglas del procedimiento."
                     )
 
-                # Trazabilidad explícita de la conciliación motivada
+                # Resolver descripción de documento fuente
+                source_doc_desc = None
+                if offer.documents:
+                    doc_ids = [d.document_id for d in offer.documents]
+                    uploaded_docs = db.query(UploadedDocument).filter(UploadedDocument.id.in_(doc_ids)).all()
+                    if uploaded_docs:
+                        source_doc_desc = ", ".join([f"Doc #{d.id} ({d.original_filename})" for d in uploaded_docs])
+                if not source_doc_desc and offer.source_document:
+                    source_doc_desc = offer.source_document
+                if not source_doc_desc:
+                    source_doc_desc = "Cotización física/digital registrada"
+
+                # Identidad del responsable autorizado
+                auth_user = db.query(User).filter(User.id == user_id).first()
+                user_identity = f"{auth_user.username} (ID: {user_id}, Rol: {user_role})" if auth_user else f"Usuario ID {user_id} (Rol: {user_role})"
+
+                # Trazabilidad explícita y procedencia verificable de la revisión administrativa (sin automatizar decisiones jurídicas ni alterar precios unitarios)
                 audit_recon = AuditLog(
                     user_id=user_id,
                     tenant_id=tenant_id,
@@ -174,9 +185,11 @@ class SelectionService:
                     entity_type="SupplierOffer",
                     entity_id=str(offer.id),
                     details=(
-                        f"Conciliación de discrepancia aritmética: Total declarado en PDF/carátula=S/ {declared_hdr:,.2f}, "
-                        f"Total recalculado por ítems=S/ {calculated_total:,.2f}, Diferencia=S/ {diff:,.2f}. "
-                        f"Tratamiento y motivación registrada: {clean_just}"
+                        f"Expediente {case_id}: Revisión administrativa de conciliación económica | "
+                        f"Oferta #{offer.id} | Documento fuente: {source_doc_desc} | "
+                        f"Importe declarado: S/ {declared_hdr:,.2f} | Importe calculado: S/ {calculated_total:,.2f} | "
+                        f"Diferencia detectada: S/ {diff:,.2f} | Responsable autorizado: {user_identity} | "
+                        f"Motivación íntegra: {clean_just}"
                     ),
                     status="SUCCESS"
                 )
