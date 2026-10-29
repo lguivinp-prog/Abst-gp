@@ -498,7 +498,7 @@ def create_procurement_item(
         action="CREATE_PROCUREMENT_ITEM",
         entity_type="CaseProcurementItem",
         entity_id=str(item.id),
-        details=f"Ítem {item.item_number} registrado: {item.description} ({item.quantity} {item.unit})",
+        details=f"Expediente {case_id}: Ítem {item.item_number} registrado: {item.description} ({item.quantity} {item.unit})",
         status="SUCCESS"
     )
     db.add(audit)
@@ -581,7 +581,7 @@ def update_procurement_item(
         action="UPDATE_PROCUREMENT_ITEM",
         entity_type="CaseProcurementItem",
         entity_id=str(item.id),
-        details=f"Ítem {item.item_number} actualizado: {item.description} ({item.quantity} {item.unit})",
+        details=f"Expediente {case_id}: Ítem {item.item_number} actualizado: {item.description} ({item.quantity} {item.unit})",
         status="SUCCESS"
     )
     db.add(audit)
@@ -638,7 +638,7 @@ def delete_procurement_item(
         action="DELETE_PROCUREMENT_ITEM",
         entity_type="CaseProcurementItem",
         entity_id=str(item_id),
-        details=f"Ítem eliminado: {item_desc}",
+        details=f"Expediente {case_id}: Ítem eliminado: {item_desc}",
         status="SUCCESS"
     )
     db.add(audit)

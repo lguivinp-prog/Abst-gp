@@ -70,8 +70,15 @@ def get_case_history(
         or_clauses.append(and_(AuditLog.entity_type == "Supplier", AuditLog.entity_id.in_(supplier_ids)))
     if eval_ids:
         or_clauses.append(and_(AuditLog.entity_type == "OfferEvaluation", AuditLog.entity_id.in_(eval_ids)))
+    item_conditions = [AuditLog.details.like(f"Expediente {case_id}:%")]
     if item_ids:
-        or_clauses.append(and_(AuditLog.entity_type == "CaseProcurementItem", AuditLog.entity_id.in_(item_ids)))
+        item_conditions.append(AuditLog.entity_id.in_(item_ids))
+    or_clauses.append(
+        and_(
+            AuditLog.entity_type == "CaseProcurementItem",
+            or_(*item_conditions)
+        )
+    )
     if val_ids:
         or_clauses.append(and_(AuditLog.entity_type == "ValidationRequest", AuditLog.entity_id.in_(val_ids)))
     if attempt_ids:

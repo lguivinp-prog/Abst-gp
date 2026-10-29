@@ -88,3 +88,37 @@ def test_history_cross_tenant_rejected(other_client: TestClient, db_session: Ses
     )
     assert cross_res.status_code in [403, 404]
 
+def test_history_includes_deleted_procurement_item_by_case_prefix(client: TestClient, db_session: Session, test_case_file):
+    log_deleted_item = AuditLog(
+        user_id=1,
+        tenant_id="mega_tenant",
+        action="DELETE_PROCUREMENT_ITEM",
+        entity_type="CaseProcurementItem",
+        entity_id="999",
+        details=f"Expediente {test_case_file.id}: Ítem eliminado: 1: Papel bond",
+        status="SUCCESS"
+    )
+    log_other_deleted_item = AuditLog(
+        user_id=1,
+        tenant_id="mega_tenant",
+        action="DELETE_PROCUREMENT_ITEM",
+        entity_type="CaseProcurementItem",
+        entity_id="1000",
+        details="Expediente 99999: Ítem eliminado: 1: Tóner",
+        status="SUCCESS"
+    )
+    db_session.add_all([log_deleted_item, log_other_deleted_item])
+    db_session.commit()
+
+    response = client.get(
+        f"/api/v6/cases/{test_case_file.id}/history",
+        headers={"Authorization": "Bearer test_token"}
+    )
+    assert response.status_code == 200
+    data = response.json()
+    deleted_events = [d for d in data if d["action"] == "DELETE_PROCUREMENT_ITEM"]
+    assert len(deleted_events) == 1
+    assert deleted_events[0]["entity_id"] == "999"
+    assert f"Expediente {test_case_file.id}:" in deleted_events[0]["details"]
+
+
