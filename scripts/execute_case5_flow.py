@@ -3,9 +3,45 @@ import urllib.parse
 import json
 import ssl
 import sys
+import os
 
-BASE_URL = "https://192.168.2.18"
-ctx = ssl._create_unverified_context()
+BASE_URL = os.getenv("PILOTO_BASE_URL", "https://192.168.2.18")
+
+def get_tls_context():
+    ca_file = os.getenv("PILOTO_CA_FILE")
+    if not ca_file:
+        candidate = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "certs", "caddy_root_ca.crt")
+        if os.path.exists(candidate):
+            ca_file = candidate
+    if ca_file and os.path.exists(ca_file):
+        ctx = ssl.create_default_context(cafile=ca_file)
+    else:
+        ctx = ssl.create_default_context()
+    ctx.check_hostname = True
+    ctx.verify_mode = ssl.CERT_REQUIRED
+    return ctx
+
+ctx = get_tls_context()
+
+def load_pilot_credentials():
+    op_pwd = os.getenv("PILOTO_OPERATOR_PASSWORD")
+    adm_pwd = os.getenv("PILOTO_ADMIN_PASSWORD")
+    if not op_pwd or not adm_pwd:
+        env_pilot = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), ".env.pilot")
+        if os.path.exists(env_pilot):
+            with open(env_pilot, "r", encoding="utf-8") as f:
+                for line in f:
+                    line = line.strip()
+                    if line.startswith("PILOTO_OPERATOR_PASSWORD="):
+                        op_pwd = op_pwd or line.split("=", 1)[1].strip()
+                    elif line.startswith("PILOTO_ADMIN_PASSWORD="):
+                        adm_pwd = adm_pwd or line.split("=", 1)[1].strip()
+    if not op_pwd or not adm_pwd:
+        raise ValueError(
+            "Credenciales del piloto no configuradas. Defina PILOTO_OPERATOR_PASSWORD y "
+            "PILOTO_ADMIN_PASSWORD como variables de entorno o en .env.pilot seguro."
+        )
+    return op_pwd, adm_pwd
 
 def login(username, password):
     data = urllib.parse.urlencode({'username': username, 'password': password}).encode('utf-8')
@@ -84,15 +120,17 @@ def main():
     print(f"Target URL: {BASE_URL}")
     print("=" * 70)
 
-    # 1. AUTENTICACIÓN
+    # 1. CARGA SEGURA DE CREDENCIALES Y AUTENTICACIÓN
+    op_password, adm_password = load_pilot_credentials()
+
     print("\n[1] Autenticación Operador ('operator')...")
-    s_op, r_op = login("operator", "Operator123!")
+    s_op, r_op = login("operator", op_password)
     assert s_op == 200 and r_op.get("access_token"), f"Error login operador: {s_op}, {r_op}"
     op_token = r_op["access_token"]
     print(" -> Operador autenticado exitosamente.")
 
     print("\n[2] Autenticación Supervisor ('admin')...")
-    s_adm, r_adm = login("admin", "Operator123!")
+    s_adm, r_adm = login("admin", adm_password)
     assert s_adm == 200 and r_adm.get("access_token"), f"Error login admin: {s_adm}, {r_adm}"
     adm_token = r_adm["access_token"]
     print(" -> Supervisor autenticado exitosamente.")
@@ -285,7 +323,7 @@ def main():
 
     # 9. PERSISTENCIA Y AUDITORÍA TRAS RE-AUTENTICACIÓN FRESCA
     print("\n[10] Verificación de Persistencia y Auditoría...")
-    s_op2, r_op2 = login("operator", "Operator123!")
+    s_op2, r_op2 = login("operator", op_password)
     fresh_token = r_op2["access_token"]
     
     h2_status, h2_data = http_get("/api/v6/cases/5/history", fresh_token)

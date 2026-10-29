@@ -33,6 +33,8 @@ __pycache__/
 *.key
 *.pfx
 *.p12
+*.crt
+certs/
 
 *.onnx
 *.pth
