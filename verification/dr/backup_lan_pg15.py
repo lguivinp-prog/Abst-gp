@@ -899,7 +899,9 @@ def execute_pg_restore(
     effective_sql_file = sql_file.parent / f".prep_restore_{uuid.uuid4().hex[:6]}.sql"
     with open(effective_sql_file, "wb") as f_out:
         with open(sql_file, "rb") as f_in:
-            shutil.copyfileobj(f_in, f_out)
+            for line in f_in:
+                if b"transaction_timeout" not in line:
+                    f_out.write(line)
         f_out.write(quarantine_snippet)
         f_out.flush()
         os.fsync(f_out.fileno())

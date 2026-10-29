@@ -38,7 +38,7 @@ services:
     restart: unless-stopped
     environment:
       - APP_ENV=lan
-      - DATABASE_URL=postgresql://${POSTGRES_USER:-abst_admin}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB:-abst_gp_lan}
+      - DATABASE_URL=postgresql+psycopg2://${POSTGRES_USER:-abst_admin}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB:-abst_gp_lan}
       - REDIS_URL=redis://:${REDIS_PASSWORD}@redis:6379/0
       - SECRET_KEY=${SECRET_KEY:?Requerido SECRET_KEY seguro de produccion}
       - MFA_ENCRYPTION_KEY=${MFA_ENCRYPTION_KEY:?Requerido clave de 32 bytes para cifrado MFA}
@@ -46,12 +46,14 @@ services:
       - BACKUP_SIGNING_KEY=${BACKUP_SIGNING_KEY:?Requerido clave de 32 bytes para firma de respaldo}
       - UPLOADS_DIR=/data/uploads
       - TRUSTED_PROXIES=127.0.0.1,::1,172.16.0.0/12,10.0.0.0/8
-      - ALERT_CHANNEL=${ALERT_CHANNEL:-webhook}
+      - VALIDATION_API_KEY=${VALIDATION_API_KEY:?Requerido VALIDATION_API_KEY para entorno LAN}
+      - ALERT_CHANNEL=${ALERT_CHANNEL:-console}
       - ALERT_WEBHOOK_URL=${ALERT_WEBHOOK_URL:-}
       - ALERT_TELEGRAM_BOT_TOKEN=${ALERT_TELEGRAM_BOT_TOKEN:-}
       - ALERT_TELEGRAM_CHAT_ID=${ALERT_TELEGRAM_CHAT_ID:-}
     volumes:
       - abst_lan_uploads:/data/uploads
+      - ./verification:/app/verification:ro
     networks:
       - abst_lan_backend
       - abst_lan_frontend
@@ -68,7 +70,7 @@ services:
     command: ["rq", "worker", "-u", "redis://:${REDIS_PASSWORD}@redis:6379/0", "default"]
     environment:
       - APP_ENV=lan
-      - DATABASE_URL=postgresql://${POSTGRES_USER:-abst_admin}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB:-abst_gp_lan}
+      - DATABASE_URL=postgresql+psycopg2://${POSTGRES_USER:-abst_admin}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB:-abst_gp_lan}
       - REDIS_URL=redis://:${REDIS_PASSWORD}@redis:6379/0
       - SECRET_KEY=${SECRET_KEY}
       - MFA_ENCRYPTION_KEY=${MFA_ENCRYPTION_KEY}
@@ -94,7 +96,7 @@ services:
     command: ["rq", "worker", "-u", "redis://:${REDIS_PASSWORD}@redis:6379/0", "ocr_tasks"]
     environment:
       - APP_ENV=lan
-      - DATABASE_URL=postgresql://${POSTGRES_USER:-abst_admin}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB:-abst_gp_lan}
+      - DATABASE_URL=postgresql+psycopg2://${POSTGRES_USER:-abst_admin}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB:-abst_gp_lan}
       - REDIS_URL=redis://:${REDIS_PASSWORD}@redis:6379/0
       - SECRET_KEY=${SECRET_KEY}
       - MFA_ENCRYPTION_KEY=${MFA_ENCRYPTION_KEY}

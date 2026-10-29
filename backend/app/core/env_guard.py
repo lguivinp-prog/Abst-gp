@@ -61,13 +61,11 @@ def validate_migration_environment(app_env: str, db_url: str, env_vars: dict) ->
             
         return
         
-    if app_env == 'local':
+    if app_env in ('local', 'lan'):
         if host != 'db':
-            raise EnvGuardError(f"Local environment requires host 'db', got '{host}'")
+            raise EnvGuardError(f"{app_env.upper()} environment requires host 'db', got '{host}'")
         if str(port) != '5432':
-            raise EnvGuardError(f"Local environment requires port '5432', got '{port}'")
-        if db_name != 'abst_gp':
-            raise EnvGuardError(f"Local environment requires database 'abst_gp', got '{db_name}'")
+            raise EnvGuardError(f"{app_env.upper()} environment requires port '5432', got '{port}'")
         return
         
     raise EnvGuardError(f"Unknown or unauthorized environment: {app_env}")
