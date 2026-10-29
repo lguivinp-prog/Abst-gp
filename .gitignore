@@ -65,5 +65,9 @@ test-results/
 .env
 .env.*
 !.env.example
+!.env.test.example
+!.env.*.template
+monitoring/alert_state.json
+monitoring/alerts_history.jsonl
 paddleocr_cache/
 audit_gpt_p13/

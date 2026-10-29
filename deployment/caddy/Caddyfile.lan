@@ -4,6 +4,8 @@
 {
     admin off
     auto_https disable_redirects
+    default_sni {$SERVER_NAME:localhost}
+    debug
 }
 
 https://{$SERVER_NAME:localhost}:443 {

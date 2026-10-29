@@ -97,3 +97,22 @@ def test_guard_does_not_create_engine(mock_engine_from_config, mock_create_engin
     })
     mock_create_engine.assert_not_called()
     mock_engine_from_config.assert_not_called()
+
+def test_guard_lan_env_allowed_pilot():
+    validate_migration_environment('lan', 'postgresql://user:pass@db:5432/abst_gp_pilot', {})
+
+def test_guard_lan_env_allowed_lan():
+    validate_migration_environment('lan', 'postgresql://user:pass@db:5432/abst_gp_lan', {})
+
+def test_guard_lan_env_wrong_host():
+    with pytest.raises(EnvGuardError, match="LAN environment requires host 'db', got 'localhost'"):
+        validate_migration_environment('lan', 'postgresql://user:pass@localhost:5432/abst_gp_pilot', {})
+
+def test_guard_lan_env_wrong_port():
+    with pytest.raises(EnvGuardError, match="LAN environment requires port '5432', got '5433'"):
+        validate_migration_environment('lan', 'postgresql://user:pass@db:5433/abst_gp_pilot', {})
+
+def test_guard_lan_env_unauthorized_db():
+    with pytest.raises(EnvGuardError, match=r"LAN environment requires database in \('abst_gp_pilot', 'abst_gp_lan'\), got 'wrong_db'"):
+        validate_migration_environment('lan', 'postgresql://user:pass@db:5432/wrong_db', {})
+
