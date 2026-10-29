@@ -148,14 +148,39 @@ class SelectionService:
         elif procurement_items:
             raise ValueError("Incomplete offer: Offer has no total price defined")
 
-        # Consistencia entre subtotales y total económico declarado
-        if procurement_items and raw_price is not None:
-            try:
-                hdr_total = float(raw_price)
-            except (ValueError, TypeError):
-                hdr_total = None
-            if hdr_total is not None and abs(hdr_total - calculated_total) > 0.05:
-                raise ValueError(f"Inconsistent offer total amount: Header total ({hdr_total}) does not match sum of item subtotals ({calculated_total})")
+        # Consistencia entre subtotales y total económico declarado (Trazabilidad y Conciliación Aritmética)
+        declared_hdr = float(offer.price) if offer.price is not None else None
+        if procurement_items and declared_hdr is not None and calculated_total > 0:
+            diff = abs(declared_hdr - calculated_total)
+            if diff > 0.05:
+                # Discrepancia aritmética identificada entre total declarado y suma de precios unitarios
+                clean_just = (justification or "").strip()
+                reconciliation_keywords = [
+                    "aritmetic", "aritmétic", "unitario", "prevalec", "concilia", "discrepanc", "error", "rectifica", "diferencia", "carátula", "caratula"
+                ]
+                has_reconciliation_motivation = any(kw in clean_just.lower() for kw in reconciliation_keywords)
+
+                if not clean_just or not has_reconciliation_motivation:
+                    raise ValueError(
+                        f"Inconsistent offer total amount: Header total ({declared_hdr}) does not match sum of item subtotals ({calculated_total}). "
+                        f"Inconsistencia aritmética de S/ {diff:,.2f} detectada; se requiere motivación expresa de conciliación conforme a las reglas del procedimiento."
+                    )
+
+                # Trazabilidad explícita de la conciliación motivada
+                audit_recon = AuditLog(
+                    user_id=user_id,
+                    tenant_id=tenant_id,
+                    action="RECONCILE_ARITHMETIC_DISCREPANCY",
+                    entity_type="SupplierOffer",
+                    entity_id=str(offer.id),
+                    details=(
+                        f"Conciliación de discrepancia aritmética: Total declarado en PDF/carátula=S/ {declared_hdr:,.2f}, "
+                        f"Total recalculado por ítems=S/ {calculated_total:,.2f}, Diferencia=S/ {diff:,.2f}. "
+                        f"Tratamiento y motivación registrada: {clean_just}"
+                    ),
+                    status="SUCCESS"
+                )
+                db.add(audit_recon)
 
         # Impedir comparaciones o selecciones entre monedas heterogéneas sin regla de conversión
         case_offers = db.query(SupplierOffer).filter_by(case_id=case_id).all()

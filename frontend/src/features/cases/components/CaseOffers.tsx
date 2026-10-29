@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { FileText, Building2, Check, X, AlertCircle, Trash2, Edit2 } from 'lucide-react';
+import { FileText, Building2, Check, X, AlertCircle, AlertTriangle, Trash2, Edit2 } from 'lucide-react';
 import { Button } from '../../../components/ui/Button';
 import { Badge } from '../../../components/ui/Badge';
 import { v6Client } from '../../../api/v6/v6Client';
@@ -237,33 +237,36 @@ export const CaseOffers: React.FC<CaseOffersProps> = ({ caseId, caseStatus }) =>
                     <div className="offer-edit">
                       {/* FILA 1 — METADATOS DE OFERTA */}
                       <div className="offer-meta-row" style={{ display: 'grid', gridTemplateColumns: 'repeat(2, minmax(0, 1fr))', gap: '16px', width: '100%' }}>
-                        {procurementItems.length === 0 && (
-                          <div className="form-group">
-                            <label>Precio Ofertado (Opcional)</label>
-                            <div className="input-with-icon">
-                              <span className="text-gray-500 font-medium mr-2">
-                                {(editData.currency || 'PEN') === 'USD' ? 'US$' : 'S/'}
-                              </span>
-                              <input
-                                type="number"
-                                name="price"
-                                step="0.01"
-                                value={editData.price || ''}
-                                onChange={handleInputChange}
-                                placeholder="Ej. 1500.00"
-                              />
-                              <select
-                                name="currency"
-                                value={editData.currency || 'PEN'}
-                                onChange={handleInputChange}
-                                className="ml-2 border rounded p-1"
-                              >
-                                <option value="PEN">PEN</option>
-                                <option value="USD">USD</option>
-                              </select>
-                            </div>
+                        <div className="form-group">
+                          <label>Total Declarado en Documento (PDF / Cotización)</label>
+                          <div className="input-with-icon">
+                            <span className="text-gray-500 font-medium mr-2">
+                              {(editData.currency || 'PEN') === 'USD' ? 'US$' : 'S/'}
+                            </span>
+                            <input
+                              type="number"
+                              name="price"
+                              step="0.01"
+                              value={editData.price || ''}
+                              onChange={handleInputChange}
+                              placeholder="Ej. 2500.00"
+                            />
+                            <select
+                              name="currency"
+                              value={editData.currency || 'PEN'}
+                              onChange={handleInputChange}
+                              className="ml-2 border rounded p-1"
+                            >
+                              <option value="PEN">PEN</option>
+                              <option value="USD">USD</option>
+                            </select>
                           </div>
-                        )}
+                          {procurementItems.length > 0 && (
+                            <p className="text-xs text-gray-500 mt-1">
+                              Importe documental de referencia. Si difiere de los precios unitarios, se registrará discrepancia aritmética sin alterarlos.
+                            </p>
+                          )}
+                        </div>
                         <div className="form-group">
                           <label>Estado de la Oferta</label>
                           <select name="status" value={editData.status || offer.status} onChange={handleInputChange} className="w-full border rounded p-2">
@@ -389,27 +392,51 @@ export const CaseOffers: React.FC<CaseOffersProps> = ({ caseId, caseStatus }) =>
                     </div>
                   ) : (
                     <div className="case-offer-details">
-                      {(!offer.items || offer.items.length === 0) && (
-                        <div className="detail-item price">
-                          <span className="label">Precio:</span>
-                          <span className="value">
-                            {offer.price != null ? `${(offer.currency || 'PEN') === 'USD' ? 'US$' : 'S/'} ${formatMoney(offer.price)}` : 'No especificado'}
-                          </span>
-                        </div>
-                      )}
-                      {(offer.items && offer.items.length > 0) && (
+                      {offer.items && offer.items.length > 0 ? (
                         <>
                           <div className="detail-item">
                             <span className="label">Moneda:</span>
                             <span className="value">{offer.currency || 'PEN'}</span>
                           </div>
                           <div className="detail-item price">
-                            <span className="label">Monto Total:</span>
+                            <span className="label">Total Recalculado (Ítems):</span>
                             <span className="value font-bold text-green-700">
                               {(offer.currency || 'PEN') === 'USD' ? 'US$' : 'S/'} {formatMoney(offer.total_amount)}
                             </span>
                           </div>
+                          {offer.price != null && (
+                            <div className="detail-item">
+                              <span className="label">Total Declarado (PDF):</span>
+                              <span className="value font-medium text-gray-800">
+                                {(offer.currency || 'PEN') === 'USD' ? 'US$' : 'S/'} {formatMoney(offer.price)}
+                              </span>
+                            </div>
+                          )}
                         </>
+                      ) : (
+                        <div className="detail-item price">
+                          <span className="label">Precio Ofertado:</span>
+                          <span className="value">
+                            {offer.price != null ? `${(offer.currency || 'PEN') === 'USD' ? 'US$' : 'S/'} ${formatMoney(offer.price)}` : 'No especificado'}
+                          </span>
+                        </div>
+                      )}
+
+                      {offer.price != null && offer.total_amount != null && Math.abs(Number(offer.price) - Number(offer.total_amount)) > 0.05 && (
+                        <div className="p-3 my-3 bg-amber-50 border border-amber-300 rounded text-amber-900 text-sm" style={{ gridColumn: '1 / -1', width: '100%' }}>
+                          <div className="flex items-center gap-2 font-semibold text-amber-800 mb-1">
+                            <AlertTriangle size={16} />
+                            <span>Inconsistencia Aritmética Detectada</span>
+                          </div>
+                          <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 text-xs text-amber-950 mb-2">
+                            <div>Total declarado en PDF: <strong>{(offer.currency || 'PEN') === 'USD' ? 'US$' : 'S/'} {formatMoney(offer.price)}</strong></div>
+                            <div>Total recalculado por ítems: <strong>{(offer.currency || 'PEN') === 'USD' ? 'US$' : 'S/'} {formatMoney(offer.total_amount)}</strong></div>
+                            <div>Diferencia detectada: <strong>{(offer.currency || 'PEN') === 'USD' ? 'US$' : 'S/'} {formatMoney(Math.abs(Number(offer.price) - Number(offer.total_amount)))}</strong></div>
+                          </div>
+                          <p className="text-xs text-amber-800 m-0">
+                            Prevalecen los precios unitarios conforme a las reglas del procedimiento. La discrepancia no descalifica la oferta, pero requiere motivación administrativa al proponer la selección.
+                          </p>
+                        </div>
                       )}
                       <div className="detail-item">
                         <span className="label">Doc. Fuente:</span>

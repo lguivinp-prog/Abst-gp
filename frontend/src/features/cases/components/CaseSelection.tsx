@@ -56,10 +56,17 @@ export const CaseSelection: React.FC<CaseSelectionProps> = ({ caseId }) => {
   const handlePropose = async (offerId: number) => {
     const isDivergent = topRecommendation && offerId !== topRecommendation.supplier_offer_id;
     const isNoRec = !topRecommendation;
+    const targetOffer = offers.find((o) => o.id === offerId);
+    const hasDiscrepancy = targetOffer && targetOffer.price != null && targetOffer.total_amount != null &&
+      Math.abs(Number(targetOffer.price) - Number(targetOffer.total_amount)) > 0.05;
 
-    // Validación en Frontend de Justificación Expresa (Requisito 4 y 5 de Etapa 3)
-    if ((isDivergent || isNoRec) && !justification.trim()) {
-      setError('Debe fundamentar expresamente el motivo de la propuesta seleccionada.');
+    // Validación de justificación obligatoria: divergente, sin recomendación o discrepancia aritmética
+    if ((isDivergent || isNoRec || hasDiscrepancy) && !justification.trim()) {
+      if (hasDiscrepancy) {
+        setError('La oferta presenta una inconsistencia aritmética entre el total documental y la suma de precios unitarios. Conforme a las reglas del procedimiento, debe fundamentar expresamente la conciliación.');
+      } else {
+        setError('Debe fundamentar expresamente el motivo de la propuesta seleccionada.');
+      }
       return;
     }
 
@@ -213,6 +220,12 @@ export const CaseSelection: React.FC<CaseSelectionProps> = ({ caseId }) => {
                           Propuesta Divergente
                         </Badge>
                       )}
+                      {offer.price != null && offer.total_amount != null && Math.abs(Number(offer.price) - Number(offer.total_amount)) > 0.05 && (
+                        <Badge variant="warning" className="text-xs flex items-center gap-1">
+                          <AlertTriangle size={12} />
+                          Inconsistencia Aritmética
+                        </Badge>
+                      )}
                       {!isOfferComplete && (
                         <Badge variant="danger" className="text-xs">
                           Incompleta / Pendiente
@@ -225,12 +238,17 @@ export const CaseSelection: React.FC<CaseSelectionProps> = ({ caseId }) => {
                   </div>
 
                   <div className="text-right">
-                    <span className="text-xs text-gray-500 block">Importe Económico Ofertado</span>
+                    <span className="text-xs text-gray-500 block">Importe Económico Validado</span>
                     <span className="text-base font-bold text-gray-900">
                       {displayPrice != null
                         ? `${offer.currency || 'PEN'} ${Number(displayPrice).toLocaleString('es-PE', { minimumFractionDigits: 2 })}`
                         : 'No definido'}
                     </span>
+                    {offer.price != null && offer.total_amount != null && Math.abs(Number(offer.price) - Number(offer.total_amount)) > 0.05 && (
+                      <span className="text-xs text-amber-700 block">
+                        Doc. Original: {offer.currency || 'PEN'} {Number(offer.price).toLocaleString('es-PE', { minimumFractionDigits: 2 })}
+                      </span>
+                    )}
                     {vfm && vfm.is_eligible && (
                       <span className="text-xs text-blue-700 block mt-0.5">
                         Puntaje: {vfm.total_score} | Ratio: {vfm.vfm_ratio?.toFixed(2)}
@@ -241,6 +259,24 @@ export const CaseSelection: React.FC<CaseSelectionProps> = ({ caseId }) => {
 
                 {!selection && isOfferComplete && (
                   <div className="mt-4 pt-4 border-t border-gray-100">
+                    {/* Alerta de Inconsistencia Aritmética */}
+                    {offer.price != null && offer.total_amount != null && Math.abs(Number(offer.price) - Number(offer.total_amount)) > 0.05 && (
+                      <div className="mb-3 p-2.5 rounded bg-amber-50 border border-amber-300 text-xs text-amber-900 flex items-start gap-2">
+                        <AlertTriangle size={15} className="text-amber-600 flex-shrink-0 mt-0.5" />
+                        <div>
+                          <strong>Inconsistencia aritmética detectada en esta oferta:</strong>
+                          <p className="mt-0.5">
+                            Total declarado en documento: <strong>{offer.currency || 'PEN'} {Number(offer.price).toLocaleString('es-PE', { minimumFractionDigits: 2 })}</strong> |
+                            Total recalculado por precios unitarios: <strong>{offer.currency || 'PEN'} {Number(offer.total_amount).toLocaleString('es-PE', { minimumFractionDigits: 2 })}</strong> |
+                            Diferencia: <strong>{offer.currency || 'PEN'} {Math.abs(Number(offer.price) - Number(offer.total_amount)).toLocaleString('es-PE', { minimumFractionDigits: 2 })}</strong>.
+                          </p>
+                          <p className="mt-0.5 text-amber-800">
+                            Prevalecen los precios unitarios ofertados. Es <strong>obligatorio motivar el tratamiento y conciliación</strong> conforme a las reglas del procedimiento aplicable.
+                          </p>
+                        </div>
+                      </div>
+                    )}
+
                     {/* Alerta de Divergencia si se propone una oferta distinta */}
                     {isDivergent && (
                       <div className="mb-3 p-2.5 rounded bg-amber-50 border border-amber-200 text-xs text-amber-900 flex items-start gap-2">
@@ -267,7 +303,9 @@ export const CaseSelection: React.FC<CaseSelectionProps> = ({ caseId }) => {
 
                     <div className="space-y-2">
                       <label className="block text-xs font-semibold text-gray-700">
-                        {isDivergent
+                        {offer.price != null && offer.total_amount != null && Math.abs(Number(offer.price) - Number(offer.total_amount)) > 0.05
+                          ? 'Motivación obligatoria de conciliación aritmética y propuesta *'
+                          : isDivergent
                           ? 'Justificación expresa de la selección divergente *'
                           : !topRecommendation
                           ? 'Fundamentación obligatoria de la propuesta *'
